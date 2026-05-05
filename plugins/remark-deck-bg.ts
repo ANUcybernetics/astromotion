@@ -1,4 +1,5 @@
 import type { Root, RootContent, Paragraph, Image } from "mdast";
+import { dirname, resolve } from "node:path";
 import { parseBgModifiers } from "../src/parse-helpers.ts";
 
 interface BgImage {
@@ -7,6 +8,15 @@ interface BgImage {
   size?: string;
   splitPercent?: string;
   filters?: string;
+}
+
+function resolveAssetUrl(url: string, deckPath: string | undefined): string {
+  if (!deckPath) return url;
+  if (!url.startsWith("./") && !url.startsWith("../")) return url;
+  const absPath = resolve(dirname(deckPath), url);
+  const srcIdx = absPath.indexOf("/src/");
+  if (srcIdx === -1) return url;
+  return absPath.slice(srcIdx);
 }
 
 interface MdxJsxAttribute {
@@ -77,8 +87,12 @@ export function remarkDeckBg() {
       const remaining: RootContent[] = [];
       for (const child of sec.children as RootContent[]) {
         const img = asBgImageParagraph(child);
-        if (img) bgImages.push(img);
-        else remaining.push(child);
+        if (img) {
+          img.url = resolveAssetUrl(img.url, file.path);
+          bgImages.push(img);
+        } else {
+          remaining.push(child);
+        }
       }
       const fullBleed = bgImages.find((i) => !i.position);
       const splitImg = bgImages.find((i) => i.position);
