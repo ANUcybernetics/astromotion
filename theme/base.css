@@ -5,21 +5,10 @@
 }
 
 .split-layout {
+  position: absolute;
+  inset: 0;
   display: flex;
-  width: 100%;
-  height: 100%;
   gap: 0;
-}
-
-/*
- * The next two rules live outside @layer astromotion on purpose: any
- * unlayered downstream rule on `.reveal .slides section` (e.g. a project
- * theme setting `padding: 4rem 5rem`) would otherwise beat the layered
- * versions and break full-bleed split slides.
- */
-.reveal .slides section:has(.split-layout) {
-  padding: 0;
-  align-content: stretch;
 }
 
 .reveal .slides section .at-heading-anchor {
