@@ -5,10 +5,14 @@
 }
 
 .split-layout {
+  position: absolute;
+  inset: 0;
   display: flex;
-  width: 100%;
-  height: 100%;
   gap: 0;
+}
+
+.reveal .slides section .at-heading-anchor {
+  display: none;
 }
 
 .split-image {
@@ -102,11 +106,6 @@
     &:has(.slide-bg) > :not(.slide-bg) {
       position: relative;
       z-index: 1;
-    }
-
-    &:has(.split-layout) {
-      padding: 0;
-      align-content: stretch;
     }
   }
 }
