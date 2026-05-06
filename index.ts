@@ -1,4 +1,4 @@
-import type { AstroIntegration } from "astro";
+import type { AstroIntegration, ShikiConfig } from "astro";
 import mdx from "@astrojs/mdx";
 import { copyFileSync, mkdirSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export interface AstromotionOptions {
   theme?: string;
   injectRoutes?: boolean;
-  codeTheme?: string | Record<string, unknown>;
+  codeTheme?: ShikiConfig["theme"];
 }
 
 export function astromotion(options: AstromotionOptions = {}): AstroIntegration {
@@ -27,7 +27,6 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
     hooks: {
       "astro:config:setup"({ updateConfig, injectRoute, config }) {
         projectRoot = fileURLToPath(config.root);
-        const codeThemeValue = options.codeTheme ?? "vitesse-dark";
 
         const hasMdx = config.integrations.some((i) => i.name === "@astrojs/mdx");
         if (!hasMdx) {
@@ -36,8 +35,7 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
               mdx({
                 remarkPlugins: deckRemarkPlugins,
                 shikiConfig: {
-                  theme:
-                    typeof codeThemeValue === "string" ? codeThemeValue : "vitesse-dark",
+                  theme: options.codeTheme ?? "vitesse-dark",
                 },
               }),
             ],
