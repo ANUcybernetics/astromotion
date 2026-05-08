@@ -1,3 +1,4 @@
+import remarkSmartypants from "remark-smartypants";
 import { remarkDeckIncludes } from "./remark-deck-includes.ts";
 import { remarkDeckSections } from "./remark-deck-sections.ts";
 import { remarkDeckClasses } from "./remark-deck-classes.ts";
@@ -12,6 +13,7 @@ export const deckRemarkPlugins = [
   remarkDeckNotes,
   remarkDeckQr,
   remarkDeckBg,
+  [remarkSmartypants, { dashes: "oldschool" }] as const,
 ];
 
 export {

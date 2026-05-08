@@ -6,8 +6,7 @@ import remarkMdx from "remark-mdx";
 import { deckRemarkPlugins } from "../plugins/index.ts";
 
 async function runPipeline(input: string, filePath: string): Promise<Root> {
-  const processor = unified().use(remarkParse).use(remarkMdx);
-  for (const plugin of deckRemarkPlugins) processor.use(plugin);
+  const processor = unified().use(remarkParse).use(remarkMdx).use(deckRemarkPlugins);
   const tree = processor.parse(input);
   await processor.run(tree, { path: filePath });
   return tree as Root;
