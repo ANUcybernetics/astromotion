@@ -9,6 +9,11 @@ consumers like llms-unplugged were already pinning) and `@shikijs/rehype` 3 →
 4. Also added the previously missing `remark-smartypants` direct dep that the
 plugin pipeline test was importing.
 
+Reveal 6 dropped the `dist/` segment from its package exports, so the CSS
+imports in `DeckLayout.astro` and `theme/default.css` were updated from
+`reveal.js/dist/reveal.css` → `reveal.js/reveal.css` and similarly for the
+black theme.
+
 ### Disable Reveal.js scroll view on narrow viewports
 
 Reveal 6 ships `scrollActivationWidth: 435`, which silently switches decks
