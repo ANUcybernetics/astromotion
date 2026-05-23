@@ -291,8 +291,6 @@ astromotion({
 });
 ```
 
-`codeTheme` (a single theme name) is accepted as a deprecated shortcut.
-
 If you set `injectRoutes: false`, you'll need to create your own route pages.
 See `pages/[...slug].astro` in this package for the reference implementation.
 

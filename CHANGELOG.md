@@ -2,14 +2,15 @@
 
 ## 2026-05-23
 
-### `shikiConfig` option
+### **Breaking:** `codeTheme` removed, replaced by `shikiConfig`
 
-New `shikiConfig: ShikiConfig` option accepts the full Astro shiki shape —
-single `theme` or dual `themes` with optional `defaultColor`. Existing
-`codeTheme` option still works but is deprecated; `shikiConfig` wins if
-both are set. Fixes a long-standing typing bug where the dual-theme shape
-documented in the README didn't typecheck against `codeTheme`'s
-`ShikiConfig["theme"]` declaration.
+The `codeTheme: ShikiConfig["theme"]` option only accepted a single theme,
+but the README documented passing a dual-theme `{ themes, defaultColor }`
+object — which silently bypassed the type. Replaced with `shikiConfig:
+ShikiConfig` accepting the full Astro shiki shape (single `theme` or dual
+`themes` with optional `defaultColor`).
+
+Migration: rename `codeTheme: "<name>"` → `shikiConfig: { theme: "<name>" }`.
 
 ### Plugins registered via global markdown config
 

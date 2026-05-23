@@ -19,11 +19,6 @@ export interface AstromotionOptions {
    */
   shikiConfig?: ShikiConfig;
   /**
-   * @deprecated Use `shikiConfig` instead. Single-theme shortcut; if
-   * `shikiConfig` is also provided, `shikiConfig` wins.
-   */
-  codeTheme?: ShikiConfig["theme"];
-  /**
    * `cssVariable` names registered via Astro's top-level `fonts` config.
    * For each variable, astromotion injects `<Font cssVariable={v} preload />`
    * into the deck `<head>` so deck pages get self-hosted fonts with
@@ -60,9 +55,7 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
 
         const hasMdx = config.integrations.some((i) => i.name === "@astrojs/mdx");
         if (!hasMdx) {
-          const shikiConfig: ShikiConfig =
-            options.shikiConfig ??
-            (options.codeTheme ? { theme: options.codeTheme } : { theme: "vitesse-dark" });
+          const shikiConfig: ShikiConfig = options.shikiConfig ?? { theme: "vitesse-dark" };
           updateConfig({
             integrations: [mdx({ shikiConfig })],
           });
