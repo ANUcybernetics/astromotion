@@ -36,13 +36,13 @@
   "devDependencies": {
     "@astrojs/mdx": "^5.0.6",
     "@e18e/eslint-plugin": "^0.5.0",
-    "astro": "^6.3.7",
+    "astro": "^6.4.2",
     "eslint-plugin-no-only-tests": "^3.4.0",
     "eslint-plugin-perfectionist": "^5.9.0",
     "eslint-plugin-unused-imports": "^4.4.1",
     "linkedom": "^0.18.12",
-    "oxfmt": "^0.51.0",
-    "oxlint": "^1.66.0",
+    "oxfmt": "^0.52.0",
+    "oxlint": "^1.67.0",
     "stylelint": "^17.12.0",
     "stylelint-config-standard": "^40.0.0",
     "vitest": "^4.1.7"
