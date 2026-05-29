@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-30
+
+### **Breaking:** deck remark plugins are no longer auto-registered
+
+The integration no longer registers `deckRemarkPlugins` on Astro's global
+`markdown.remarkPlugins`. Astro 6.4's `markdown.processor` is a single value
+that can't be co-owned by multiple integrations, and the old top-level
+`markdown.remarkPlugins` API is deprecated (removed in Astro 8).
+
+Consumers must now wire the exported `deckRemarkPlugins` into their own markdown
+processor: with astro-theme-anu, `anuTheme({ extraRemarkPlugins: deckRemarkPlugins })`;
+standalone, `markdown: { processor: unified({ remarkPlugins: deckRemarkPlugins }) }`
+(`unified` from `@astrojs/markdown-remark`). The plugins still self-gate on
+`.deck.mdx`, so they no-op on regular content.
+
 ## 2026-05-23
 
 ### **Breaking:** `codeTheme` removed, replaced by `shikiConfig`

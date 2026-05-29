@@ -5,7 +5,6 @@ import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectDeckAssets } from "./src/asset-collector.ts";
 import { viteDeckWatchIncludes } from "./src/vite-plugin-watch-includes.ts";
-import { deckRemarkPlugins } from "./plugins/index.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -42,16 +41,6 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
     hooks: {
       "astro:config:setup"({ updateConfig, injectRoute, config }) {
         projectRoot = fileURLToPath(config.root);
-
-        // Register deck plugins on Astro's global markdown config so they're
-        // inherited by @astrojs/mdx via `extendMarkdownConfig: true` (default).
-        // Each plugin gates itself with `endsWith(".deck.mdx")`, so they no-op
-        // on regular .md / .mdx files.
-        updateConfig({
-          markdown: {
-            remarkPlugins: [...deckRemarkPlugins],
-          },
-        });
 
         const hasMdx = config.integrations.some((i) => i.name === "@astrojs/mdx");
         if (!hasMdx) {
