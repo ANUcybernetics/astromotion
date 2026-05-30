@@ -126,6 +126,12 @@ syntax:
 - `{/* _class: name */}` --- set a CSS class on the enclosing slide (e.g.
   `impact`, `banner`, `quote`, `centered`, or any custom class your theme
   defines)
+- `{/* _animate */}` --- flag the slide for Reveal.js
+  [auto-animate](https://revealjs.com/auto-animate/): adjacent slides that both
+  carry `_animate` smoothly tween matching elements (matched by `data-id`, or by
+  text for headings/paragraphs) from one slide to the next. Use
+  `{/* _animate: id */}` to scope independent sequences --- only slides whose
+  ids match animate across their shared boundary.
 - `{/* notes: ...HTML body... */}` --- presenter notes, visible in the
   Reveal.js speaker view (press **S**). The content is rendered as HTML.
 - `{/* @include ./path.mdx */}` --- inline slides from another `.mdx` file

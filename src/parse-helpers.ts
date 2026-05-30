@@ -56,6 +56,31 @@ export function parseIncludeDirectiveMdx(value: string): string | null {
   return path || null;
 }
 
+/**
+ * Parse an `{/* _animate *​/}` directive, which flags the enclosing slide for
+ * Reveal.js auto-animate (a smooth FLIP transition to the next/previous slide
+ * that also carries `_animate`). Returns `null` when `value` is not an animate
+ * directive, or `{ id }` when it is:
+ *
+ *   {/* _animate *​/}        -> { id: null }   (bare flag)
+ *   {/* _animate: shuffle *​/} -> { id: "shuffle" }  (scoped group)
+ *
+ * The optional id maps to `data-auto-animate-id`: Reveal only animates between
+ * two adjacent slides whose ids are equal, so giving two separate sequences
+ * different ids stops them animating across the boundary between them.
+ */
+export function parseAnimateDirectiveMdx(value: string): { id: string | null } | null {
+  const body = parseMdxFlowExpression(value);
+  if (body === null) return null;
+  if (body === "_animate") return { id: null };
+  const prefix = "_animate:";
+  if (body.startsWith(prefix)) {
+    const id = body.slice(prefix.length).trim();
+    return { id: id || null };
+  }
+  return null;
+}
+
 export function extractFrontmatter(raw: string): { data: string; content: string } | null {
   const open = "---\n";
   if (!raw.startsWith(open)) return null;

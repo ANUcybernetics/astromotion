@@ -12,14 +12,15 @@ Consumed as a package by Astro sites --- not a standalone app.
 
 ## Architecture
 
-The integration (`index.ts`) registers `@astrojs/mdx` with the six custom remark
-plugins, aliases theme CSS via a virtual module, and injects a catch-all deck
-route.
+The integration (`index.ts`) registers `@astrojs/mdx`, aliases theme CSS via a
+virtual module, and injects a catch-all deck route. The eight custom remark
+plugins are exported as `deckRemarkPlugins` for consumers to wire into their own
+markdown processor (see the breaking-change note in CHANGELOG).
 
 ### .deck.mdx format
 
 Decks are authored as `.deck.mdx` files. Astro's MDX integration processes
-them through the standard remark/rehype pipeline, plus the six custom remark
+them through the standard remark/rehype pipeline, plus the eight custom remark
 plugins (in `plugins/`). The result is an Astro component whose default export
 is the slide content.
 
@@ -36,11 +37,16 @@ is the slide content.
    `<section>` elements
 3. `remarkDeckClasses` --- converts `{/* _class: name */}` expressions to
    `class` attributes on the enclosing section
-4. `remarkDeckNotes` --- converts `{/* notes: ...HTML... */}` expressions to
+4. `remarkDeckAnimate` --- converts `{/* _animate */}` (and `{/* _animate: id */}`)
+   expressions to `data-auto-animate` (and `data-auto-animate-id`) attributes on
+   the enclosing section, enabling Reveal.js auto-animate between adjacent slides
+5. `remarkDeckNotes` --- converts `{/* notes: ...HTML... */}` expressions to
    `<div class="notes">` elements inside the section
-5. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
-6. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
+6. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
+7. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
    and split layouts
+8. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
+   dashes) to slide text, including content spliced in by `@include`
 
 Each plugin gates itself with `if (!file.path?.endsWith('.deck.mdx')) return`
 so it silently ignores non-deck MDX files.

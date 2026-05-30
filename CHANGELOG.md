@@ -2,6 +2,17 @@
 
 ## 2026-05-30
 
+### `_animate` directive for Reveal.js auto-animate
+
+New `{/* _animate */}` slide directive (plus `{/* _animate: id */}`) sets
+`data-auto-animate` (and `data-auto-animate-id`) on the enclosing `<section>`,
+so adjacent slides that both carry it smoothly tween matching elements via
+Reveal.js [auto-animate](https://revealjs.com/auto-animate/). Elements match by
+`data-id` (authored in your markup/components) or, for headings and paragraphs,
+by text content. Ids scope independent sequences: only slides whose ids match
+animate across their shared boundary. Handled by a new `remarkDeckAnimate`
+plugin, slotted into `deckRemarkPlugins` after `remarkDeckClasses`.
+
 ### **Breaking:** deck remark plugins are no longer auto-registered
 
 The integration no longer registers `deckRemarkPlugins` on Astro's global

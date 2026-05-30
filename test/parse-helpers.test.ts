@@ -4,6 +4,7 @@ import {
   parseClassDirectiveMdx,
   parseNotesDirectiveMdx,
   parseIncludeDirectiveMdx,
+  parseAnimateDirectiveMdx,
   extractFrontmatter,
   parseBgModifiers,
 } from "../src/parse-helpers.ts";
@@ -216,5 +217,36 @@ describe("parseIncludeDirectiveMdx", () => {
     expect(parseIncludeDirectiveMdx("/* @include ../shared/topic.mdx */")).toBe(
       "../shared/topic.mdx",
     );
+  });
+});
+
+describe("parseAnimateDirectiveMdx", () => {
+  it("parses the bare flag with no id", () => {
+    expect(parseAnimateDirectiveMdx("/* _animate */")).toEqual({ id: null });
+  });
+
+  it("parses an id when given", () => {
+    expect(parseAnimateDirectiveMdx("/* _animate: shuffle */")).toEqual({ id: "shuffle" });
+  });
+
+  it("treats an empty id as no id", () => {
+    expect(parseAnimateDirectiveMdx("/* _animate: */")).toEqual({ id: null });
+  });
+
+  it("handles extra whitespace around the id", () => {
+    expect(parseAnimateDirectiveMdx("/*  _animate:  pile  */")).toEqual({ id: "pile" });
+  });
+
+  it("returns null for other directives", () => {
+    expect(parseAnimateDirectiveMdx("/* _class: impact */")).toBeNull();
+    expect(parseAnimateDirectiveMdx("/* notes: hi */")).toBeNull();
+  });
+
+  it("returns null for a non-comment value", () => {
+    expect(parseAnimateDirectiveMdx("_animate")).toBeNull();
+  });
+
+  it("does not match a directive that merely starts with _animate", () => {
+    expect(parseAnimateDirectiveMdx("/* _animated */")).toBeNull();
   });
 });
