@@ -37,6 +37,17 @@ const { Content, frontmatter } = Astro.props;
 
 <script>
   import Reveal from "reveal.js";
+
+  // Drop slides gated behind an `_if:` directive whose query param is absent
+  // from the deck URL, before Reveal reads the DOM — so slide indices and
+  // `#/` hashes count only the slides that survive. A slide tagged
+  // `{/* _if: presenters */}` is hidden unless the URL carries `?presenters`.
+  const params = new URLSearchParams(location.search);
+  document.querySelectorAll(".slides section[data-deck-if]").forEach((slide) => {
+    const cond = slide.getAttribute("data-deck-if");
+    if (cond && !params.has(cond)) slide.remove();
+  });
+
   const deck = new Reveal({
     width: 1280,
     height: 720,

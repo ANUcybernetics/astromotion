@@ -44,6 +44,10 @@ export function parseClassDirectiveMdx(value: string): string | null {
   return parseMdxDirective(value, "_class");
 }
 
+export function parseIfDirectiveMdx(value: string): string | null {
+  return parseMdxDirective(value, "_if");
+}
+
 export function parseNotesDirectiveMdx(value: string): string | null {
   return parseMdxDirective(value, "notes");
 }

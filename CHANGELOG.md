@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-03
+
+### `_if` directive for query-param-gated slides
+
+New `{/* _if: name */}` slide directive sets `data-deck-if="name"` on the
+enclosing `<section>`. The deck's Reveal bootstrap removes any such slide whose
+query param is absent from the deck URL before `deck.initialize()` runs, so
+slide indices and `#/` hashes count only the slides that survive. A slide
+tagged `{/* _if: presenters */}` is hidden by default and appears only when the
+URL carries `?presenters`. Handled by a new `remarkDeckConditionals` plugin,
+slotted into `deckRemarkPlugins` after `remarkDeckClasses`.
+
 ## 2026-05-30
 
 ### `_animate` directive for Reveal.js auto-animate
