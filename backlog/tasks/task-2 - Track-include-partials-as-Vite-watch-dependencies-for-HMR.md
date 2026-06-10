@@ -3,8 +3,8 @@ id: TASK-2
 title: Track @include partials as Vite watch dependencies for HMR
 status: In Progress
 assignee: []
-created_date: '2026-05-08 11:07'
-updated_date: '2026-06-10 04:06'
+created_date: "2026-05-08 11:07"
+updated_date: "2026-06-10 04:06"
 labels:
   - dx
   - bug
@@ -15,6 +15,7 @@ priority: medium
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
+
 ## Context
 
 The `remark-deck-includes` plugin (`plugins/remark-deck-includes.ts`) reads
@@ -122,5 +123,7 @@ underlying invalidation lands.
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+
 Downstream verification (llms-unplugged, 2026-06-10): the missing piece is server-side invalidation. handleHotUpdate currently sends full-reload but the dev server re-serves the stale compiled parent module; calling server.moduleGraph.onFileChange(deckFile) for each parent deck before sending full-reload fixes it end-to-end (verified against astro 6.4.4 / @astrojs/mdx 6.0.2 via a consumer-side shim in llms-unplugged's astro.config.ts, which reuses collectIncludePaths and should be deleted once this lands). Note decksByInclude is only populated after a deck's transform has run, so the watcher.add/mapping approach here works once the deck has been requested at least once.
+
 <!-- SECTION:NOTES:END -->
