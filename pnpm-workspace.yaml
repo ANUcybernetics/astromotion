@@ -1,10 +1,13 @@
 allowBuilds:
   esbuild: true
   sharp: false
+# Name patterns, not name@version: the supply-chain verify gate matches by
+# package-name glob, so versioned entries are silently ignored.
 minimumReleaseAgeExclude:
-  - "@astrojs/internal-helpers@0.10.0"
-  - "@astrojs/markdown-remark@7.2.0"
-  - astro@6.4.2
-  - "@astrojs/mdx@6.0.1"
+  - astro
+  - "@astrojs/internal-helpers"
+  - "@astrojs/markdown-remark"
+  - "@astrojs/mdx"
+  - "@astrojs/markdown-satteri"
 overrides:
   vite: ^8.0.5

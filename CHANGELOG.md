@@ -1,31 +1,42 @@
 # Changelog
 
+## 2026-06-23
+
+### Breaking: require Astro 7 and @astrojs/mdx 7
+
+Peer dependencies now require `astro@^7` and `@astrojs/mdx@^7` (previously
+`astro@^6` and `@astrojs/mdx@^5 || ^6`). Astro 7 ships Vite 8 (Rolldown), a Rust
+compiler, and Sätteri as the default Markdown processor. The deck engine itself
+is unchanged --- it builds its own standalone `unified()` pipeline and only
+imports types from Astro --- so no deck content or syntax changes are required.
+Consumers must move to Astro 7 in lockstep.
+
 ## 2026-06-11
 
 ### Feature: speaker notes now show in the Reveal.js speaker view
 
 `{/* notes: ... */}` directives were emitted as `<div class="notes">`, but the
 deck route registered no Reveal plugins, so pressing **S** opened nothing and
-the notes (hidden by consuming themes) surfaced nowhere. The route now
-registers Reveal's notes plugin, and `remarkDeckNotes` emits
+the notes (hidden by consuming themes) surfaced nowhere. The route now registers
+Reveal's notes plugin, and `remarkDeckNotes` emits
 `<aside class="notes" aria-hidden="true">` --- the element the plugin reads ---
-so the speaker view (current slide, next slide, notes, timer) works. Reveal
-core CSS hides `aside.notes` (`display:none`) so the audience never sees it,
-and `aria-hidden` keeps the presenter-only aside from registering as a
-complementary landmark in static a11y scans (which don't apply reveal's CSS).
-HTML in the notes body is preserved.
+so the speaker view (current slide, next slide, notes, timer) works. Reveal core
+CSS hides `aside.notes` (`display:none`) so the audience never sees it, and
+`aria-hidden` keeps the presenter-only aside from registering as a complementary
+landmark in static a11y scans (which don't apply reveal's CSS). HTML in the
+notes body is preserved.
 
 ## 2026-06-10
 
 ### Fix: deck partial edits now show up in the dev server
 
-Editing an `@include` partial sent a full-reload but the browser came back
-with stale content: the dev server's compiled parent `.deck.mdx` module was
-never invalidated, so the reload re-served the output compiled before the
-edit. `astromotion:watch-includes` now calls `moduleGraph.onFileChange()` for
-every deck whose (transitive) include set contains the changed file before
-sending the full-reload, so a partial edit behaves like an edit to the deck
-itself. Verified against astro 6.4.4 / @astrojs/mdx 6.0.2 in llms-unplugged.
+Editing an `@include` partial sent a full-reload but the browser came back with
+stale content: the dev server's compiled parent `.deck.mdx` module was never
+invalidated, so the reload re-served the output compiled before the edit.
+`astromotion:watch-includes` now calls `moduleGraph.onFileChange()` for every
+deck whose (transitive) include set contains the changed file before sending the
+full-reload, so a partial edit behaves like an edit to the deck itself. Verified
+against astro 6.4.4 / @astrojs/mdx 6.0.2 in llms-unplugged.
 
 ## 2026-06-05
 
@@ -53,10 +64,10 @@ split backgrounds now behave identically.
 New `{/* _if: name */}` slide directive sets `data-deck-if="name"` on the
 enclosing `<section>`. The deck's Reveal bootstrap removes any such slide whose
 query param is absent from the deck URL before `deck.initialize()` runs, so
-slide indices and `#/` hashes count only the slides that survive. A slide
-tagged `{/* _if: presenters */}` is hidden by default and appears only when the
-URL carries `?presenters`. Handled by a new `remarkDeckConditionals` plugin,
-slotted into `deckRemarkPlugins` after `remarkDeckClasses`.
+slide indices and `#/` hashes count only the slides that survive. A slide tagged
+`{/* _if: presenters */}` is hidden by default and appears only when the URL
+carries `?presenters`. Handled by a new `remarkDeckConditionals` plugin, slotted
+into `deckRemarkPlugins` after `remarkDeckClasses`.
 
 ## 2026-05-30
 
@@ -79,8 +90,9 @@ that can't be co-owned by multiple integrations, and the old top-level
 `markdown.remarkPlugins` API is deprecated (removed in Astro 8).
 
 Consumers must now wire the exported `deckRemarkPlugins` into their own markdown
-processor: with astro-theme-anu, `anuTheme({ extraRemarkPlugins: deckRemarkPlugins })`;
-standalone, `markdown: { processor: unified({ remarkPlugins: deckRemarkPlugins }) }`
+processor: with astro-theme-anu,
+`anuTheme({ extraRemarkPlugins: deckRemarkPlugins })`; standalone,
+`markdown: { processor: unified({ remarkPlugins: deckRemarkPlugins }) }`
 (`unified` from `@astrojs/markdown-remark`). The plugins still self-gate on
 `.deck.mdx`, so they no-op on regular content.
 
@@ -88,28 +100,28 @@ standalone, `markdown: { processor: unified({ remarkPlugins: deckRemarkPlugins }
 
 ### **Breaking:** `codeTheme` removed, replaced by `shikiConfig`
 
-The `codeTheme: ShikiConfig["theme"]` option only accepted a single theme,
-but the README documented passing a dual-theme `{ themes, defaultColor }`
-object — which silently bypassed the type. Replaced with `shikiConfig:
-ShikiConfig` accepting the full Astro shiki shape (single `theme` or dual
-`themes` with optional `defaultColor`).
+The `codeTheme: ShikiConfig["theme"]` option only accepted a single theme, but
+the README documented passing a dual-theme `{ themes, defaultColor }` object —
+which silently bypassed the type. Replaced with `shikiConfig: ShikiConfig`
+accepting the full Astro shiki shape (single `theme` or dual `themes` with
+optional `defaultColor`).
 
 Migration: rename `codeTheme: "<name>"` → `shikiConfig: { theme: "<name>" }`.
 
 ### Plugins registered via global markdown config
 
-`deckRemarkPlugins` now goes onto Astro's global `markdown.remarkPlugins`,
-which `@astrojs/mdx` inherits by default (`extendMarkdownConfig: true`).
-Previously astromotion only attached the plugins when it owned the mdx
-integration; when a theme registered mdx first, the deck plugins silently
-fell off and decks rendered as plain MDX (no `<section>` wrapping, `@include`
-directives ignored). Each plugin still gates itself on `endsWith(".deck.mdx")`
-so the change is a no-op for regular `.md` / `.mdx` files.
+`deckRemarkPlugins` now goes onto Astro's global `markdown.remarkPlugins`, which
+`@astrojs/mdx` inherits by default (`extendMarkdownConfig: true`). Previously
+astromotion only attached the plugins when it owned the mdx integration; when a
+theme registered mdx first, the deck plugins silently fell off and decks
+rendered as plain MDX (no `<section>` wrapping, `@include` directives ignored).
+Each plugin still gates itself on `endsWith(".deck.mdx")` so the change is a
+no-op for regular `.md` / `.mdx` files.
 
 ### `@include` strips yaml frontmatter
 
-When `{/* @include ./topic.mdx */}` splices an included file's content into
-a deck, YAML and TOML frontmatter on the included file are now removed
+When `{/* @include ./topic.mdx */}` splices an included file's content into a
+deck, YAML and TOML frontmatter on the included file are now removed
 automatically. This lets a single `.mdx` file double as a standalone Astro
 content entry (with frontmatter) and as a deck slide partial.
 
@@ -119,59 +131,58 @@ content entry (with frontmatter) and as a deck slide partial.
 
 `{/* @include ... */}` now accepts bare module specifiers in addition to
 relative/absolute paths --- e.g.
-`{/* @include astro-theme-anu/partials/foo.mdx */}` goes through Node's
-package resolution starting from the requesting deck file. The watch plugin
-follows the same rule, so HMR still wires up hot-reload on partial edits.
-Existing relative paths (`./`, `../`, `/`) behave exactly as before.
+`{/* @include astro-theme-anu/partials/foo.mdx */}` goes through Node's package
+resolution starting from the requesting deck file. The watch plugin follows the
+same rule, so HMR still wires up hot-reload on partial edits. Existing relative
+paths (`./`, `../`, `/`) behave exactly as before.
 
 ## 2026-05-09
 
 ### Refresh dependencies
 
 Bumped all dependencies to latest, notably `reveal.js` 5.2 → 6.0 (matches what
-consumers like llms-unplugged were already pinning) and `@shikijs/rehype` 3 → 4. Also added the previously missing `remark-smartypants` direct dep that the
+consumers like llms-unplugged were already pinning) and `@shikijs/rehype` 3 → 4.
+Also added the previously missing `remark-smartypants` direct dep that the
 plugin pipeline test was importing.
 
 Reveal 6 dropped the `dist/` segment from its package exports, so the CSS
 imports in `DeckLayout.astro` and `theme/default.css` were updated from
-`reveal.js/dist/reveal.css` → `reveal.js/reveal.css` and similarly for the
-black theme.
+`reveal.js/dist/reveal.css` → `reveal.js/reveal.css` and similarly for the black
+theme.
 
 ### Disable Reveal.js scroll view on narrow viewports
 
-Reveal 6 ships `scrollActivationWidth: 435`, which silently switches decks
-into a vertical-scroll layout (slides stacked at near-1:1, no scaling) on
-viewports ≤435px wide. That broke the assumed invariant that decks always
-render onto the fixed 1280×720 canvas scaled to fit. The deck route now
-sets `scrollActivationWidth: null`, so portrait mobile viewports get the
-same scaled 16:9 layout as desktop --- just smaller.
+Reveal 6 ships `scrollActivationWidth: 435`, which silently switches decks into
+a vertical-scroll layout (slides stacked at near-1:1, no scaling) on viewports
+≤435px wide. That broke the assumed invariant that decks always render onto the
+fixed 1280×720 canvas scaled to fit. The deck route now sets
+`scrollActivationWidth: null`, so portrait mobile viewports get the same scaled
+16:9 layout as desktop --- just smaller.
 
 ## 2026-05-08
 
 ### Track `@include` partials as Vite watch dependencies
 
-A new dev-only Vite plugin (`astromotion:watch-includes`) scans each
-`.deck.mdx` source on transform, walks nested includes up to
-`MAX_DEPTH = 10`, registers each resolved partial with Vite's file watcher,
-and sends a `full-reload` over the dev WebSocket when a tracked partial
-changes. Production builds are unaffected --- this is purely a dev-server
-ergonomics change.
+A new dev-only Vite plugin (`astromotion:watch-includes`) scans each `.deck.mdx`
+source on transform, walks nested includes up to `MAX_DEPTH = 10`, registers
+each resolved partial with Vite's file watcher, and sends a `full-reload` over
+the dev WebSocket when a tracked partial changes. Production builds are
+unaffected --- this is purely a dev-server ergonomics change.
 
 Note: in environments where Astro's MDX dev pipeline caches rendered deck
 output, a content refresh may still require a manual server restart. The
-watch-file registration and reload signal are correct; downstream
-effectiveness depends on how Astro invalidates its module/page caches in
-your version.
+watch-file registration and reload signal are correct; downstream effectiveness
+depends on how Astro invalidates its module/page caches in your version.
 
 ## 2026-05-06
 
 ### `fontVariables` option for the Astro 6 fonts API
 
-`astromotion()` now accepts a `fontVariables: string[]` option whose entries
-are `cssVariable` names from Astro's top-level `fonts` config. For each
-variable, astromotion injects `<Font cssVariable={v} preload />` into the
-deck `<head>` --- giving decks self-hosted fonts with automatic preloading,
-subsetting, and `font-fallback` metrics.
+`astromotion()` now accepts a `fontVariables: string[]` option whose entries are
+`cssVariable` names from Astro's top-level `fonts` config. For each variable,
+astromotion injects `<Font cssVariable={v} preload />` into the deck `<head>`
+--- giving decks self-hosted fonts with automatic preloading, subsetting, and
+`font-fallback` metrics.
 
 ```ts
 import { fontProviders } from "astro/config";
@@ -194,8 +205,8 @@ defineConfig({
 ```
 
 Consuming themes can reference the variable directly
-(`var(--font-public-sans, "Public Sans")`) or rely on the `@font-face`
-rule emitted by `<Font>` to register the family by its plain name.
+(`var(--font-public-sans, "Public Sans")`) or rely on the `@font-face` rule
+emitted by `<Font>` to register the family by its plain name.
 
 ## 2026-05-05
 
@@ -207,20 +218,19 @@ remark plugins (lifted from the previous bespoke pipeline).
 
 **Why:** the previous split forced authors to choose between server-rendered
 markdown (`.deck.md`, no components) and client-only Svelte (`.deck.svelte`,
-full Svelte runtime, no SSR). The new format gives islands-style hydration:
-SSR by default, per-component opt-in to client-side hydration via Astro's
-`client:*` directives.
+full Svelte runtime, no SSR). The new format gives islands-style hydration: SSR
+by default, per-component opt-in to client-side hydration via Astro's `client:*`
+directives.
 
-**Migration:** Rename `*.deck.md` and `*.deck.svelte` → `*.deck.mdx`. For
-files that had a `<script lang="ts">` block, lift its contents to top-level
-MDX `import` and `export const` statements (drop the `<script>` wrapper).
+**Migration:** Rename `*.deck.md` and `*.deck.svelte` → `*.deck.mdx`. For files
+that had a `<script lang="ts">` block, lift its contents to top-level MDX
+`import` and `export const` statements (drop the `<script>` wrapper).
 
 Convert directive syntax from HTML comments to MDX expression syntax:
 `<!-- @include ./path -->` → `{/* @include ./path.mdx */}`,
-`<!-- _class: name -->` → `{/* _class: name */}`,
-`<!-- notes: ... -->` → `{/* notes: ... */}`. The bg image syntax
-(`![bg ...](url)`), QR images (`![qr](url)`), and slide separators (`---`)
-are unchanged.
+`<!-- _class: name -->` → `{/* _class: name */}`, `<!-- notes: ... -->` →
+`{/* notes: ... */}`. The bg image syntax (`![bg ...](url)`), QR images
+(`![qr](url)`), and slide separators (`---`) are unchanged.
 
 `@astrojs/svelte` is no longer a peer dependency. `@astrojs/mdx` is now
 required.
@@ -230,22 +240,21 @@ required.
 ### Slides now render onto a fixed 1280×720 canvas
 
 Reveal.js's `disableLayout: true` flag has been dropped from both the `.deck.md`
-catch-all route and the `.deck.svelte` preprocessor. With layout enabled,
-Reveal renders slides at the configured 1280×720 canvas and applies a
-`transform: scale()` to fit the viewport, so a deck looks pixel-identical at
-any resolution from a thumbnail up to 4K.
+catch-all route and the `.deck.svelte` preprocessor. With layout enabled, Reveal
+renders slides at the configured 1280×720 canvas and applies a
+`transform: scale()` to fit the viewport, so a deck looks pixel-identical at any
+resolution from a thumbnail up to 4K.
 
 `maxScale: 4` was added alongside the flip to lift Reveal's default 2.0 scale
 cap, which would otherwise letterbox 4K monitors (3.0× scale needed). The
 `display: "grid"` Reveal option remains, so consuming themes can keep using
 `place-content: center` on sections.
 
-**Behaviour change for authors:** the slide canvas was previously
-viewport-sized (e.g. 1920×1080 on a full-HD monitor); it is now a fixed
-1280×720. Decks authored to fit a stretched viewport may need their content
-trimmed to fit a 720-tall canvas. Typical content sizes in the
-`astro-theme-anu` deck.css fit comfortably; very dense slides should be
-spot-checked.
+**Behaviour change for authors:** the slide canvas was previously viewport-sized
+(e.g. 1920×1080 on a full-HD monitor); it is now a fixed 1280×720. Decks
+authored to fit a stretched viewport may need their content trimmed to fit a
+720-tall canvas. Typical content sizes in the `astro-theme-anu` deck.css fit
+comfortably; very dense slides should be spot-checked.
 
 **No theme-CSS changes required.** Consuming themes' rem/px sizing, padding,
 `place-content` rules, absolute positioning, and split/QR layouts all work the
@@ -264,10 +273,11 @@ subpath deployments. Use relative paths (`./assets/photo.jpg`) instead --- these
 are resolved correctly for both the Vite plugin path (via ES module imports) and
 the static HTML path (via `resolveImageUrl`).
 
-**`processDeckMarkdown` accepts a `base` option.** The catch-all `[...slug].astro`
-page passes `import.meta.env.BASE_URL` so that resolved relative paths include
-the deployment base path in the generated HTML. This only affects the static
-HTML path --- the Vite plugin path uses imports which Vite resolves natively.
+**`processDeckMarkdown` accepts a `base` option.** The catch-all
+`[...slug].astro` page passes `import.meta.env.BASE_URL` so that resolved
+relative paths include the deployment base path in the generated HTML. This only
+affects the static HTML path --- the Vite plugin path uses imports which Vite
+resolves natively.
 
 **Migration:** change any `/assets/...` or `/images/...` paths in deck files to
 `./assets/...`. Background images (`![bg](...)`) and inline images (`![](...)`)
