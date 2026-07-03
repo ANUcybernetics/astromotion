@@ -43,7 +43,7 @@ zero-dep) and pure-function state/geometry modules with unit tests.
 The repo doubles as a Claude Code plugin marketplace (`.claude-plugin/`) serving
 the `astromotion-decks` skill from `.claude/skills/`, so the skill's canonical
 home versions with the package it documents. Subscribe with
-`claude plugin marketplace add benswift/astromotion` (pin a release with
+`claude plugin marketplace add ANUcybernetics/astromotion` (pin a release with
 `@vX.Y.Z`), then `claude plugin install astromotion@astromotion`. The plugin
 version in `.claude-plugin/plugin.json` tracks the package version.
 

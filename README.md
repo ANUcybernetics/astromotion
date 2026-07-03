@@ -20,7 +20,7 @@ the churn.
 ## Install
 
 ```sh
-npm install github:benswift/astromotion
+npm install github:ANUcybernetics/astromotion
 ```
 
 ## Setup
