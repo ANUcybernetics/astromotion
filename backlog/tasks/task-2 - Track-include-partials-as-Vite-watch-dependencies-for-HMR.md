@@ -3,8 +3,8 @@ id: TASK-2
 title: Track @include partials as Vite watch dependencies for HMR
 status: Done
 assignee: []
-created_date: '2026-05-08 11:07'
-updated_date: '2026-06-10 04:24'
+created_date: "2026-05-08 11:07"
+updated_date: "2026-06-10 04:24"
 labels:
   - dx
   - bug
@@ -15,6 +15,7 @@ priority: medium
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
+
 ## Context
 
 The `remark-deck-includes` plugin (`plugins/remark-deck-includes.ts`) reads
@@ -88,7 +89,9 @@ parent's transform registers the partial as a watch file.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
+
 <!-- AC:BEGIN -->
+
 - [x] #1 Editing an included partial in a consuming project triggers HMR without touching the parent .deck.mdx
 - [x] #2 Nested includes (partial including partial) are also tracked
 - [x] #3 Production build still works correctly
@@ -114,10 +117,13 @@ upstream tooling --- the upstream caching issue masks any effect of the
 watch-file registration. Filed against a future upstream Astro/MDX fix; the
 plumbing in this task is correct and will start working as soon as the
 underlying invalidation lands.
+
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+
 Fixed in v0.5.4 (commit d1be2e5): handleHotUpdate now calls server.moduleGraph.onFileChange() for each parent deck before sending full-reload — without the invalidation the dev server re-served the stale compiled parent MDX module. Regression tests cover the invalidation and its ordering before the reload. AC#6 verified in llms-unplugged on astromotion v0.5.4 (astro 6.4.4 / @astrojs/mdx 6.0.2): edited src/decks/partials/cutouts-generation.mdx with no consumer-side shim; both cutouts decks re-rendered fresh without touching the parents. llms-unplugged's temporary shim has been removed.
+
 <!-- SECTION:NOTES:END -->

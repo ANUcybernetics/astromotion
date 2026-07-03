@@ -150,12 +150,12 @@ Any framework Astro supports (Svelte, React, Vue, Solid, etc.) can be imported
 at the top of a `.deck.mdx` file and used in slide content. Hydration is
 opt-in per component via Astro's `client:*` directives:
 
-| Directive            | When the component hydrates                       |
-| -------------------- | ------------------------------------------------- |
-| (none)               | server-rendered as static HTML, never hydrated    |
-| `client:load`        | as soon as the page loads                         |
-| `client:idle`        | when the browser is idle                          |
-| `client:visible`     | when the component scrolls into view              |
+| Directive              | When the component hydrates                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| (none)                 | server-rendered as static HTML, never hydrated                                                  |
+| `client:load`          | as soon as the page loads                                                                       |
+| `client:idle`          | when the browser is idle                                                                        |
+| `client:visible`       | when the component scrolls into view                                                            |
 | `client:only="svelte"` | skip SSR, render only on the client (use for components that touch `window`/DOM at module load) |
 
 ```mdx
