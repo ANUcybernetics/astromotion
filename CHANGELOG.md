@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-03
+
+### Feature: the astromotion-decks authoring skill now ships from this repo
+
+The repo doubles as a Claude Code plugin marketplace (`.claude-plugin/`) serving
+the `astromotion-decks` skill from `.claude/skills/`, so the skill's canonical
+home versions with the package it documents. Subscribe with
+`claude plugin marketplace add benswift/astromotion` (pin a release with
+`@vX.Y.Z`), then `claude plugin install astromotion@astromotion`. The plugin
+version in `.claude-plugin/plugin.json` tracks the package version.
+
 ## 2026-06-30
 
 ### Feature: keep the display awake while presenting fullscreen

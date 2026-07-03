@@ -1,6 +1,6 @@
 {
   "name": "astromotion",
-  "version": "0.6.1",
+  "version": "0.7.2",
   "description": "Authoring skills for astromotion slide decks (.deck.mdx), shipped from the astromotion repo so the skill always matches the package version",
   "author": {
     "name": "Ben Swift",
