@@ -2,6 +2,13 @@
 
 ## 2026-07-03
 
+### Tweak: bigger whiteboard brushes (12px and 36px)
+
+The two brush sizes are now 12px fine and 36px broad (were 8px and 16px), so the
+broad marker reads as a proper highlighter at projection distance. The toolbar
+dots render at half the on-canvas diameter so the broad dot still fits inside
+its chip.
+
 ### Feature: two whiteboard brush sizes (fine and broad)
 
 The whiteboard now has two brush sizes --- fine (8px) for writing and broad

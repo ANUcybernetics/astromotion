@@ -45,7 +45,7 @@ export const INK_PALETTE = ["#1d1d1f", "#d62828", "#1d6fd6", "#1e9e4a"];
 // Brush sizes in CSS px (pressure thins/thickens around each): fine for
 // writing, broad for highlighting. The two digit keys after the palette
 // select them.
-export const BRUSH_SIZES = [8, 16];
+export const BRUSH_SIZES = [12, 36];
 
 // Colour keys are the leading digits and the brush sizes claim the next
 // ones, so a palette can hold at most 9 - BRUSH_SIZES.length inks.

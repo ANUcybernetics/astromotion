@@ -54,8 +54,9 @@
   box-shadow: 0 0 0 2px rgb(0 0 0 / 40%);
 }
 
-/* Brush size buttons: same chip as the swatches, with a centred dot at the
-   brush's actual on-canvas diameter (--dot-size, set by the script). */
+/* Brush size buttons: same chip as the swatches, with a centred dot at half
+   the brush's on-canvas diameter (--dot-size, set by the script) so the
+   broad marker still fits inside the chip. */
 .astromotion-whiteboard-size {
   display: grid;
   place-items: center;
@@ -72,8 +73,8 @@
 
 .astromotion-whiteboard-size::after {
   content: "";
-  width: var(--dot-size);
-  height: var(--dot-size);
+  width: calc(var(--dot-size) / 2);
+  height: calc(var(--dot-size) / 2);
   border-radius: 50%;
   background: rgb(0 0 0 / 65%);
 }
