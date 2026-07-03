@@ -32,6 +32,7 @@ export type WhiteboardAction =
   | { type: "color"; index: number }
   | { type: "undo" }
   | { type: "clear" }
+  | { type: "download" }
   | { type: "swallow" };
 
 // Default whiteboard-marker ink, used when the consuming theme doesn't
@@ -86,6 +87,9 @@ export function keyAction(
     case "Backspace":
     case "Delete":
       return { type: "clear" };
+    case "d":
+    case "D":
+      return { type: "download" };
     default:
       if (/^[1-9]$/.test(key)) return { type: "color", index: Number(key) - 1 };
       return { type: "swallow" };
@@ -120,9 +124,20 @@ export function applyAction(
     case "clear":
       if (state.strokes.length === 0 && !state.current) return state;
       return { ...state, strokes: [], current: null };
+    case "download": // side effect owned by the DOM layer, no state change
     case "swallow":
       return state;
   }
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+// Timestamped download name, e.g. whiteboard-20260703-152410.png. Local time
+// --- it should match the clock on the wall of the room you presented in.
+export function boardFilename(now: Date): string {
+  const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `whiteboard-${date}-${time}.png`;
 }
 
 export function beginStroke(

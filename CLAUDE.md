@@ -116,8 +116,9 @@ deployments --- this is intentional to fail early rather than mask content bugs.
   open, a capture-phase keydown listener claims all unmodified keys so Reveal
   never navigates underneath. Strokes are perfect-freehand outlines filled on a
   canvas; the drawing survives toggling (only `C` clears) but lives in memory
-  only. Themes define the ink palette as a consecutive run of
-  `--astromotion-wb-ink-<n>` custom properties (up to nine).
+  only, and `D` downloads it as a timestamped PNG. Themes define the ink palette
+  as a consecutive run of `--astromotion-wb-ink-<n>` custom properties (up to
+  nine).
 
 ## Theming
 

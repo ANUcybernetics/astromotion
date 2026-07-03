@@ -13,6 +13,7 @@
 import {
   applyAction,
   beginStroke,
+  boardFilename,
   createWhiteboard,
   endStroke,
   extendStroke,
@@ -74,7 +75,7 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
   const hint = document.createElement("span");
   hint.className = "astromotion-whiteboard-hint";
   const colourHint = palette.length > 1 ? `1–${palette.length} colour · ` : "";
-  hint.textContent = `${colourHint}Z undo · C clear · W close`;
+  hint.textContent = `${colourHint}Z undo · C clear · D save · W close`;
   toolbar.appendChild(hint);
   overlay.appendChild(toolbar);
 
@@ -128,6 +129,29 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
     scheduleRender();
   };
 
+  // Save the board as a PNG: composite the (transparent) stroke canvas onto
+  // the board surface colour, then hand it to the browser as a download.
+  const downloadBoard = () => {
+    render(); // flush any pending frame so the file matches the screen
+    const out = document.createElement("canvas");
+    out.width = canvas.width;
+    out.height = canvas.height;
+    const outCtx = out.getContext("2d");
+    if (!outCtx || out.width === 0) return;
+    outCtx.fillStyle = getComputedStyle(overlay).backgroundColor;
+    outCtx.fillRect(0, 0, out.width, out.height);
+    outCtx.drawImage(canvas, 0, 0);
+    out.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = boardFilename(new Date());
+      link.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  };
+
   deck.addKeyBinding({ keyCode: 87, key: "W", description: "Whiteboard" }, () => {
     dispatch({ type: "open" });
   });
@@ -139,7 +163,8 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
       if (!action) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      dispatch(action);
+      if (action.type === "download") downloadBoard();
+      else dispatch(action);
     },
     true,
   );

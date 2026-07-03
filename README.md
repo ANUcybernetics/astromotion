@@ -325,10 +325,11 @@ pressure simulated from drawing speed with a mouse or trackpad.
 
 While the whiteboard is open it owns the keyboard (so the deck can't navigate
 underneath): the **digit keys** switch pen colour (or click the swatches), **Z**
-undoes the last stroke, **C** clears the board, and **W** or **Escape** closes
-it. The drawing survives toggling back to the slides --- flip to the deck and
-return and it's still there --- but it lives in memory only: **C** clears it,
-and a page reload discards it.
+undoes the last stroke, **C** clears the board, **D** downloads the board as a
+timestamped PNG (e.g. `whiteboard-20260703-152410.png`), and **W** or **Escape**
+closes it. The drawing survives toggling back to the slides --- flip to the deck
+and return and it's still there --- but it lives in memory only: **C** clears
+it, and a page reload discards it.
 
 Consuming themes can restyle the board via CSS custom properties:
 `--astromotion-wb-bg` sets the board surface, and a consecutive run of

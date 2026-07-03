@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   applyAction,
   beginStroke,
+  boardFilename,
   createWhiteboard,
   endStroke,
   extendStroke,
@@ -103,6 +104,13 @@ describe("keyAction", () => {
     }
   });
 
+  it("downloads on d (either case)", () => {
+    const state = openBoard();
+    for (const key of ["d", "D"]) {
+      expect(keyAction(state, key, false)).toEqual({ type: "download" });
+    }
+  });
+
   it("maps digits to zero-based palette indices", () => {
     const state = openBoard();
     expect(keyAction(state, "1", false)).toEqual({ type: "color", index: 0 });
@@ -192,9 +200,19 @@ describe("applyAction", () => {
     expect(applyAction(state, { type: "clear" }, PALETTE_SIZE)).toBe(state);
   });
 
-  it("swallow is an identity no-op", () => {
+  it("swallow and download are identity no-ops on the state", () => {
     const state = openBoard();
     expect(applyAction(state, { type: "swallow" }, PALETTE_SIZE)).toBe(state);
+    expect(applyAction(state, { type: "download" }, PALETTE_SIZE)).toBe(state);
+  });
+});
+
+describe("boardFilename", () => {
+  it("formats a local timestamp with zero padding", () => {
+    expect(boardFilename(new Date(2026, 6, 3, 15, 4, 27))).toBe("whiteboard-20260703-150427.png");
+    expect(boardFilename(new Date(2026, 11, 31, 23, 59, 59))).toBe(
+      "whiteboard-20261231-235959.png",
+    );
   });
 });
 
