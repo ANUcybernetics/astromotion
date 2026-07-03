@@ -40,6 +40,7 @@ const { Content, frontmatter } = Astro.props;
   import RevealNotes from "reveal.js/plugin/notes";
 
   import { keepAwakeInFullscreen } from "../src/keep-awake";
+  import { initWhiteboard } from "../src/whiteboard";
 
   // Drop slides gated behind an `_if:` directive whose query param is absent
   // from the deck URL, before Reveal reads the DOM — so slide indices and
@@ -67,6 +68,8 @@ const { Content, frontmatter } = Astro.props;
     scrollActivationWidth: null,
     plugins: [RevealNotes],
   });
-  deck.initialize();
+  // Whiteboard registers a Reveal key binding, so wait for the keyboard
+  // controller to be ready.
+  void deck.initialize().then(() => initWhiteboard(deck));
   keepAwakeInFullscreen();
 </script>

@@ -22,6 +22,7 @@
   "dependencies": {
     "@qrgrid/core": "^0.2.4",
     "@shikijs/rehype": "^4.1.0",
+    "perfect-freehand": "^1.2.3",
     "rehype-stringify": "^10.0.1",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",

@@ -1,8 +1,8 @@
 # astromotion
 
 Astro integration for markdown-authored slide decks powered by
-[Reveal.js](https://revealjs.com), with a bit of
-[Marp](https://marp.app) syntax mixed in.
+[Reveal.js](https://revealjs.com), with a bit of [Marp](https://marp.app) syntax
+mixed in.
 
 This is shared in the spirit of openness and bonhomie, but it's really quite
 idiosyncratic, and I don't expect anyone apart from
@@ -10,12 +10,12 @@ idiosyncratic, and I don't expect anyone apart from
 
 ### About the name
 
-The name is a portmanteau of Astro +
-[Animotion](https://animotion.pages.dev). Animotion (a Svelte wrapper around
-Reveal.js) was the original runtime, but it was removed in favour of using
-Reveal.js directly --- the Svelte runtime and SvelteKit shims weren't worth the
-cost when 98% of decks are pure markdown. The name stuck because renaming a
-package used across several projects isn't worth the churn.
+The name is a portmanteau of Astro + [Animotion](https://animotion.pages.dev).
+Animotion (a Svelte wrapper around Reveal.js) was the original runtime, but it
+was removed in favour of using Reveal.js directly --- the Svelte runtime and
+SvelteKit shims weren't worth the cost when 98% of decks are pure markdown. The
+name stuck because renaming a package used across several projects isn't worth
+the churn.
 
 ## Install
 
@@ -37,12 +37,11 @@ export default defineConfig({
 ```
 
 The integration registers `@astrojs/mdx` (only if no other integration has
-already done so) and adds the deck remark plugins to Astro's global
-markdown config, so it composes cleanly with themes that register mdx
-themselves. It also injects the `/decks/[...slug]` catch-all route and
-resolves your theme CSS. Slides are server-rendered HTML by default;
-interactive components opt in to client-side hydration per component via
-Astro's `client:*` directives.
+already done so) and adds the deck remark plugins to Astro's global markdown
+config, so it composes cleanly with themes that register mdx themselves. It also
+injects the `/decks/[...slug]` catch-all route and resolves your theme CSS.
+Slides are server-rendered HTML by default; interactive components opt in to
+client-side hydration per component via Astro's `client:*` directives.
 
 **Important:** deck pages must not use Astro's `<ClientRouter />` --- it
 conflicts with Reveal.js keyboard navigation.
@@ -132,10 +131,10 @@ syntax:
   text for headings/paragraphs) from one slide to the next. Use
   `{/* _animate: id */}` to scope independent sequences --- only slides whose
   ids match animate across their shared boundary.
-- `{/* notes: ...HTML body... */}` --- presenter notes, visible in the
-  Reveal.js speaker view (press **S**). The content is rendered as HTML.
-- `{/* @include ./path.mdx */}` --- inline slides from another `.mdx` file
-  (see Include directives below)
+- `{/* notes: ...HTML body... */}` --- presenter notes, visible in the Reveal.js
+  speaker view (press **S**). The content is rendered as HTML.
+- `{/* @include ./path.mdx */}` --- inline slides from another `.mdx` file (see
+  Include directives below)
 
 ### Background images
 
@@ -158,10 +157,10 @@ deployments.
 ![qr](https://example.com)
 ```
 
-Generates an SVG QR code at build time, with CSS animations on the modules
-(the little squares morph and shift colour). The animations respect
-`prefers-reduced-motion`. The URL is displayed as a clickable link beneath
-the code.
+Generates an SVG QR code at build time, with CSS animations on the modules (the
+little squares morph and shift colour). The animations respect
+`prefers-reduced-motion`. The URL is displayed as a clickable link beneath the
+code.
 
 ### Include directives
 
@@ -173,15 +172,15 @@ Inline slides from another `.mdx` file:
 
 Paths are relative to the current deck file. Included content participates in
 slide splitting --- thematic breaks inside the included file create new slides.
-Only `.mdx` files are supported; rename any `.md` partials to `.mdx` first.
-This is handy for sharing common slides (acknowledgements, logos, boilerplate)
-across multiple decks.
+Only `.mdx` files are supported; rename any `.md` partials to `.mdx` first. This
+is handy for sharing common slides (acknowledgements, logos, boilerplate) across
+multiple decks.
 
 ### Components
 
-Import any component framework Astro supports (Svelte, React, Vue, Solid,
-etc.) at the top of the file and use it directly in slide content. Hydration is
-opt-in per component:
+Import any component framework Astro supports (Svelte, React, Vue, Solid, etc.)
+at the top of the file and use it directly in slide content. Hydration is opt-in
+per component:
 
 ```mdx
 import MyWidget from "../components/MyWidget.svelte";
@@ -211,8 +210,8 @@ configurable --- see Options below.
 ### Smart typography
 
 [Smartypants](https://www.npmjs.com/package/smartypants) runs on all slide
-content, converting straight quotes to curly quotes, triple dashes to em
-dashes, double dashes to en dashes, and triple dots to ellipsis characters.
+content, converting straight quotes to curly quotes, triple dashes to em dashes,
+double dashes to en dashes, and triple dots to ellipsis characters.
 
 ## Theming
 
@@ -223,8 +222,8 @@ styling, create a CSS file and pass it to the integration:
 astromotion({ theme: "./src/decks/theme.css" });
 ```
 
-Your theme CSS sets Reveal.js CSS variables and slide class styles. At a
-minimum you'll want:
+Your theme CSS sets Reveal.js CSS variables and slide class styles. At a minimum
+you'll want:
 
 - **Reveal.js CSS variables** --- `--r-background-color`, `--r-main-color`,
   `--r-main-font`, `--r-main-font-size`, `--r-heading-color`,
@@ -316,6 +315,23 @@ These aren't currently configurable by the consumer --- they're hardcoded in the
 catch-all route. If you need different settings, set `injectRoutes: false` and
 write your own route.
 
+## Whiteboard
+
+Press **W** while presenting to flip to a fullscreen whiteboard for ephemeral
+doodles (it's listed on Reveal's help overlay, press **?**). Strokes are drawn
+with [perfect-freehand](https://github.com/steveruizok/perfect-freehand), so
+they get variable-width ink: real pressure when drawing with a stylus, and
+pressure simulated from drawing speed with a mouse or trackpad.
+
+While the whiteboard is open it owns the keyboard (so the deck can't navigate
+underneath): **1--4** switch pen colour (or click the swatches), **Z** undoes
+the last stroke, **C** clears the board, and **W** or **Escape** closes it.
+Nothing is ever saved --- closing the whiteboard discards the drawing.
+
+Consuming themes can restyle the board via CSS custom properties:
+`--astromotion-wb-bg` for the board surface, and `--astromotion-wb-ink-1`
+through `--astromotion-wb-ink-4` for the pen palette.
+
 ## Deck listing page
 
 The integration doesn't inject a listing page since it would need your site's
@@ -398,9 +414,9 @@ The package exports:
 ## Migration from `.deck.md` / `.deck.svelte`
 
 1. Rename `*.deck.md` and `*.deck.svelte` to `*.deck.mdx`.
-2. For `.deck.svelte` files with a `<script lang="ts">` block, lift its
-   contents to top-level MDX `import` and `export const` statements and drop
-   the `<script>` wrapper.
+2. For `.deck.svelte` files with a `<script lang="ts">` block, lift its contents
+   to top-level MDX `import` and `export const` statements and drop the
+   `<script>` wrapper.
 3. Convert directive syntax from HTML comments to MDX expression syntax:
    - `<!-- @include ./path -->` → `{/* @include ./path.mdx */}`
    - `<!-- _class: name -->` → `{/* _class: name */}`

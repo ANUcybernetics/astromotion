@@ -2,6 +2,21 @@
 
 ## 2026-07-03
 
+### Feature: ephemeral whiteboard mode (press W)
+
+Pressing `W` in a deck flips to a fullscreen whiteboard for ephemeral doodles
+--- listed on Reveal's help overlay, closed with `W`/`Escape`. Strokes render
+via perfect-freehand (the tldraw ink engine) so they get variable-width
+pen-physics ink: real stylus pressure when a pen is detected, simulated from
+drawing velocity for mouse and trackpad, with coalesced pointer events for
+smooth fast strokes. While open, the board claims every unmodified key ---
+`1`--`4` switch colour, `Z` undoes, `C` clears --- so the deck never navigates
+underneath; modified keys pass through to the browser. Nothing is saved: closing
+discards the drawing. Themes can restyle via `--astromotion-wb-bg` and
+`--astromotion-wb-ink-<n>` custom properties. Adds the `perfect-freehand`
+dependency (tiny, zero-dep) and pure-function state/geometry modules with unit
+tests.
+
 ### Feature: the astromotion-decks authoring skill now ships from this repo
 
 The repo doubles as a Claude Code plugin marketplace (`.claude-plugin/`) serving
