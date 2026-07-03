@@ -42,19 +42,34 @@ export const INK_PALETTE = ["#1d1d1f", "#d62828", "#1d6fd6", "#1e9e4a"];
 // Colour keys are the digits, so a palette can hold at most nine inks.
 export const MAX_INKS = 9;
 
-// Resolve the ink palette from theme CSS custom properties. A theme defines
-// its own palette as a consecutive run of --astromotion-wb-ink-1, -2, ...
-// (any length up to MAX_INKS); the run replaces the default palette
-// entirely, so themes control both the colours and how many there are. The
-// readVar indirection keeps this testable without a DOM.
-export function resolveInkPalette(readVar: (name: string) => string): string[] {
-  const inks: string[] = [];
-  for (let i = 1; i <= MAX_INKS; i++) {
-    const value = readVar(`--astromotion-wb-ink-${i}`).trim();
-    if (!value) break;
-    inks.push(value);
+// Split a CSS colour list on top-level commas only, so commas inside
+// functional notation (legacy rgb(190, 131, 14)) don't break a colour apart.
+// var() references never reach us --- getComputedStyle substitutes them
+// before the value is read.
+function splitColorList(value: string): string[] {
+  const colors: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+    if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    else if (ch === "," && depth === 0) {
+      colors.push(value.slice(start, i));
+      start = i + 1;
+    }
   }
-  return inks.length > 0 ? inks : INK_PALETTE;
+  colors.push(value.slice(start));
+  return colors.map((color) => color.trim()).filter(Boolean);
+}
+
+// Resolve the ink palette from the theme: --astromotion-wb-inks is a single
+// comma-separated colour list which replaces the default palette entirely,
+// so themes control both the colours and how many there are (capped at
+// MAX_INKS). The readVar indirection keeps this testable without a DOM.
+export function resolveInkPalette(readVar: (name: string) => string): string[] {
+  const inks = splitColorList(readVar("--astromotion-wb-inks"));
+  return inks.length > 0 ? inks.slice(0, MAX_INKS) : INK_PALETTE;
 }
 
 export function createWhiteboard(): WhiteboardState {

@@ -30,48 +30,38 @@ describe("createWhiteboard", () => {
   });
 });
 
-const vars = (defined: Record<string, string>) => (name: string) => defined[name] ?? "";
+const inks = (value: string) => (name: string) => (name === "--astromotion-wb-inks" ? value : "");
 
 describe("resolveInkPalette", () => {
   it("falls back to the default palette when the theme defines no inks", () => {
-    expect(resolveInkPalette(vars({}))).toEqual(INK_PALETTE);
+    expect(resolveInkPalette(inks(""))).toEqual(INK_PALETTE);
   });
 
-  it("uses the theme's consecutive run of inks, whatever its length", () => {
-    const theme = {
-      "--astromotion-wb-ink-1": "#0d0d0d",
-      "--astromotion-wb-ink-2": "#be830e",
-      "--astromotion-wb-ink-3": "#be4e0e",
-      "--astromotion-wb-ink-4": "#0085ad",
-      "--astromotion-wb-ink-5": "#1e9e4a",
-    };
-    expect(resolveInkPalette(vars(theme))).toEqual([
+  it("splits the theme's comma-separated list, whatever its length", () => {
+    expect(resolveInkPalette(inks("#0d0d0d, #be830e, #be4e0e, #0085ad, #1e9e4a"))).toEqual([
       "#0d0d0d",
       "#be830e",
       "#be4e0e",
       "#0085ad",
       "#1e9e4a",
     ]);
-    expect(resolveInkPalette(vars({ "--astromotion-wb-ink-1": "red" }))).toEqual(["red"]);
+    expect(resolveInkPalette(inks("red"))).toEqual(["red"]);
   });
 
-  it("stops at the first gap in the run", () => {
-    const theme = {
-      "--astromotion-wb-ink-1": "#111",
-      "--astromotion-wb-ink-3": "#333", // slot 2 missing --- ignored
-    };
-    expect(resolveInkPalette(vars(theme))).toEqual(["#111"]);
+  it("keeps commas inside functional notation together", () => {
+    expect(resolveInkPalette(inks("rgb(190, 131, 14), hsl(200, 100%, 34%)"))).toEqual([
+      "rgb(190, 131, 14)",
+      "hsl(200, 100%, 34%)",
+    ]);
   });
 
-  it("trims whitespace from computed values", () => {
-    expect(resolveInkPalette(vars({ "--astromotion-wb-ink-1": " #111 " }))).toEqual(["#111"]);
+  it("tolerates ragged whitespace and empty segments", () => {
+    expect(resolveInkPalette(inks("  #111 ,, #222,  "))).toEqual(["#111", "#222"]);
   });
 
   it("caps the palette at MAX_INKS (the digit keys)", () => {
-    const theme = Object.fromEntries(
-      Array.from({ length: 12 }, (_, i) => [`--astromotion-wb-ink-${i + 1}`, `#${i}`]),
-    );
-    expect(resolveInkPalette(vars(theme))).toHaveLength(MAX_INKS);
+    const twelve = Array.from({ length: 12 }, (_, i) => `#${i}${i}${i}`).join(", ");
+    expect(resolveInkPalette(inks(twelve))).toHaveLength(MAX_INKS);
   });
 });
 

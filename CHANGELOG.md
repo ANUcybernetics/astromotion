@@ -14,11 +14,11 @@ digits switch colour, `Z` undoes, `C` clears, `D` downloads the board as a
 timestamped PNG --- so the deck never navigates underneath; modified keys pass
 through to the browser. The drawing survives toggling back to the slides (only
 `C` clears it) but lives in memory only --- a reload discards it. Themes can
-restyle via custom properties: `--astromotion-wb-bg` sets the board surface, and
-a consecutive run of `--astromotion-wb-ink-1`, `-2`, ... (one to nine inks)
-replaces the built-in four-colour palette. Adds the `perfect-freehand`
-dependency (tiny, zero-dep) and pure-function state/geometry modules with unit
-tests.
+restyle via two custom properties: `--astromotion-wb-bg` sets the board surface,
+and `--astromotion-wb-inks` is a comma-separated colour list (one to nine inks,
+split on top-level commas so legacy `rgb(r, g, b)` works) that replaces the
+built-in four-colour palette. Adds the `perfect-freehand` dependency (tiny,
+zero-dep) and pure-function state/geometry modules with unit tests.
 
 ### Feature: the astromotion-decks authoring skill now ships from this repo
 

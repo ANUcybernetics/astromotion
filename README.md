@@ -331,18 +331,18 @@ closes it. The drawing survives toggling back to the slides --- flip to the deck
 and return and it's still there --- but it lives in memory only: **C** clears
 it, and a page reload discards it.
 
-Consuming themes can restyle the board via CSS custom properties:
-`--astromotion-wb-bg` sets the board surface, and a consecutive run of
-`--astromotion-wb-ink-1`, `--astromotion-wb-ink-2`, ... defines the pen palette
---- any length from one to nine inks (the digit keys), replacing the built-in
-four-colour palette entirely. For example, ANU-flavoured inks:
+Consuming themes can restyle the board via two CSS custom properties:
+`--astromotion-wb-bg` sets the board surface, and `--astromotion-wb-inks` is a
+comma-separated colour list defining the pen palette --- any length from one to
+nine inks (the digit keys), replacing the built-in four-colour palette entirely.
+Any CSS colour syntax works, including `var()` references and legacy comma-form
+`rgb()`. For example, ANU-flavoured inks:
 
 ```css
 :root {
-  --astromotion-wb-ink-1: var(--anu-dark-grey);
-  --astromotion-wb-ink-2: var(--anu-gold);
-  --astromotion-wb-ink-3: var(--anu-copper);
-  --astromotion-wb-ink-4: var(--anu-teal);
+  --astromotion-wb-bg: var(--anu-white);
+  --astromotion-wb-inks:
+    var(--anu-dark-grey), var(--anu-gold), var(--anu-copper), var(--anu-teal);
 }
 ```
 

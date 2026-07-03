@@ -117,8 +117,8 @@ deployments --- this is intentional to fail early rather than mask content bugs.
   never navigates underneath. Strokes are perfect-freehand outlines filled on a
   canvas; the drawing survives toggling (only `C` clears) but lives in memory
   only, and `D` downloads it as a timestamped PNG. Themes define the ink palette
-  as a consecutive run of `--astromotion-wb-ink-<n>` custom properties (up to
-  nine).
+  as a single comma-separated `--astromotion-wb-inks` custom property (up to
+  nine colours, split on top-level commas).
 
 ## Theming
 
