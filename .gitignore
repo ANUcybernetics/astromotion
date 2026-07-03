@@ -1,2 +1,8 @@
 node_modules/
 !test/fixtures/node_modules/
+
+# Include .claude/skills in the repo (global gitignore excludes .claude/*)
+!.claude/
+!.claude/skills/
+!.claude/skills/**
+.claude/settings.local.json

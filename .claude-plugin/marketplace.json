@@ -1,0 +1,15 @@
+{
+  "name": "astromotion",
+  "description": "Claude Code authoring skills for the astromotion deck engine, versioned with the package",
+  "owner": {
+    "name": "Ben Swift",
+    "email": "ben@benswift.me"
+  },
+  "plugins": [
+    {
+      "name": "astromotion",
+      "source": "./",
+      "description": "astromotion-decks: author and edit .deck.mdx slide decks with the astromotion syntax"
+    }
+  ]
+}
