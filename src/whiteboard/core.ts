@@ -2,8 +2,10 @@
 //
 // Pure data and transitions: the DOM layer (./index.ts) owns the canvas,
 // pointer events, and rendering, and drives everything through these
-// functions so the behaviour is testable without a browser. Nothing is ever
-// persisted --- closing the whiteboard discards every stroke.
+// functions so the behaviour is testable without a browser. Strokes live in
+// memory only: they survive toggling the board closed and open again (so you
+// can flip back to the slides and return to the doodle), but only the clear
+// key empties the board, and a page reload discards everything.
 
 export interface WhiteboardPoint {
   x: number;
@@ -32,9 +34,27 @@ export type WhiteboardAction =
   | { type: "clear" }
   | { type: "swallow" };
 
-// Whiteboard-marker ink. Consuming themes can override per-slot via
-// --astromotion-wb-ink-<n> custom properties (read by the DOM layer).
+// Default whiteboard-marker ink, used when the consuming theme doesn't
+// define a palette of its own (see resolveInkPalette).
 export const INK_PALETTE = ["#1d1d1f", "#d62828", "#1d6fd6", "#1e9e4a"];
+
+// Colour keys are the digits, so a palette can hold at most nine inks.
+export const MAX_INKS = 9;
+
+// Resolve the ink palette from theme CSS custom properties. A theme defines
+// its own palette as a consecutive run of --astromotion-wb-ink-1, -2, ...
+// (any length up to MAX_INKS); the run replaces the default palette
+// entirely, so themes control both the colours and how many there are. The
+// readVar indirection keeps this testable without a DOM.
+export function resolveInkPalette(readVar: (name: string) => string): string[] {
+  const inks: string[] = [];
+  for (let i = 1; i <= MAX_INKS; i++) {
+    const value = readVar(`--astromotion-wb-ink-${i}`).trim();
+    if (!value) break;
+    inks.push(value);
+  }
+  return inks.length > 0 ? inks : INK_PALETTE;
+}
 
 export function createWhiteboard(): WhiteboardState {
   return { active: false, color: 0, strokes: [], current: null };
@@ -82,9 +102,13 @@ export function applyAction(
   switch (action.type) {
     case "open":
       return state.active ? state : { ...state, active: true };
-    case "close":
-      // Colour selection survives across sessions; strokes never do.
-      return { active: false, color: state.color, strokes: [], current: null };
+    case "close": {
+      // Strokes and colour selection survive the toggle --- only the clear
+      // action empties the board. A stroke still in progress is committed
+      // (its ink was already on the board).
+      const strokes = state.current ? [...state.strokes, state.current] : state.strokes;
+      return { active: false, color: state.color, strokes, current: null };
+    }
     case "color":
       if (action.index < 0 || action.index >= paletteSize || action.index === state.color) {
         return state;

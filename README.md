@@ -324,13 +324,26 @@ they get variable-width ink: real pressure when drawing with a stylus, and
 pressure simulated from drawing speed with a mouse or trackpad.
 
 While the whiteboard is open it owns the keyboard (so the deck can't navigate
-underneath): **1--4** switch pen colour (or click the swatches), **Z** undoes
-the last stroke, **C** clears the board, and **W** or **Escape** closes it.
-Nothing is ever saved --- closing the whiteboard discards the drawing.
+underneath): the **digit keys** switch pen colour (or click the swatches), **Z**
+undoes the last stroke, **C** clears the board, and **W** or **Escape** closes
+it. The drawing survives toggling back to the slides --- flip to the deck and
+return and it's still there --- but it lives in memory only: **C** clears it,
+and a page reload discards it.
 
 Consuming themes can restyle the board via CSS custom properties:
-`--astromotion-wb-bg` for the board surface, and `--astromotion-wb-ink-1`
-through `--astromotion-wb-ink-4` for the pen palette.
+`--astromotion-wb-bg` sets the board surface, and a consecutive run of
+`--astromotion-wb-ink-1`, `--astromotion-wb-ink-2`, ... defines the pen palette
+--- any length from one to nine inks (the digit keys), replacing the built-in
+four-colour palette entirely. For example, ANU-flavoured inks:
+
+```css
+:root {
+  --astromotion-wb-ink-1: var(--anu-dark-grey);
+  --astromotion-wb-ink-2: var(--anu-gold);
+  --astromotion-wb-ink-3: var(--anu-copper);
+  --astromotion-wb-ink-4: var(--anu-teal);
+}
+```
 
 ## Deck listing page
 

@@ -10,12 +10,14 @@ via perfect-freehand (the tldraw ink engine) so they get variable-width
 pen-physics ink: real stylus pressure when a pen is detected, simulated from
 drawing velocity for mouse and trackpad, with coalesced pointer events for
 smooth fast strokes. While open, the board claims every unmodified key ---
-`1`--`4` switch colour, `Z` undoes, `C` clears --- so the deck never navigates
-underneath; modified keys pass through to the browser. Nothing is saved: closing
-discards the drawing. Themes can restyle via `--astromotion-wb-bg` and
-`--astromotion-wb-ink-<n>` custom properties. Adds the `perfect-freehand`
-dependency (tiny, zero-dep) and pure-function state/geometry modules with unit
-tests.
+digits switch colour, `Z` undoes, `C` clears --- so the deck never navigates
+underneath; modified keys pass through to the browser. The drawing survives
+toggling back to the slides (only `C` clears it) but lives in memory only --- a
+reload discards it. Themes can restyle via custom properties:
+`--astromotion-wb-bg` sets the board surface, and a consecutive run of
+`--astromotion-wb-ink-1`, `-2`, ... (one to nine inks) replaces the built-in
+four-colour palette. Adds the `perfect-freehand` dependency (tiny, zero-dep) and
+pure-function state/geometry modules with unit tests.
 
 ### Feature: the astromotion-decks authoring skill now ships from this repo
 

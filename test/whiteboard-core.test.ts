@@ -7,6 +7,8 @@ import {
   extendStroke,
   INK_PALETTE,
   keyAction,
+  MAX_INKS,
+  resolveInkPalette,
   type WhiteboardState,
 } from "../src/whiteboard/core.ts";
 
@@ -24,6 +26,51 @@ describe("createWhiteboard", () => {
       strokes: [],
       current: null,
     });
+  });
+});
+
+const vars = (defined: Record<string, string>) => (name: string) => defined[name] ?? "";
+
+describe("resolveInkPalette", () => {
+  it("falls back to the default palette when the theme defines no inks", () => {
+    expect(resolveInkPalette(vars({}))).toEqual(INK_PALETTE);
+  });
+
+  it("uses the theme's consecutive run of inks, whatever its length", () => {
+    const theme = {
+      "--astromotion-wb-ink-1": "#0d0d0d",
+      "--astromotion-wb-ink-2": "#be830e",
+      "--astromotion-wb-ink-3": "#be4e0e",
+      "--astromotion-wb-ink-4": "#0085ad",
+      "--astromotion-wb-ink-5": "#1e9e4a",
+    };
+    expect(resolveInkPalette(vars(theme))).toEqual([
+      "#0d0d0d",
+      "#be830e",
+      "#be4e0e",
+      "#0085ad",
+      "#1e9e4a",
+    ]);
+    expect(resolveInkPalette(vars({ "--astromotion-wb-ink-1": "red" }))).toEqual(["red"]);
+  });
+
+  it("stops at the first gap in the run", () => {
+    const theme = {
+      "--astromotion-wb-ink-1": "#111",
+      "--astromotion-wb-ink-3": "#333", // slot 2 missing --- ignored
+    };
+    expect(resolveInkPalette(vars(theme))).toEqual(["#111"]);
+  });
+
+  it("trims whitespace from computed values", () => {
+    expect(resolveInkPalette(vars({ "--astromotion-wb-ink-1": " #111 " }))).toEqual(["#111"]);
+  });
+
+  it("caps the palette at MAX_INKS (the digit keys)", () => {
+    const theme = Object.fromEntries(
+      Array.from({ length: 12 }, (_, i) => [`--astromotion-wb-ink-${i + 1}`, `#${i}`]),
+    );
+    expect(resolveInkPalette(vars(theme))).toHaveLength(MAX_INKS);
   });
 });
 
@@ -85,12 +132,24 @@ describe("applyAction", () => {
     expect(applyAction(opened, { type: "open" }, PALETTE_SIZE)).toBe(opened);
   });
 
-  it("close discards strokes but keeps the colour selection", () => {
+  it("close keeps strokes and colour selection for the next toggle", () => {
     let state = applyAction(openBoard(), { type: "color", index: 2 }, PALETTE_SIZE);
     state = beginStroke(state, { x: 0, y: 0, pressure: 0.5 }, false);
     state = endStroke(state);
     const closed = applyAction(state, { type: "close" }, PALETTE_SIZE);
-    expect(closed).toEqual({ active: false, color: 2, strokes: [], current: null });
+    expect(closed.active).toBe(false);
+    expect(closed.color).toBe(2);
+    expect(closed.strokes).toHaveLength(1);
+    const reopened = applyAction(closed, { type: "open" }, PALETTE_SIZE);
+    expect(reopened.strokes).toHaveLength(1);
+  });
+
+  it("close commits a stroke still in progress", () => {
+    let state = beginStroke(openBoard(), { x: 0, y: 0, pressure: 0.5 }, false);
+    state = extendStroke(state, { x: 1, y: 1, pressure: 0.5 });
+    const closed = applyAction(state, { type: "close" }, PALETTE_SIZE);
+    expect(closed.current).toBeNull();
+    expect(closed.strokes).toHaveLength(1);
   });
 
   it("ignores out-of-range colour indices", () => {

@@ -2,11 +2,13 @@
 //
 // `W` opens the board --- registered as a Reveal key binding so it appears on
 // the help overlay. While open, a capture-phase keydown listener claims every
-// unmodified key (colours on 1--4, undo on Z, clear on C, close on W/Escape)
-// so Reveal never navigates underneath the board; modified keys pass through
-// so browser shortcuts keep working. Strokes render via perfect-freehand:
-// real stylus pressure when a pen is detected, simulated from velocity for
-// mouse and trackpad. Nothing is saved --- closing clears the board.
+// unmodified key (digits for colour, undo on Z, clear on C, close on
+// W/Escape) so Reveal never navigates underneath the board; modified keys
+// pass through so browser shortcuts keep working. Strokes render via
+// perfect-freehand: real stylus pressure when a pen is detected, simulated
+// from velocity for mouse and trackpad. The drawing survives toggling back
+// to the slides (only C clears it) but lives in memory only --- a reload
+// discards it.
 
 import {
   applyAction,
@@ -14,8 +16,8 @@ import {
   createWhiteboard,
   endStroke,
   extendStroke,
-  INK_PALETTE,
   keyAction,
+  resolveInkPalette,
   type WhiteboardAction,
   type WhiteboardState,
 } from "./core";
@@ -52,12 +54,10 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
 
   document.body.appendChild(overlay);
 
-  // Consuming themes can re-ink individual palette slots via custom
-  // properties; themes are static, so resolve once.
+  // Consuming themes define their own palette via custom properties (see
+  // resolveInkPalette); themes are static, so resolve once.
   const styles = getComputedStyle(overlay);
-  const palette = INK_PALETTE.map(
-    (fallback, i) => styles.getPropertyValue(`--astromotion-wb-ink-${i + 1}`).trim() || fallback,
-  );
+  const palette = resolveInkPalette((name) => styles.getPropertyValue(name));
 
   const toolbar = document.createElement("div");
   toolbar.className = "astromotion-whiteboard-toolbar";
@@ -73,7 +73,8 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
   });
   const hint = document.createElement("span");
   hint.className = "astromotion-whiteboard-hint";
-  hint.textContent = "1–4 colour · Z undo · C clear · W close";
+  const colourHint = palette.length > 1 ? `1–${palette.length} colour · ` : "";
+  hint.textContent = `${colourHint}Z undo · C clear · W close`;
   toolbar.appendChild(hint);
   overlay.appendChild(toolbar);
 
@@ -118,6 +119,9 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
     const next = applyAction(state, action, palette.length);
     if (next === state) return;
     state = next;
+    // Closing mid-stroke means the pointerup may never reach the hidden
+    // canvas --- reset the gesture tracking or reopening can't draw.
+    if (!state.active) activePointer = null;
     syncDom();
     // The canvas has zero size while hidden; size it on the way in.
     if (state.active && !wasActive) resize();
