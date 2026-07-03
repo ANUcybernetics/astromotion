@@ -324,7 +324,9 @@ they get variable-width ink: real pressure when drawing with a stylus, and
 pressure simulated from drawing speed with a mouse or trackpad.
 
 While the whiteboard is open it owns the keyboard (so the deck can't navigate
-underneath): the **digit keys** switch pen colour (or click the swatches), **Z**
+underneath): the leading **digit keys** switch pen colour and the next two pick
+the brush size, fine or broad --- with the default four-colour palette that's
+**1–4** for colour and **5–6** for size (or click the toolbar buttons). **Z**
 undoes the last stroke, **C** clears the board, **D** downloads the board as a
 timestamped PNG (e.g. `whiteboard-20260703-152410.png`), and **W** or **Escape**
 closes it. The drawing survives toggling back to the slides --- flip to the deck
@@ -334,9 +336,10 @@ it, and a page reload discards it.
 Consuming themes can restyle the board via two CSS custom properties:
 `--astromotion-wb-bg` sets the board surface, and `--astromotion-wb-inks` is a
 comma-separated colour list defining the pen palette --- any length from one to
-nine inks (the digit keys), replacing the built-in four-colour palette entirely.
-Any CSS colour syntax works, including `var()` references and legacy comma-form
-`rgb()`. For example, ANU-flavoured inks:
+seven inks (the digit keys, minus the two the brush sizes claim), replacing the
+built-in four-colour palette entirely. Any CSS colour syntax works, including
+`var()` references and legacy comma-form `rgb()`. For example, ANU-flavoured
+inks:
 
 ```css
 :root {

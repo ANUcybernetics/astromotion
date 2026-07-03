@@ -1,7 +1,7 @@
 /* Ephemeral whiteboard overlay (press W in a deck). Consuming themes can
    restyle via the custom properties: --astromotion-wb-bg for the board
-   surface, --astromotion-wb-ink-1 through -4 for the pen palette (the ink
-   values are read by the whiteboard script at init). */
+   surface, --astromotion-wb-inks for the pen palette (a comma-separated
+   colour list, read by the whiteboard script at init). */
 
 .astromotion-whiteboard {
   position: fixed;
@@ -50,6 +50,35 @@
 }
 
 .astromotion-whiteboard-swatch[aria-pressed="true"] {
+  scale: 1.25;
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 40%);
+}
+
+/* Brush size buttons: same chip as the swatches, with a centred dot at the
+   brush's actual on-canvas diameter (--dot-size, set by the script). */
+.astromotion-whiteboard-size {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 2px solid rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 80%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 15%);
+  cursor: pointer;
+  transition: scale 0.1s ease-out;
+}
+
+.astromotion-whiteboard-size::after {
+  content: "";
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 65%);
+}
+
+.astromotion-whiteboard-size[aria-pressed="true"] {
   scale: 1.25;
   box-shadow: 0 0 0 2px rgb(0 0 0 / 40%);
 }

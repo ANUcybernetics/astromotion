@@ -2,6 +2,17 @@
 
 ## 2026-07-03
 
+### Feature: two whiteboard brush sizes (fine and broad)
+
+The whiteboard now has two brush sizes --- fine (8px) for writing and broad
+(16px) for highlighting --- selected with the first two digit keys after the
+colour palette (so with the default four-ink palette, `1`--`4` switch colour and
+`5`--`6` switch size) or by clicking the new toolbar buttons, which show each
+brush's actual on-canvas dot. Like colour, the size is fixed per stroke at
+pointerdown and survives toggling the board closed. Reserving two digits for the
+brushes caps the ink palette at seven colours (was nine); no known theme defines
+more than five.
+
 ### Feature: ephemeral whiteboard mode (press W)
 
 Pressing `W` in a deck flips to a fullscreen whiteboard for ephemeral doodles

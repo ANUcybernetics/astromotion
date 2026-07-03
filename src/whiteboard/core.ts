@@ -15,6 +15,7 @@ export interface WhiteboardPoint {
 
 export interface WhiteboardStroke {
   color: number; // palette index, fixed at pointerdown
+  size: number; // brush size index, fixed at pointerdown
   pen: boolean; // real stylus pressure (vs simulated from velocity)
   points: WhiteboardPoint[];
 }
@@ -22,6 +23,7 @@ export interface WhiteboardStroke {
 export interface WhiteboardState {
   active: boolean;
   color: number;
+  size: number;
   strokes: WhiteboardStroke[];
   current: WhiteboardStroke | null;
 }
@@ -30,6 +32,7 @@ export type WhiteboardAction =
   | { type: "open" }
   | { type: "close" }
   | { type: "color"; index: number }
+  | { type: "size"; index: number }
   | { type: "undo" }
   | { type: "clear" }
   | { type: "download" }
@@ -39,8 +42,14 @@ export type WhiteboardAction =
 // define a palette of its own (see resolveInkPalette).
 export const INK_PALETTE = ["#1d1d1f", "#d62828", "#1d6fd6", "#1e9e4a"];
 
-// Colour keys are the digits, so a palette can hold at most nine inks.
-export const MAX_INKS = 9;
+// Brush sizes in CSS px (pressure thins/thickens around each): fine for
+// writing, broad for highlighting. The two digit keys after the palette
+// select them.
+export const BRUSH_SIZES = [8, 16];
+
+// Colour keys are the leading digits and the brush sizes claim the next
+// ones, so a palette can hold at most 9 - BRUSH_SIZES.length inks.
+export const MAX_INKS = 9 - BRUSH_SIZES.length;
 
 // Split a CSS colour list on top-level commas only, so commas inside
 // functional notation (legacy rgb(190, 131, 14)) don't break a colour apart.
@@ -73,7 +82,7 @@ export function resolveInkPalette(readVar: (name: string) => string): string[] {
 }
 
 export function createWhiteboard(): WhiteboardState {
-  return { active: false, color: 0, strokes: [], current: null };
+  return { active: false, color: 0, size: 0, strokes: [], current: null };
 }
 
 // Map a keydown to an action. Opening the board is Reveal's key binding (so
@@ -85,6 +94,7 @@ export function keyAction(
   state: WhiteboardState,
   key: string,
   hasModifier: boolean,
+  paletteSize: number,
 ): WhiteboardAction | null {
   if (!state.active || hasModifier) return null;
   switch (key) {
@@ -106,7 +116,15 @@ export function keyAction(
     case "D":
       return { type: "download" };
     default:
-      if (/^[1-9]$/.test(key)) return { type: "color", index: Number(key) - 1 };
+      // Digits map to the palette first, then the next BRUSH_SIZES.length
+      // digits pick the brush size (e.g. four inks: 1-4 colour, 5-6 size).
+      if (/^[1-9]$/.test(key)) {
+        const index = Number(key) - 1;
+        if (index < paletteSize) return { type: "color", index };
+        if (index < paletteSize + BRUSH_SIZES.length) {
+          return { type: "size", index: index - paletteSize };
+        }
+      }
       return { type: "swallow" };
   }
 }
@@ -122,17 +140,22 @@ export function applyAction(
     case "open":
       return state.active ? state : { ...state, active: true };
     case "close": {
-      // Strokes and colour selection survive the toggle --- only the clear
-      // action empties the board. A stroke still in progress is committed
-      // (its ink was already on the board).
+      // Strokes and the colour/size selection survive the toggle --- only
+      // the clear action empties the board. A stroke still in progress is
+      // committed (its ink was already on the board).
       const strokes = state.current ? [...state.strokes, state.current] : state.strokes;
-      return { active: false, color: state.color, strokes, current: null };
+      return { active: false, color: state.color, size: state.size, strokes, current: null };
     }
     case "color":
       if (action.index < 0 || action.index >= paletteSize || action.index === state.color) {
         return state;
       }
       return { ...state, color: action.index };
+    case "size":
+      if (action.index < 0 || action.index >= BRUSH_SIZES.length || action.index === state.size) {
+        return state;
+      }
+      return { ...state, size: action.index };
     case "undo":
       if (state.strokes.length === 0) return state;
       return { ...state, strokes: state.strokes.slice(0, -1) };
@@ -161,7 +184,7 @@ export function beginStroke(
   pen: boolean,
 ): WhiteboardState {
   if (!state.active || state.current) return state;
-  return { ...state, current: { color: state.color, pen, points: [point] } };
+  return { ...state, current: { color: state.color, size: state.size, pen, points: [point] } };
 }
 
 export function extendStroke(state: WhiteboardState, point: WhiteboardPoint): WhiteboardState {

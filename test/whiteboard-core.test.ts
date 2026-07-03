@@ -3,6 +3,7 @@ import {
   applyAction,
   beginStroke,
   boardFilename,
+  BRUSH_SIZES,
   createWhiteboard,
   endStroke,
   extendStroke,
@@ -20,10 +21,11 @@ function openBoard(): WhiteboardState {
 }
 
 describe("createWhiteboard", () => {
-  it("starts inactive with no strokes and the first colour", () => {
+  it("starts inactive with no strokes, the first colour, and the fine brush", () => {
     expect(createWhiteboard()).toEqual({
       active: false,
       color: 0,
+      size: 0,
       strokes: [],
       current: null,
     });
@@ -69,57 +71,72 @@ describe("keyAction", () => {
   it("claims nothing while inactive (opening is Reveal's key binding)", () => {
     const state = createWhiteboard();
     for (const key of ["w", "W", "Escape", "1", "z", "c", "ArrowRight", " "]) {
-      expect(keyAction(state, key, false)).toBeNull();
+      expect(keyAction(state, key, false, PALETTE_SIZE)).toBeNull();
     }
   });
 
   it("closes on w, W, and Escape", () => {
     const state = openBoard();
     for (const key of ["w", "W", "Escape"]) {
-      expect(keyAction(state, key, false)).toEqual({ type: "close" });
+      expect(keyAction(state, key, false, PALETTE_SIZE)).toEqual({ type: "close" });
     }
   });
 
   it("undoes on z and u (either case)", () => {
     const state = openBoard();
     for (const key of ["z", "Z", "u", "U"]) {
-      expect(keyAction(state, key, false)).toEqual({ type: "undo" });
+      expect(keyAction(state, key, false, PALETTE_SIZE)).toEqual({ type: "undo" });
     }
   });
 
   it("clears on c, Backspace, and Delete", () => {
     const state = openBoard();
     for (const key of ["c", "C", "Backspace", "Delete"]) {
-      expect(keyAction(state, key, false)).toEqual({ type: "clear" });
+      expect(keyAction(state, key, false, PALETTE_SIZE)).toEqual({ type: "clear" });
     }
   });
 
   it("downloads on d (either case)", () => {
     const state = openBoard();
     for (const key of ["d", "D"]) {
-      expect(keyAction(state, key, false)).toEqual({ type: "download" });
+      expect(keyAction(state, key, false, PALETTE_SIZE)).toEqual({ type: "download" });
     }
   });
 
-  it("maps digits to zero-based palette indices", () => {
+  it("maps the leading digits to zero-based palette indices", () => {
     const state = openBoard();
-    expect(keyAction(state, "1", false)).toEqual({ type: "color", index: 0 });
-    expect(keyAction(state, "4", false)).toEqual({ type: "color", index: 3 });
-    expect(keyAction(state, "9", false)).toEqual({ type: "color", index: 8 });
-    expect(keyAction(state, "0", false)).toEqual({ type: "swallow" });
+    expect(keyAction(state, "1", false, PALETTE_SIZE)).toEqual({ type: "color", index: 0 });
+    expect(keyAction(state, "4", false, PALETTE_SIZE)).toEqual({ type: "color", index: 3 });
+    expect(keyAction(state, "0", false, PALETTE_SIZE)).toEqual({ type: "swallow" });
+  });
+
+  it("maps the digits after the palette to brush sizes, then swallows", () => {
+    const state = openBoard();
+    // PALETTE_SIZE is 4, so 5 and 6 are the two brush sizes
+    expect(keyAction(state, "5", false, PALETTE_SIZE)).toEqual({ type: "size", index: 0 });
+    expect(keyAction(state, "6", false, PALETTE_SIZE)).toEqual({ type: "size", index: 1 });
+    expect(keyAction(state, "7", false, PALETTE_SIZE)).toEqual({ type: "swallow" });
+    expect(keyAction(state, "9", false, PALETTE_SIZE)).toEqual({ type: "swallow" });
+  });
+
+  it("shifts the size keys with the palette length", () => {
+    const state = openBoard();
+    expect(keyAction(state, "2", false, 1)).toEqual({ type: "size", index: 0 });
+    expect(keyAction(state, "8", false, MAX_INKS)).toEqual({ type: "size", index: 0 });
+    expect(keyAction(state, "9", false, MAX_INKS)).toEqual({ type: "size", index: 1 });
   });
 
   it("swallows every other unmodified key so Reveal never navigates", () => {
     const state = openBoard();
     for (const key of ["ArrowRight", "ArrowLeft", " ", "n", "p", "f", "s", "Enter"]) {
-      expect(keyAction(state, key, false)).toEqual({ type: "swallow" });
+      expect(keyAction(state, key, false, PALETTE_SIZE)).toEqual({ type: "swallow" });
     }
   });
 
   it("lets modified keys pass through for browser shortcuts", () => {
     const state = openBoard();
-    expect(keyAction(state, "r", true)).toBeNull();
-    expect(keyAction(state, "w", true)).toBeNull();
+    expect(keyAction(state, "r", true, PALETTE_SIZE)).toBeNull();
+    expect(keyAction(state, "w", true, PALETTE_SIZE)).toBeNull();
   });
 });
 
@@ -130,13 +147,15 @@ describe("applyAction", () => {
     expect(applyAction(opened, { type: "open" }, PALETTE_SIZE)).toBe(opened);
   });
 
-  it("close keeps strokes and colour selection for the next toggle", () => {
+  it("close keeps strokes and the colour/size selection for the next toggle", () => {
     let state = applyAction(openBoard(), { type: "color", index: 2 }, PALETTE_SIZE);
+    state = applyAction(state, { type: "size", index: 1 }, PALETTE_SIZE);
     state = beginStroke(state, { x: 0, y: 0, pressure: 0.5 }, false);
     state = endStroke(state);
     const closed = applyAction(state, { type: "close" }, PALETTE_SIZE);
     expect(closed.active).toBe(false);
     expect(closed.color).toBe(2);
+    expect(closed.size).toBe(1);
     expect(closed.strokes).toHaveLength(1);
     const reopened = applyAction(closed, { type: "open" }, PALETTE_SIZE);
     expect(reopened.strokes).toHaveLength(1);
@@ -159,6 +178,17 @@ describe("applyAction", () => {
   it("re-selecting the current colour is an identity no-op", () => {
     const state = openBoard();
     expect(applyAction(state, { type: "color", index: 0 }, PALETTE_SIZE)).toBe(state);
+  });
+
+  it("size selects a brush; out-of-range and re-select are identity no-ops", () => {
+    const state = openBoard();
+    const broad = applyAction(state, { type: "size", index: 1 }, PALETTE_SIZE);
+    expect(broad.size).toBe(1);
+    expect(applyAction(state, { type: "size", index: 0 }, PALETTE_SIZE)).toBe(state);
+    expect(applyAction(state, { type: "size", index: BRUSH_SIZES.length }, PALETTE_SIZE)).toBe(
+      state,
+    );
+    expect(applyAction(state, { type: "size", index: -1 }, PALETTE_SIZE)).toBe(state);
   });
 
   it("undo removes the most recent stroke only", () => {
@@ -207,22 +237,27 @@ describe("boardFilename", () => {
 });
 
 describe("stroke lifecycle", () => {
-  it("begin captures the colour and pen flag at pointerdown", () => {
+  it("begin captures the colour, size, and pen flag at pointerdown", () => {
     let state = applyAction(openBoard(), { type: "color", index: 1 }, PALETTE_SIZE);
+    state = applyAction(state, { type: "size", index: 1 }, PALETTE_SIZE);
     state = beginStroke(state, { x: 5, y: 6, pressure: 0.8 }, true);
     expect(state.current).toEqual({
       color: 1,
+      size: 1,
       pen: true,
       points: [{ x: 5, y: 6, pressure: 0.8 }],
     });
   });
 
-  it("a colour change mid-stroke does not recolour the stroke in progress", () => {
+  it("a colour or size change mid-stroke does not restyle the stroke in progress", () => {
     let state = beginStroke(openBoard(), { x: 0, y: 0, pressure: 0.5 }, false);
     state = applyAction(state, { type: "color", index: 3 }, PALETTE_SIZE);
+    state = applyAction(state, { type: "size", index: 1 }, PALETTE_SIZE);
     expect(state.current?.color).toBe(0);
+    expect(state.current?.size).toBe(0);
     state = endStroke(state);
     expect(state.strokes[0].color).toBe(0);
+    expect(state.strokes[0].size).toBe(0);
   });
 
   it("extend appends points; end moves the stroke to the finished list", () => {

@@ -2,8 +2,8 @@
 //
 // `W` opens the board --- registered as a Reveal key binding so it appears on
 // the help overlay. While open, a capture-phase keydown listener claims every
-// unmodified key (digits for colour, undo on Z, clear on C, close on
-// W/Escape) so Reveal never navigates underneath the board; modified keys
+// unmodified key (digits for colour then brush size, undo on Z, clear on C,
+// close on W/Escape) so Reveal never navigates underneath the board; modified keys
 // pass through so browser shortcuts keep working. Strokes render via
 // perfect-freehand: real stylus pressure when a pen is detected, simulated
 // from velocity for mouse and trackpad. The drawing survives toggling back
@@ -14,6 +14,7 @@ import {
   applyAction,
   beginStroke,
   boardFilename,
+  BRUSH_SIZES,
   createWhiteboard,
   endStroke,
   extendStroke,
@@ -32,8 +33,6 @@ interface RevealKeyBindings {
     callback: (event: KeyboardEvent) => void,
   ): void;
 }
-
-const STROKE_SIZE = 8; // CSS px; pressure thins/thickens around this
 
 // The canvas is fullscreen at the viewport origin, so client coordinates are
 // canvas coordinates.
@@ -72,10 +71,21 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
     toolbar.appendChild(swatch);
     return swatch;
   });
+  const sizeButtons = BRUSH_SIZES.map((size, i) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "astromotion-whiteboard-size";
+    button.style.setProperty("--dot-size", `${size}px`);
+    button.setAttribute("aria-label", `Brush size ${i + 1}`);
+    button.addEventListener("click", () => dispatch({ type: "size", index: i }));
+    toolbar.appendChild(button);
+    return button;
+  });
   const hint = document.createElement("span");
   hint.className = "astromotion-whiteboard-hint";
   const colourHint = palette.length > 1 ? `1–${palette.length} colour · ` : "";
-  hint.textContent = `${colourHint}Z undo · C clear · D save · W close`;
+  const sizeHint = `${palette.length + 1}–${palette.length + BRUSH_SIZES.length} size · `;
+  hint.textContent = `${colourHint}${sizeHint}Z undo · C clear · D save · W close`;
   toolbar.appendChild(hint);
   overlay.appendChild(toolbar);
 
@@ -94,7 +104,10 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
     const strokes = state.current ? [...state.strokes, state.current] : state.strokes;
     for (const stroke of strokes) {
-      const path = strokeOutlinePath(stroke.points, { size: STROKE_SIZE, pen: stroke.pen });
+      const path = strokeOutlinePath(stroke.points, {
+        size: BRUSH_SIZES[stroke.size] ?? BRUSH_SIZES[0],
+        pen: stroke.pen,
+      });
       if (!path) continue;
       ctx.fillStyle = palette[stroke.color] ?? palette[0];
       ctx.fill(new Path2D(path));
@@ -112,6 +125,9 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
     overlay.hidden = !state.active;
     swatches.forEach((swatch, i) => {
       swatch.setAttribute("aria-pressed", String(i === state.color));
+    });
+    sizeButtons.forEach((button, i) => {
+      button.setAttribute("aria-pressed", String(i === state.size));
     });
   };
 
@@ -159,7 +175,12 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
   document.addEventListener(
     "keydown",
     (event) => {
-      const action = keyAction(state, event.key, event.ctrlKey || event.metaKey || event.altKey);
+      const action = keyAction(
+        state,
+        event.key,
+        event.ctrlKey || event.metaKey || event.altKey,
+        palette.length,
+      );
       if (!action) return;
       event.preventDefault();
       event.stopImmediatePropagation();
