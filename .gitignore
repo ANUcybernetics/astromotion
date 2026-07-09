@@ -1,6 +1,10 @@
 node_modules/
 !test/fixtures/node_modules/
 
+# Build artefacts of the base-path fixture (the test creates and cleans them)
+test/fixtures/base-path-site/.astro/
+test/fixtures/base-path-site/dist-*/
+
 # Include .claude/skills in the repo (global gitignore excludes .claude/*)
 !.claude/
 !.claude/skills/

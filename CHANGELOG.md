@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-09
+
+### Breaking: deck `<head>` assets are opt-in, and base-path aware
+
+`DeckHead` hardcoded `<link rel="icon" href="/favicon.svg">` and defaulted
+`og:image` to `/og-image.svg`. Both were root-absolute, so on a site deployed
+under a `base` path they addressed the server root rather than the site; and
+both pointed at files a consumer need never have created. Every deck consumer
+was shipping a dangling `og:image`.
+
+Deck pages are injected routes, so no consumer layout could correct this.
+`favicon` and `ogImage` are now integration options, resolved against the site's
+`base`, and **nothing is emitted when they are unset**. A deck's `image:`
+frontmatter still overrides `ogImage`.
+
+To keep a favicon on your decks, pass it explicitly:
+
+```js
+astromotion({ favicon: "/favicon.svg" });
+```
+
+A build-time test now builds a fixture under `base: "/test-base"` and asserts
+every internal URL in the deck head carries the prefix. The class of bug is
+invisible to `astro-broken-links-checker`, which resolves prefixed and
+unprefixed paths to the same file.
+
 ## 2026-07-03
 
 ### Tweak: bigger whiteboard brushes (12px and 36px)

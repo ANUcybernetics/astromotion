@@ -25,6 +25,19 @@ export interface AstromotionOptions {
    * `astro.config`'s `fonts` array.
    */
   fontVariables?: string[];
+  /**
+   * Favicon for deck pages, as a path served by the site (e.g.
+   * `/favicon.svg`, from `public/`). Resolved against the site's `base`.
+   * When omitted, no `<link rel="icon">` is emitted — a dangling icon link
+   * is worse than none.
+   */
+  favicon?: string;
+  /**
+   * Default social-card image for deck pages, as a site-served path or an
+   * absolute URL. A deck's `image:` frontmatter overrides it. When neither
+   * is set, the `og:image` / `twitter:image` tags are omitted entirely.
+   */
+  ogImage?: string;
 }
 
 export function astromotion(options: AstromotionOptions = {}): AstroIntegration {
@@ -53,6 +66,9 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
         const fontsModuleId = "virtual:astromotion/fonts";
         const resolvedFontsModuleId = "\0" + fontsModuleId;
 
+        const headModuleId = "virtual:astromotion/head";
+        const resolvedHeadModuleId = "\0" + headModuleId;
+
         updateConfig({
           vite: {
             resolve: {
@@ -71,6 +87,22 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
                 load(id: string) {
                   if (id === resolvedFontsModuleId) {
                     return `export const fontVariables = ${JSON.stringify(fontVariables)};\n`;
+                  }
+                  return null;
+                },
+              },
+              {
+                name: "astromotion:virtual-head",
+                resolveId(id: string) {
+                  if (id === headModuleId) return resolvedHeadModuleId;
+                  return null;
+                },
+                load(id: string) {
+                  if (id === resolvedHeadModuleId) {
+                    return (
+                      `export const favicon = ${JSON.stringify(options.favicon ?? null)};\n` +
+                      `export const ogImage = ${JSON.stringify(options.ogImage ?? null)};\n`
+                    );
                   }
                   return null;
                 },

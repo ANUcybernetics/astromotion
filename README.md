@@ -46,6 +46,23 @@ client-side hydration per component via Astro's `client:*` directives.
 **Important:** deck pages must not use Astro's `<ClientRouter />` --- it
 conflicts with Reveal.js keyboard navigation.
 
+### Head assets
+
+Deck pages are injected routes, so astromotion --- not your layout --- owns
+their `<head>`. Two options fill it:
+
+```js
+astromotion({
+  favicon: "/favicon.svg", // omit and no <link rel="icon"> is emitted
+  ogImage: "/og-image.png", // omit and the og:/twitter: image tags are omitted
+});
+```
+
+Both take a path served by your site (typically from `public/`), or an absolute
+URL, and are resolved against the site's `base` --- so they stay correct on a
+site deployed under a subpath. Nothing is emitted for an option you leave unset:
+a dangling icon or social-card URL is worse than none.
+
 ## Writing slides
 
 Create `.deck.mdx` files in `src/decks/`:
@@ -81,8 +98,10 @@ image: /og-image.png
 ```
 
 All fields are optional. `title` falls back to the filename slug. `description`
-defaults to "Slide deck". `image` defaults to `/og-image.svg`. These are used
-for the page `<title>` and Open Graph / Twitter Card meta tags.
+defaults to "Slide deck". `image` overrides the integration's `ogImage` option
+for this deck. These are used for the page `<title>` and Open Graph / Twitter
+Card meta tags; when neither `image` nor `ogImage` is set, the social-image tags
+are omitted.
 
 ### Slide syntax
 
