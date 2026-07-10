@@ -7,11 +7,11 @@ description:
   astromotion.
 ---
 
-You author slide decks as `.deck.mdx` files using the astromotion package.
-Decks are MDX-first (markdown plus optional component imports), processed by
-Astro's MDX integration and rendered as Reveal.js presentations. Slides
-server-render to zero-JS HTML by default; interactive components opt into
-hydration via Astro's `client:*` directives.
+You author slide decks as `.deck.mdx` files using the astromotion package. Decks
+are MDX-first (markdown plus optional component imports), processed by Astro's
+MDX integration and rendered as Reveal.js presentations. Slides server-render to
+zero-JS HTML by default; interactive components opt into hydration via Astro's
+`client:*` directives.
 
 ## File conventions
 
@@ -58,8 +58,8 @@ Content here
 ```
 
 Top-level `import` and `export const` statements work as in any MDX file. Use
-them to bring in components, deck-scoped CSS, and shared constants. There is
-no `<script>` wrapper.
+them to bring in components, deck-scoped CSS, and shared constants. There is no
+`<script>` wrapper.
 
 ### Frontmatter
 
@@ -68,8 +68,8 @@ YAML frontmatter between `---` fences at the top of the file. Fields: `title`
 
 ### Slide separators
 
-Separate slides with a blank line, three dashes, blank line (`\n---\n`). This
-is a markdown thematic break --- the same separator used by Marp.
+Separate slides with a blank line, three dashes, blank line (`\n---\n`). This is
+a markdown thematic break --- the same separator used by Marp.
 
 ## Markdown slides
 
@@ -97,12 +97,12 @@ expression-comment syntax:
 
 Place directives at the top of a slide (after the `---` separator).
 
-**Documenting directives in fenced examples:** when you show a directive
-inside a fenced code block (e.g. a tutorial deck or prose docs), tag the
-fence `mdx`, not `markdown`. oxfmt formats the body of a `markdown`-tagged
-fence as markdown and corrupts the directive --- `{/* _class: impact */}`
-becomes `{/_ \_class: impact _/}` (asterisks flipped to underscores, the
-class underscore escaped). An `mdx`-tagged fence is left intact.
+**Documenting directives in fenced examples:** when you show a directive inside
+a fenced code block (e.g. a tutorial deck or prose docs), tag the fence `mdx`,
+not `markdown`. oxfmt formats the body of a `markdown`-tagged fence as markdown
+and corrupts the directive --- `{/* _class: impact */}` becomes
+`{/_ \_class: impact _/}` (asterisks flipped to underscores, the class
+underscore escaped). An `mdx`-tagged fence is left intact.
 
 ### Available slide classes
 
@@ -147,8 +147,8 @@ Generates an animated inline SVG QR code linking to the URL.
 ## Components and hydration
 
 Any framework Astro supports (Svelte, React, Vue, Solid, etc.) can be imported
-at the top of a `.deck.mdx` file and used in slide content. Hydration is
-opt-in per component via Astro's `client:*` directives:
+at the top of a `.deck.mdx` file and used in slide content. Hydration is opt-in
+per component via Astro's `client:*` directives:
 
 | Directive              | When the component hydrates                                                                     |
 | ---------------------- | ----------------------------------------------------------------------------------------------- |
@@ -188,24 +188,24 @@ import graph). Prefer this over inline `<style>` blocks.
 
 ## Theme
 
-Decks use their own theme CSS, independent of the site's `global.css`. The
-theme is configured in `astro.config.mjs` via
-`astromotion({ theme: "./path/to/theme.css" })`. The theme file sets
-Reveal.js's `--r-*` CSS variables under `:root` and adds slide-class styles
-(`.banner`, `.impact`, etc.). astromotion's `theme/base.css` is always
-imported and maps `--r-*` to Reveal.js elements via an `@layer astromotion`
-block, so consuming themes only need to set variables.
+Decks use their own theme CSS, independent of the site's `global.css`. The theme
+is configured in `astro.config.mjs` via
+`astromotion({ theme: "./path/to/theme.css" })`. The theme file sets Reveal.js's
+`--r-*` CSS variables under `:root` and adds slide-class styles (`.banner`,
+`.impact`, etc.). astromotion's `theme/base.css` is always imported and maps
+`--r-*` to Reveal.js elements via an `@layer astromotion` block, so consuming
+themes only need to set variables.
 
 ## Architecture notes
 
 - Slides render onto a fixed 1280×720 canvas, scaled to fit the viewport via
-  Reveal.js's `transform: scale()` layout. `maxScale: 4` lifts Reveal's
-  default 2.0 cap so 4K monitors fill rather than letterbox.
-- The catch-all `pages/[...slug].astro` route enumerates `*.deck.mdx` files
-  via `import.meta.glob({ eager: true })` at build time, generating one
-  static path per deck.
-- Decks must not use Astro's `<ClientRouter />` --- it conflicts with
-  Reveal.js keyboard navigation.
+  Reveal.js's `transform: scale()` layout. `maxScale: 4` lifts Reveal's default
+  2.0 cap so 4K monitors fill rather than letterbox.
+- The catch-all `pages/[...slug].astro` route enumerates `*.deck.mdx` files via
+  `import.meta.glob({ eager: true })` at build time, generating one static path
+  per deck.
+- Decks must not use Astro's `<ClientRouter />` --- it conflicts with Reveal.js
+  keyboard navigation.
 
 ## PDF export
 
@@ -238,9 +238,9 @@ composing prompts). Deck-specific notes:
 ### Per-deck style overrides
 
 In addition to the site-wide `## Image generation style` section in project
-`CLAUDE.md`, a deck can provide its own style fragment in `image-style.txt`
-next to the `.deck.mdx` file. When both exist, combine them (deck-specific
-fragment takes precedence if they conflict).
+`CLAUDE.md`, a deck can provide its own style fragment in `image-style.txt` next
+to the `.deck.mdx` file. When both exist, combine them (deck-specific fragment
+takes precedence if they conflict).
 
 Reference the generated image in a slide:
 
