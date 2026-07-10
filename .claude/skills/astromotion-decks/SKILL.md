@@ -217,30 +217,21 @@ Builds the site, starts a preview server, and uses decktape to capture slides.
 
 ## Generating background images
 
-Use the `styled-image-gen` skill to generate background images. See that skill
-for the full workflow (discovering style guidance, selecting reference images,
-composing prompts). Deck-specific notes:
+Use the `styled-image-gen` skill. It owns the whole workflow --- reading the
+site-wide `## Image generation style` section from the project `CLAUDE.md`,
+choosing reference images, composing the prompt, and picking a model. Only the
+deck-specific parts live here:
 
-- Output into the deck's `assets/` directory with `--output-dir` +
-  `--output-filename` for predictable paths you can reference from
+- Write into the deck's `assets/` directory with `--output-dir` +
+  `--output-filename`, so the path is predictable and can be referenced as
   `![bg](./assets/<filename>.avif)` immediately
-- `--aspect-ratio 16:9` for full-bleed backgrounds (`![bg]`)
-- `--aspect-ratio 3:4` or `9:16` for split layouts (`![bg left:50%]`,
-  `![bg right:50%]`) --- taller images fill the split panel better
-- Default `--resolution 4K` keeps images sharp on large screens
-- Default AVIF output is ideal for decks (small file size, good quality)
-- `--model recraft` for vector backgrounds (geometric, flat-illustration,
-  diagrammatic): outputs an editable `.svg` that scales crisply at any
-  resolution. Reference images are ignored, so the project ref dir and the
-  per-deck `image-style.txt` only influence output via the prompt suffix --- not
-  via visual cues. Reference as `![bg](./assets/<filename>.svg)`
-
-### Per-deck style overrides
-
-In addition to the site-wide `## Image generation style` section in project
-`CLAUDE.md`, a deck can provide its own style fragment in `image-style.txt` next
-to the `.deck.mdx` file. When both exist, combine them (deck-specific fragment
-takes precedence if they conflict).
+- Full-bleed backgrounds (`![bg]`) take the default `16:9`. Split layouts
+  (`![bg left:50%]`, `![bg right:50%]`) want `--aspect-ratio 3:4` or `9:16`, so
+  the image fills its panel instead of letterboxing inside it
+- `--model recraft` gives a vector background (geometric, flat-illustration,
+  diagrammatic) as an editable `.svg` that scales crisply at any resolution. It
+  takes no reference images, so only the prompt suffix shapes the result.
+  Reference it as `![bg](./assets/<filename>.svg)`
 
 Reference the generated image in a slide:
 
