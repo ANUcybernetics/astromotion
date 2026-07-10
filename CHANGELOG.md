@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-10
+
+### `astromotion-decks` no longer restates `styled-image-gen`'s defaults
+
+The skill's "Generating background images" section claimed `--resolution 4K` was
+the script's default (it is 2K), and documented a per-deck `image-style.txt`
+style override that nothing in this repo reads and no consumer has ever created.
+Both were duplicated surface that had drifted from the tool they described.
+
+The section now covers only what is deck-specific --- writing into the deck's
+`assets/`, the portrait ratios split layouts want, and the recraft/SVG case ---
+and defers the workflow, model choice and defaults to `styled-image-gen`.
+
+Skill-only change: no runtime, build or API surface is affected.
+`.claude-plugin/plugin.json` was also stranded at 0.9.1 and is now back in step
+with the package version.
+
 ## 2026-07-09
 
 ### Breaking: deck `<head>` assets are opt-in, and base-path aware
