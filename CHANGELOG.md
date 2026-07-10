@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-07-10 (later)
+
+### Breaking: the `astromotion-decks` skill no longer ships from this repo
+
+`.claude/skills/` and `.claude-plugin/` are gone. The skill now lives in the
+`ben` personal plugin (`benswift/claude-plugin-personal`), which tracks its
+default branch.
+
+It shipped here so it would stay tagged in lockstep with the deck syntax it
+documents. That lock was never real: Claude Code resolves the skill through a
+single marketplace `ref` in `settings.json`, so every consumer loads whatever
+tag that ref names, regardless of which astromotion version its `package.json`
+pins. What the arrangement did produce was a release, a tag, a consumer
+propagation pass and a plugin re-clone every time a sentence of documentation
+changed --- see the entry below, which cost exactly that.
+
+Nothing in the package's runtime, build output or API surface changes. If you
+subscribed to this repo as a Claude Code marketplace, drop the entry:
+
+```jsonc
+// settings.json
+"extraKnownMarketplaces": { "astromotion": { ... } },  // remove
+"enabledPlugins": { "astromotion@astromotion": true }, // remove
+```
+
+Consumers pinning `#v0.10.1` need not bump for this release; the tag matters
+only if you want the removal reflected in your lockfile.
+
 ## 2026-07-10
 
 ### `astromotion-decks` no longer restates `styled-image-gen`'s defaults
