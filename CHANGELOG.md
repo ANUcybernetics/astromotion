@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-07-15
+
+### `astromotion-pdf`: hardened PDF export, now an actual bin
+
+`scripts/deck-pdf.mjs` claimed a `npx astromotion-pdf` usage line but
+`package.json` had no `bin` entry, so the command never existed --- you had to
+invoke the script by its `node_modules` path. It's now wired up as a real bin
+(`npx astromotion-pdf <slug> [output.pdf]`).
+
+The script also absorbs the hardening the llms-unplugged site had accreted in
+its local copy, plus two flags the old hardcoded URL made necessary:
+
+- **Chrome discovery.** puppeteer's on-demand Chromium download fails hard (and
+  silently, under npx) when its cache holds a half-written entry. The script now
+  looks for a system Chrome/Chromium in the usual macOS and Linux locations
+  (after the existing `DECKTAPE_CHROME_PATH` override) and passes it via
+  `--chrome-path` with `PUPPETEER_SKIP_DOWNLOAD=1`; decktape's bundled Chromium
+  remains the fallback on browserless machines.
+- **Capture retry.** decktape intermittently dies mid-capture with "Attempted to
+  use detached Frame" (a timing bug in its progress-bar code); the capture now
+  retries up to 3 times.
+- **Ghostscript compression, on by default.** The raw capture rasterises every
+  slide (full-bleed decks land at 100 MB+); `gs -dPDFSETTINGS=/ebook` cuts that
+  to a few MB. `--no-compress` opts out; a missing `gs` degrades to the raw PDF
+  with a warning.
+- **`--prefix` and `--port` flags.** Sites that remount the deck route (e.g.
+  under `/lectures/`) or preview on a non-default port could not use the script
+  at all; both are now flags, defaulting to `/decks` and `4321`.
+- **Pinned decktape.** `npx --yes decktape@3.16.1` instead of a bare
+  `npx decktape` (which prompts interactively, or fails in CI, when decktape
+  isn't installed); override with `DECKTAPE_VERSION`.
+- The script now exits with a clear error if the preview server never becomes
+  ready, instead of letting decktape fail obscurely.
+
+The README's hand-invocation example also switched from the `reveal` plugin
+(which can't drive astromotion decks --- reveal.js 6 is an ES module and never
+lands on `window`) to the `generic` plugin the script itself uses.
+
 ## 2026-07-10 (later)
 
 ### Breaking: the `astromotion-decks` skill no longer ships from this repo

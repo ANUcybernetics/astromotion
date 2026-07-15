@@ -420,22 +420,46 @@ decks.sort((a, b) => a.slug.localeCompare(b.slug));
 
 ## PDF export
 
-Requires [decktape](https://github.com/astefanutti/decktape):
+The bundled `astromotion-pdf` command builds the site, starts a preview server,
+captures the deck with [decktape](https://github.com/astefanutti/decktape),
+compresses the result with Ghostscript, and cleans up:
 
 ```sh
-npx decktape reveal --size 1280x720 http://localhost:4321/decks/my-talk/ output.pdf
+npx astromotion-pdf my-talk output.pdf
 ```
 
-Or use the bundled script, which builds, starts a preview server, exports, and
-cleans up:
+Options:
 
-```sh
-node node_modules/astromotion/scripts/deck-pdf.mjs my-talk output.pdf
-```
+- `--prefix=/decks` --- route prefix the site serves decks under (pass this if
+  you've remounted the deck route, e.g. `--prefix=/lectures`)
+- `--port=4321` --- preview server port
+- `--no-compress` --- keep the raw decktape PDF. The raw capture rasterises
+  every slide, so decks with full-bleed backgrounds land at 100 MB+;
+  Ghostscript's `/ebook` preset cuts that to a few MB with no visible loss at
+  presentation scale. If `gs` isn't installed the script keeps the raw PDF and
+  says so.
+
+Environment variables:
+
+- `DECKTAPE_CHROME_PATH` --- Chrome/Chromium binary for decktape to drive. When
+  unset the script looks in the usual macOS and Linux install locations, and
+  only falls back to decktape's bundled Chromium (a large one-off download) if
+  none is found.
+- `DECKTAPE_CHROME_ARGS` --- comma-separated Chrome flags, e.g. `--no-sandbox`
+  (needed in containers and some Linux setups)
+- `DECKTAPE_MAX_SLIDES` --- safety cap on exported slides (default 500)
+- `DECKTAPE_VERSION` --- decktape version npx runs (default 3.16.1)
 
 The script waits up to 30 seconds for the preview server to respond and uses
-generous pauses between slides (5 seconds load, 4 seconds per slide) to handle
-heavy decks.
+generous pauses between slides (5 seconds load, 2.5 seconds per slide) to handle
+heavy decks. decktape's `reveal` plugin can't drive astromotion decks (reveal.js
+6 is initialised as an ES module and never lands on `window`), so the script
+uses the `generic` plugin, stepping through slides by key press --- if you
+invoke decktape by hand, do the same:
+
+```sh
+npx decktape generic --key=ArrowRight --size=1280x720 http://localhost:4321/decks/my-talk/ output.pdf
+```
 
 ## Exports
 

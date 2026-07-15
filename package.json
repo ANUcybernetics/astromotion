@@ -4,6 +4,9 @@
   "description": "Astro integration for markdown-authored slide decks powered by Reveal.js, with a bit of Marp syntax",
   "license": "MIT",
   "author": "Ben Swift",
+  "bin": {
+    "astromotion-pdf": "./scripts/deck-pdf.mjs"
+  },
   "type": "module",
   "exports": {
     ".": "./index.ts",
