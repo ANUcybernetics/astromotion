@@ -65,6 +65,11 @@ const { Content, frontmatter } = Astro.props;
     center: true,
     viewDistance: 10,
     maxScale: 4,
+    // The canvas is fixed at 1280x720, so in print view (?print-pdf) a
+    // slide can never legitimately span pages --- scrollHeight overflow is
+    // always decorative (glows, full-bleed backgrounds) and would otherwise
+    // mint background-only filler pages.
+    pdfMaxPagesPerSlide: 1,
     scrollActivationWidth: null,
     plugins: [RevealNotes],
   });

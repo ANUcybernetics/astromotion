@@ -2,6 +2,18 @@
 
 ## 2026-07-16
 
+### Print view: full-page notes, no filler pages
+
+Two cosmetic fixes to the `?print-pdf` view (and therefore to
+`astromotion-pdf --notes` output):
+
+- separate-page speaker notes now fill their printed page (`min-height` matching
+  the fixed canvas) instead of leaving the deck background showing below a
+  content-height white strip
+- decks now set `pdfMaxPagesPerSlide: 1` --- the canvas is fixed at 1280x720, so
+  scrollHeight overflow is always decorative (glows, full-bleed backgrounds) and
+  used to mint background-only filler pages after affected slides
+
 ### `astromotion-pdf --notes`: presenter-guide export
 
 New `--notes` flag on `astromotion-pdf` exports a presenter guide: each slide

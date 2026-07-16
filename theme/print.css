@@ -28,6 +28,13 @@ html.reveal-print .reveal .speaker-notes-pdf[data-layout="separate-page"] {
   font-family: var(--r-main-font, sans-serif);
   font-size: 20px;
   line-height: 1.5;
+
+  /* Reveal leaves the element at content height, so without a min-height the
+     rest of the printed notes page shows the deck background. 720px matches
+     the fixed canvas height (see above); Reveal's own `page-break-after:
+     always` keeps longer notes from shifting subsequent pages. */
+  box-sizing: border-box;
+  min-height: 720px;
   padding: 48px;
 }
 
