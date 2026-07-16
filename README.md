@@ -438,6 +438,15 @@ Options:
   Ghostscript's `/ebook` preset cuts that to a few MB with no visible loss at
   presentation scale. If `gs` isn't installed the script keeps the raw PDF and
   says so.
+- `--notes` --- export a presenter guide instead: each slide followed by a page
+  of its speaker notes (default output `<slug>-notes.pdf`). This mode skips
+  decktape and prints Reveal's `?print-pdf&showNotes=separate-page` view with
+  headless Chrome (`preferCSSPageSize: true`, so the page size comes from
+  Reveal's `@page` rule). It needs the optional
+  [puppeteer-core](https://pptr.dev) peer dependency
+  (`pnpm add -D puppeteer-core`) and a local Chrome/Chromium --- unlike decktape
+  mode there's no bundled-browser fallback. The `DECKTAPE_CHROME_PATH` /
+  `DECKTAPE_CHROME_ARGS` variables apply here too.
 
 Environment variables:
 

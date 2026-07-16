@@ -2,6 +2,19 @@
 
 ## 2026-07-16
 
+### `astromotion-pdf --notes`: presenter-guide export
+
+New `--notes` flag on `astromotion-pdf` exports a presenter guide: each slide
+followed by a page of its speaker notes, ready to hand to whoever's delivering
+the deck. decktape can't produce notes pages (it screenshots slides one at a
+time), so this mode instead prints Reveal's `?print-pdf&showNotes=separate-page`
+view with headless Chrome via [puppeteer-core](https://pptr.dev) --- a new
+**optional** peer dependency, needed only for `--notes` --- passing
+`preferCSSPageSize: true` so the page size comes from Reveal's
+`@page { size: 1280px 720px }` declaration rather than drifting across A4/letter
+paper. Ghostscript compression applies as in the default mode; output defaults
+to `<slug>-notes.pdf`.
+
 ### Print view support (`?print-pdf`)
 
 Reveal's print/PDF-export view (`?print-pdf`, optionally with

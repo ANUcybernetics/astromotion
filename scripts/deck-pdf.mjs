@@ -7,10 +7,20 @@
 // full-bleed backgrounds lands at 100 MB+; Ghostscript's /ebook preset cuts
 // that to a few MB with no visible loss at presentation scale).
 //
+// With --notes the deck is instead printed via headless Chrome against
+// Reveal's print view (?print-pdf&showNotes=separate-page), producing a
+// presenter guide with each slide followed by its speaker-notes page.
+// decktape can't do this (it screenshots slides one by one), so this mode
+// drives Chrome directly through puppeteer-core --- an optional peer
+// dependency your project must install to use --notes.
+//
 // Usage: astromotion-pdf <slug> [output.pdf] [options]
 //   --prefix=/decks   route prefix the site serves decks under
 //   --port=4321       preview server port
 //   --no-compress     skip Ghostscript and keep the raw decktape PDF
+//   --notes           presenter guide: slides + interleaved speaker-notes
+//                     pages (default output <slug>-notes.pdf; requires
+//                     puppeteer-core and a local Chrome/Chromium)
 //
 // Environment:
 //   DECKTAPE_CHROME_PATH  Chrome/Chromium binary (overrides discovery)
@@ -38,12 +48,13 @@ const flagValue = (name) =>
 const slug = positional[0];
 if (!slug) {
   console.error(
-    "Usage: astromotion-pdf <slug> [output.pdf] [--prefix=/decks] [--port=4321] [--no-compress]",
+    "Usage: astromotion-pdf <slug> [output.pdf] [--prefix=/decks] [--port=4321] [--no-compress] [--notes]",
   );
   process.exit(1);
 }
 
-const output = resolve(positional[1] ?? `${slug}.pdf`);
+const notes = flags.includes("--notes");
+const output = resolve(positional[1] ?? `${slug}${notes ? "-notes" : ""}.pdf`);
 const compress = !flags.includes("--no-compress");
 const prefix = (flagValue("prefix") ?? "/decks").replace(/\/+$/, "");
 const port = flagValue("port") ?? "4321";
@@ -175,6 +186,60 @@ const chromeArgs = (process.env.DECKTAPE_CHROME_ARGS ?? "")
 const maxSlides = process.env.DECKTAPE_MAX_SLIDES ?? "500";
 const decktapeVersion = process.env.DECKTAPE_VERSION ?? "3.16.1";
 
+// Presenter-guide mode: load Reveal's print view and let Chrome print it.
+// `preferCSSPageSize: true` is essential --- Reveal declares
+// `@page { size: 1280px 720px }`, and letting Chrome letterbox that onto
+// A4/letter drifts the page breaks (see theme/print.css).
+async function captureNotes() {
+  if (!chromePath) {
+    console.error(
+      "✗ --notes needs a Chrome/Chromium binary (install one or set DECKTAPE_CHROME_PATH).",
+    );
+    process.exit(1);
+  }
+  let puppeteer;
+  try {
+    ({ default: puppeteer } = await import("puppeteer-core"));
+  } catch {
+    console.error(
+      "✗ --notes requires puppeteer-core (an optional peer dependency).\n" +
+        "  Install it in your project: pnpm add -D puppeteer-core",
+    );
+    process.exit(1);
+  }
+
+  const printUrl = `${url}?print-pdf&showNotes=separate-page`;
+  console.log("Printing slides + notes with headless Chrome...");
+  const browser = await puppeteer.launch({
+    executablePath: chromePath,
+    args: chromeArgs,
+  });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 720 });
+    // networkidle0 waits for every slide's assets (the print view renders the
+    // whole deck at once); a deck with a long-polling embed may never go
+    // idle, so a timeout degrades to a warning rather than aborting.
+    try {
+      await page.goto(printUrl, { waitUntil: "networkidle0", timeout: 60_000 });
+    } catch {
+      console.warn("⚠ Page never went network-idle; printing anyway.");
+    }
+    await page.evaluate(() => document.fonts.ready);
+    // Same settling pause decktape mode uses (--load-pause): backgrounds and
+    // late layout work have no load event to await.
+    await new Promise((r) => setTimeout(r, 5000));
+    await page.pdf({
+      path: rawOutput,
+      preferCSSPageSize: true,
+      printBackground: true,
+      timeout: 300_000,
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
 // decktape's `reveal` plugin can't drive astromotion decks: it requires a
 // global `Reveal` exposing `availableFragments`, but astromotion initialises
 // reveal.js 6 as an ES module and never puts it on `window`, so the plugin
@@ -183,28 +248,36 @@ const decktapeVersion = process.env.DECKTAPE_VERSION ?? "3.16.1";
 // frame repeats --- no Reveal API needed, so it's robust across reveal.js
 // versions. Each frame is captured in its settled state, so auto-animate
 // slides export correctly.
-console.log("Capturing slides with decktape...");
-runWithRetry(
-  "npx",
-  [
-    "--yes",
-    `decktape@${decktapeVersion}`,
-    "generic",
-    // `=` form throughout: decktape's parser otherwise reads a flag-like
-    // value (e.g. `--chrome-arg --no-sandbox`) as the next option and bails.
-    "--key=ArrowRight",
-    `--max-slides=${maxSlides}`,
-    "--size=1280x720",
-    "--load-pause=5000",
-    "--pause=2500",
-    ...(chromePath ? [`--chrome-path=${chromePath}`] : []),
-    ...chromeArgs.map((a) => `--chrome-arg=${a}`),
-    url,
-    rawOutput,
-  ],
-  3,
-  chromePath ? { ...process.env, PUPPETEER_SKIP_DOWNLOAD: "1" } : process.env,
-);
+function captureSlides() {
+  console.log("Capturing slides with decktape...");
+  runWithRetry(
+    "npx",
+    [
+      "--yes",
+      `decktape@${decktapeVersion}`,
+      "generic",
+      // `=` form throughout: decktape's parser otherwise reads a flag-like
+      // value (e.g. `--chrome-arg --no-sandbox`) as the next option and bails.
+      "--key=ArrowRight",
+      `--max-slides=${maxSlides}`,
+      "--size=1280x720",
+      "--load-pause=5000",
+      "--pause=2500",
+      ...(chromePath ? [`--chrome-path=${chromePath}`] : []),
+      ...chromeArgs.map((a) => `--chrome-arg=${a}`),
+      url,
+      rawOutput,
+    ],
+    3,
+    chromePath ? { ...process.env, PUPPETEER_SKIP_DOWNLOAD: "1" } : process.env,
+  );
+}
+
+if (notes) {
+  await captureNotes();
+} else {
+  captureSlides();
+}
 
 killServer();
 
