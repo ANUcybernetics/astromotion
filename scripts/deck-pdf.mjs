@@ -64,8 +64,8 @@ function puppeteerCacheChrome() {
   }
   const mac = "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
   return versions
-    .sort()
-    .reverse()
+    .toSorted()
+    .toReversed()
     .flatMap((v) => [
       join(cacheDir, v, "chrome-linux64", "chrome"),
       join(cacheDir, v, "chrome-mac-arm64", mac),

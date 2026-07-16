@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-16
+
+### Print view support (`?print-pdf`)
+
+Reveal's print/PDF-export view (`?print-pdf`, optionally with
+`&showNotes=separate-page` for interleaved speaker-notes pages) previously
+rendered astromotion decks as an unreadable mess: Reveal's print CSS forces
+every section to `display: block !important`, collapsing the grid-based slide
+layout, and separate-page speaker notes inherit the theme's light text colour on
+a transparent (i.e. white, on paper) background.
+
+A new `theme/print.css` (loaded by `DeckLayout`) restores the fixed 1280x720
+canvas in print view, styles separate-page notes dark-on-white, hides the
+whiteboard, and adds the unprefixed `print-color-adjust: exact` that Firefox
+needs to keep slide background colours. For correctly-paged output, print with
+the page size taken from CSS (e.g. Playwright's `preferCSSPageSize: true`) ---
+Reveal declares `@page { size: 1280px 720px }` and browser-default A4/letter
+paper drifts the page breaks.
+
+Also fixes two `oxlint` errors in `scripts/deck-pdf.mjs` (mutating
+`sort`/`reverse` on the puppeteer cache listing).
+
 ## 2026-07-15
 
 ### `astromotion-pdf`: hardened PDF export, now an actual bin

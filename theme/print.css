@@ -1,0 +1,42 @@
+/* Print / PDF export view: `?print-pdf` (optionally with
+   `&showNotes=separate-page` for interleaved speaker-notes pages).
+
+   Reveal's own print CSS breaks astromotion decks in two ways: it forces
+   sections to `display: block !important`, collapsing the grid-based slide
+   layout, and it renders separate-page speaker notes transparent with
+   inherited text colour — which on paper means light theme text on a white
+   page. These rules restore the fixed canvas and make notes pages readable.
+
+   For a correctly-paged PDF, print with the page size taken from CSS
+   (Playwright `preferCSSPageSize: true` or the browser's print dialog with
+   default margins removed) — Reveal declares `@page { size: 1280px 720px }`
+   and letting the browser letterbox that onto A4/letter drifts the page
+   breaks. */
+
+html.reveal-print .reveal .slides section {
+  /* Reveal core sets `display: block !important` in print view; the slide
+     width arrives as an inline style but the height must come from CSS.
+     720px matches the fixed canvas height configured in pages/[...slug].astro
+     — keep the two in step. */
+  display: grid !important;
+  height: 720px !important;
+}
+
+html.reveal-print .reveal .speaker-notes-pdf[data-layout="separate-page"] {
+  background: #fff;
+  color: #1a1a1a;
+  font-family: var(--r-main-font, sans-serif);
+  font-size: 20px;
+  line-height: 1.5;
+  padding: 48px;
+}
+
+html.reveal-print .astromotion-whiteboard {
+  display: none !important;
+}
+
+html.reveal-print * {
+  /* reveal.css ships only the -webkit- prefixed form, so Firefox drops slide
+     background colours when printing */
+  print-color-adjust: exact;
+}
