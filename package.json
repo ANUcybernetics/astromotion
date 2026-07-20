@@ -1,6 +1,6 @@
 {
   "name": "astromotion",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Astro integration for markdown-authored slide decks powered by Reveal.js, with a bit of Marp syntax",
   "license": "MIT",
   "author": "Ben Swift",
