@@ -40,8 +40,12 @@ async function build(outDir: string, env: Record<string, string> = {}) {
   // Vitest injects BASE_URL/MODE/DEV/PROD/SSR into process.env. Inherited by the
   // child, they override the fixture's own `base`, and the build silently emits
   // root-absolute URLs — masking the very bug this test exists to catch.
+  // NODE_ENV=test leaks the same way: Vite derives `import.meta.env.PROD` from
+  // `(NODE_ENV || mode) === "production"`, so an inherited `test` would make a
+  // real `astro build` look non-production and stop the published:false filter
+  // firing. Dropping it lets Astro set NODE_ENV=production as a real build does.
   const parentEnv = { ...process.env };
-  for (const key of ["BASE_URL", "MODE", "DEV", "PROD", "SSR"]) delete parentEnv[key];
+  for (const key of ["BASE_URL", "MODE", "DEV", "PROD", "SSR", "NODE_ENV"]) delete parentEnv[key];
 
   await execFileAsync(process.execPath, [astroBin, "build", "--outDir", outDir], {
     cwd: fixture,
@@ -101,5 +105,15 @@ describe("deck head under a base path", () => {
     expect(omitted.querySelector('meta[name="twitter:card"]')?.getAttribute("content")).toBe(
       "summary",
     );
+  });
+
+  // The fixture ships two decks: `sample` (published) and `draft`
+  // (published:false). A production build must emit the first and drop the
+  // second, so its URL serves nothing and Pagefind has no HTML to index.
+  it("drops a published:false deck from the production build", async () => {
+    const draft = resolve(fixture, "dist-omitted/decks/draft/index.html");
+    await expect(readFile(draft, "utf8")).rejects.toThrow();
+    const sample = resolve(fixture, "dist-omitted/decks/sample/index.html");
+    await expect(readFile(sample, "utf8")).resolves.toContain("Slide one");
   });
 });

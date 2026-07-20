@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-20
+
+### `published: false` drops a deck from production builds
+
+A deck whose frontmatter carries `published: false` is now omitted from the
+injected `/decks/[...slug]` routes in a production build (`astro build`): no
+route is generated, so no HTML lands in `dist/` and there is nothing for
+Pagefind or a crawler to find at its URL. The dev server still serves it
+(`import.meta.env.PROD` is false under `astro dev`), so work-in-progress decks
+stay previewable locally.
+
+Previously astromotion globbed every `*.deck.mdx` off disk regardless of
+frontmatter, so a consumer's content-collection `published` flag governed
+listings and graph membership but not whether the deck page itself was emitted —
+an unpublished deck still built and was searchable. The check is a strict
+`=== false`, so an absent or `true` flag stays published as before; nothing
+changes for decks that don't set it.
+
 ## 2026-07-16
 
 ### Print view: full-page notes, no filler pages

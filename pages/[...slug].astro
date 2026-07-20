@@ -8,16 +8,24 @@ interface DeckModule {
 
 export async function getStaticPaths() {
   const modules = import.meta.glob<DeckModule>("/src/decks/**/*.deck.mdx", { eager: true });
-  return Object.entries(modules).map(([filePath, mod]) => {
-    const match = filePath.match(/\/src\/decks\/(.+)\.deck\.mdx$/);
-    if (!match) throw new Error(`Unexpected deck path: ${filePath}`);
-    const name = match[1];
-    const slug = name.endsWith("/slides") ? name.slice(0, -"/slides".length) : name;
-    return {
-      params: { slug },
-      props: { Content: mod.default, frontmatter: mod.frontmatter ?? {} },
-    };
-  });
+  return Object.entries(modules)
+    // A deck with `published: false` in its frontmatter is dropped from the
+    // production build only — no route, so no HTML in dist/ and nothing for
+    // Pagefind to index. The dev server still serves it (PROD is false there)
+    // so work-in-progress decks stay previewable locally. Absent/true stays
+    // published, matching the usual content-collection default; the check is
+    // strict `=== false` so only an explicit opt-out hides a deck.
+    .filter(([, mod]) => !(import.meta.env.PROD && mod.frontmatter?.published === false))
+    .map(([filePath, mod]) => {
+      const match = filePath.match(/\/src\/decks\/(.+)\.deck\.mdx$/);
+      if (!match) throw new Error(`Unexpected deck path: ${filePath}`);
+      const name = match[1];
+      const slug = name.endsWith("/slides") ? name.slice(0, -"/slides".length) : name;
+      return {
+        params: { slug },
+        props: { Content: mod.default, frontmatter: mod.frontmatter ?? {} },
+      };
+    });
 }
 
 const { Content, frontmatter } = Astro.props;
