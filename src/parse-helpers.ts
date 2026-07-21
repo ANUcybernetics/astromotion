@@ -48,6 +48,18 @@ export function parseIfDirectiveMdx(value: string): string | null {
   return parseMdxDirective(value, "_if");
 }
 
+/**
+ * Parse an `{/* _id: name *​/}` directive, which puts an `id` on the enclosing
+ * slide so Reveal.js can address it by name: a link to `#/name` navigates to
+ * that slide, and the URL shows `#/name` instead of a slide number while it's
+ * on screen. Only the first whitespace-delimited token is taken --- an id with
+ * a space in it is not a valid link target.
+ */
+export function parseIdDirectiveMdx(value: string): string | null {
+  const id = parseMdxDirective(value, "_id");
+  return id ? (id.split(/\s/)[0] ?? null) : null;
+}
+
 export function parseNotesDirectiveMdx(value: string): string | null {
   return parseMdxDirective(value, "notes");
 }

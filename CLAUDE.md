@@ -13,14 +13,14 @@ Consumed as a package by Astro sites --- not a standalone app.
 ## Architecture
 
 The integration (`index.ts`) registers `@astrojs/mdx`, aliases theme CSS via a
-virtual module, and injects a catch-all deck route. The eight custom remark
+virtual module, and injects a catch-all deck route. The ten custom remark
 plugins are exported as `deckRemarkPlugins` for consumers to wire into their own
 markdown processor (see the breaking-change note in CHANGELOG).
 
 ### .deck.mdx format
 
 Decks are authored as `.deck.mdx` files. Astro's MDX integration processes them
-through the standard remark/rehype pipeline, plus the eight custom remark
+through the standard remark/rehype pipeline, plus the ten custom remark
 plugins (in `plugins/`). The result is an Astro component whose default export
 is the slide content.
 
@@ -37,18 +37,24 @@ is the slide content.
    `<section>` elements
 3. `remarkDeckClasses` --- converts `{/* _class: name */}` expressions to
    `class` attributes on the enclosing section
-4. `remarkDeckAnimate` --- converts `{/* _animate */}` (and
+4. `remarkDeckConditionals` --- converts `{/* _if: name */}` expressions to
+   `data-deck-if` attributes on the enclosing section; the deck route drops
+   those slides client-side unless the URL carries the matching query param
+5. `remarkDeckIds` --- converts `{/* _id: name */}` expressions to `id`
+   attributes on the enclosing section, which is what makes Reveal.js named
+   links (`#/name`) resolve to that slide
+6. `remarkDeckAnimate` --- converts `{/* _animate */}` (and
    `{/* _animate: id */}`) expressions to `data-auto-animate` (and
    `data-auto-animate-id`) attributes on the enclosing section, enabling
    Reveal.js auto-animate between adjacent slides
-5. `remarkDeckNotes` --- converts `{/* notes: ...HTML... */}` expressions to
+7. `remarkDeckNotes` --- converts `{/* notes: ...HTML... */}` expressions to
    `<aside class="notes">` elements inside the section (the element Reveal's
    notes plugin reads for the speaker view)
-6. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
-7. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
+8. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
+9. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
    and split layouts
-8. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
-   dashes) to slide text, including content spliced in by `@include`
+10. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
+    dashes) to slide text, including content spliced in by `@include`
 
 Each plugin gates itself with `if (!file.path?.endsWith('.deck.mdx')) return` so
 it silently ignores non-deck MDX files.

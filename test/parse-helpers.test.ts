@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   parseMdxFlowExpression,
   parseClassDirectiveMdx,
+  parseIdDirectiveMdx,
   parseNotesDirectiveMdx,
   parseIncludeDirectiveMdx,
   parseAnimateDirectiveMdx,
@@ -171,6 +172,24 @@ describe("parseClassDirectiveMdx", () => {
 
   it("returns null for non-comment string", () => {
     expect(parseClassDirectiveMdx("_class: banner")).toBeNull();
+  });
+});
+
+describe("parseIdDirectiveMdx", () => {
+  it("extracts the id", () => {
+    expect(parseIdDirectiveMdx("/* _id: opening */")).toBe("opening");
+  });
+
+  it("keeps only the first token", () => {
+    expect(parseIdDirectiveMdx("/* _id: opening remarks */")).toBe("opening");
+  });
+
+  it("returns null for non-id comments", () => {
+    expect(parseIdDirectiveMdx("/* _class: banner */")).toBeNull();
+  });
+
+  it("returns null for empty value after directive", () => {
+    expect(parseIdDirectiveMdx("/* _id: */")).toBeNull();
   });
 });
 

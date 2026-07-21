@@ -144,6 +144,14 @@ syntax:
 - `{/* _class: name */}` --- set a CSS class on the enclosing slide (e.g.
   `impact`, `banner`, `quote`, `centered`, or any custom class your theme
   defines)
+- `{/* _if: name */}` --- gate the slide on a URL query param: it is removed
+  before Reveal.js initialises unless the deck URL carries `?name`, so slide
+  numbers and `#/` hashes count only the slides that survive
+- `{/* _id: name */}` --- put an `id` on the slide so Reveal.js can address it
+  by name: a link to `#/name` (from anywhere in the deck, or from outside it)
+  navigates to that slide, and the URL shows `#/name` rather than a slide number
+  while it's on screen --- handy for a running-order or index slide whose
+  entries jump to their sections
 - `{/* _animate */}` --- flag the slide for Reveal.js
   [auto-animate](https://revealjs.com/auto-animate/): adjacent slides that both
   carry `_animate` smoothly tween matching elements (matched by `data-id`, or by

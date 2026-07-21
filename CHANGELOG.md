@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-21
+
+### `_id` directive: named links between slides
+
+New `{/* _id: name */}` directive puts an `id` on the enclosing slide, which is
+what Reveal.js needs to resolve a named link: `<a href="#/name">` now navigates
+to that slide from anywhere in the deck (or from outside it), and the URL reads
+`#/name` instead of a slide number while it's on screen.
+
+The motivating case is a running-order slide whose entries jump to the section
+they name --- previously the only way to link a specific slide was its index,
+which shifts whenever a slide is added ahead of it.
+
 ## 2026-07-20
 
 ### `published: false` drops a deck from production builds
