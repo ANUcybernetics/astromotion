@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-22
+
+### Presenter clock on `T`
+
+Press **T** in a deck for a small 24-hour `HH:MM` clock in the bottom-right
+corner, and **T** again to hide it; the binding is registered with Reveal, so it
+shows up on the help overlay alongside **W** for the whiteboard.
+
+Presenting on one screen (or mirrored to a projector) means Reveal's speaker
+view --- which carries the only clock in the stack --- isn't visible, leaving
+nowhere to check the time without reaching for a phone. The overlay is sized in
+viewport pixels outside the scaled slide canvas, so it stays discreet on any
+display, and it renders hours and minutes only: seconds tick distractingly in
+the audience's peripheral vision, and "am I running late" is a minute-grained
+question. It starts hidden, so decks read on the web and PDF exports are
+unaffected unless the presenter asks for it.
+
+Themes restyle it through `--astromotion-clock-bg`, `--astromotion-clock-color`,
+`--astromotion-clock-opacity`, `--astromotion-clock-radius`,
+`--astromotion-clock-font-family` and `--astromotion-clock-font-size`.
+
 ## 2026-07-21
 
 ### `_id` directive: named links between slides

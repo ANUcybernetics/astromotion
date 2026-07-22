@@ -1,0 +1,26 @@
+/* Presenter wall clock (press T in a deck). Deliberately quiet: white on a
+   dark scrim, translucent, small, and out of the way in the bottom-right
+   corner. Consuming themes can restyle it via the custom properties. */
+
+.astromotion-clock {
+  position: fixed;
+  right: 1rem;
+  bottom: 0.75rem;
+  z-index: 50;
+  padding: 0.2em 0.55em;
+  border-radius: var(--astromotion-clock-radius, 0.25rem);
+  background: var(--astromotion-clock-bg, rgb(0 0 0 / 45%));
+  color: var(--astromotion-clock-color, #fff);
+  font-family: var(--astromotion-clock-font-family, var(--r-main-font, sans-serif));
+  font-size: var(--astromotion-clock-font-size, 1rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  opacity: var(--astromotion-clock-opacity, 0.6);
+
+  /* Never intercept a click meant for the slide underneath. */
+  pointer-events: none;
+}
+
+.astromotion-clock[hidden] {
+  display: none;
+}

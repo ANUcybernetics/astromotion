@@ -47,6 +47,7 @@ const { Content, frontmatter } = Astro.props;
   import Reveal from "reveal.js";
   import RevealNotes from "reveal.js/plugin/notes";
 
+  import { initClock } from "../src/clock";
   import { keepAwakeInFullscreen } from "../src/keep-awake";
   import { initWhiteboard } from "../src/whiteboard";
 
@@ -81,8 +82,11 @@ const { Content, frontmatter } = Astro.props;
     scrollActivationWidth: null,
     plugins: [RevealNotes],
   });
-  // Whiteboard registers a Reveal key binding, so wait for the keyboard
-  // controller to be ready.
-  void deck.initialize().then(() => initWhiteboard(deck));
+  // Whiteboard and clock register Reveal key bindings, so wait for the
+  // keyboard controller to be ready.
+  void deck.initialize().then(() => {
+    initWhiteboard(deck);
+    initClock(deck);
+  });
   keepAwakeInFullscreen();
 </script>

@@ -376,6 +376,21 @@ inks:
 }
 ```
 
+## Presenter clock
+
+Press **T** while presenting to show a small 24-hour clock (`HH:MM`) in the
+bottom-right corner, and **T** again to hide it (it's listed on Reveal's help
+overlay, press **?**). It's for the presenter's own glance at the time when
+Reveal's speaker view isn't on a second screen, so it's deliberately quiet ---
+white on a translucent scrim, at a fixed size outside the scaled slide canvas
+--- and it starts hidden, so a deck read on the web or exported to PDF never
+shows one.
+
+Consuming themes can restyle it via CSS custom properties:
+`--astromotion-clock-bg`, `--astromotion-clock-color`,
+`--astromotion-clock-opacity`, `--astromotion-clock-radius`,
+`--astromotion-clock-font-family` and `--astromotion-clock-font-size`.
+
 ## Deck listing page
 
 The integration doesn't inject a listing page since it would need your site's
