@@ -110,6 +110,10 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
       });
       if (!path) continue;
       ctx.fillStyle = palette[stroke.color] ?? palette[0];
+      // ctx is a CanvasRenderingContext2D --- this is not Array#fill. The rule
+      // matches any `.fill()` with no receiver check, and upstream declined to
+      // add one (oxc-project/oxc#23703).
+      // oxlint-disable-next-line unicorn/no-array-fill-with-reference-type
       ctx.fill(new Path2D(path));
     }
   };
