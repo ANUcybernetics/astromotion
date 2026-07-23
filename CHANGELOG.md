@@ -1,6 +1,16 @@
 # Changelog
 
-## 2026-07-23
+## 2026-07-23 (v0.16.2)
+
+### Internal: one engine for the single-directive plugins
+
+`remarkDeckClasses`, `remarkDeckConditionals`, `remarkDeckIds`,
+`remarkDeckAnimate` and `remarkDeckNotes` were five copies of the same
+walk-sections/extract-directive/apply loop. They now share a
+`sectionDirective(parse, apply)` helper; every named export (and its
+behaviour) is unchanged.
+
+## 2026-07-23 (v0.16.1)
 
 ### Deck bg images respect the site's base path
 
