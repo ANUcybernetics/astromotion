@@ -31,7 +31,9 @@ function stripPositions(node: { position?: unknown; children?: unknown[] }): voi
 }
 
 function resolveIncludesIn(root: Root, ancestors: string[]): void {
-  const fromFile = ancestors[ancestors.length - 1];
+  // ancestors always has at least one entry (the deck's own file.path from the
+  // initial call), so this is never undefined.
+  const fromFile = ancestors.at(-1)!;
   for (let i = root.children.length - 1; i >= 0; i--) {
     const node = root.children[i];
     if ((node as any).type !== "mdxFlowExpression") continue;

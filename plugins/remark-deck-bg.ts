@@ -1,4 +1,4 @@
-import type { Root, RootContent, Paragraph, Image } from "mdast";
+import type { Image, Paragraph, Root, RootContent } from "mdast";
 import { dirname, resolve } from "node:path";
 import { buildState } from "../src/build-config.ts";
 import { withBase } from "../src/head-urls.ts";

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Root } from "mdast";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

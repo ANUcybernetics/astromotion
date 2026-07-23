@@ -1,4 +1,4 @@
-import type { Root, RootContent, Paragraph, Image, Html } from "mdast";
+import type { Html, Image, Paragraph, Root, RootContent } from "mdast";
 import { generateQrCode } from "../src/svg/qr-code.ts";
 
 function isQrImageParagraph(node: RootContent): node is Paragraph {

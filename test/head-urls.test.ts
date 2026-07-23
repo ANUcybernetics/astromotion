@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { withBase, absoluteUrl } from "../src/head-urls.ts";
+import { describe, expect, it } from "vitest";
+import { absoluteUrl, withBase } from "../src/head-urls.ts";
 
 describe("withBase", () => {
   it("leaves root-absolute paths alone at the site root", () => {

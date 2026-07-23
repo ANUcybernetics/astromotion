@@ -17,11 +17,13 @@
   },
   "scripts": {
     "test": "vitest run",
-    "lint": "oxlint",
+    "lint": "oxlint && pnpm lint:css",
+    "lint:fix": "oxlint --fix && pnpm lint:css:fix",
+    "lint:css": "stylelint 'theme/**/*.css' --allow-empty-input",
+    "lint:css:fix": "stylelint 'theme/**/*.css' --allow-empty-input --fix",
     "typecheck": "tsc --noEmit",
     "format": "oxfmt .",
-    "format:check": "oxfmt --check .",
-    "stylelint": "stylelint 'theme/**/*.css'"
+    "format:check": "oxfmt --check ."
   },
   "dependencies": {
     "@qrgrid/core": "^0.2.4",
@@ -37,19 +39,19 @@
   },
   "devDependencies": {
     "@astrojs/mdx": "^7.0.0",
-    "@e18e/eslint-plugin": "^0.5.0",
+    "@e18e/eslint-plugin": "^0.5.1",
     "@types/mdast": "^4.0.4",
     "@types/node": "^24.0.0",
     "astro": "^7.1.1",
     "eslint-plugin-no-only-tests": "^3.4.0",
-    "eslint-plugin-perfectionist": "^5.9.0",
+    "eslint-plugin-perfectionist": "^5.10.0",
     "eslint-plugin-unused-imports": "^4.4.1",
     "linkedom": "^0.18.12",
-    "oxfmt": "^0.52.0",
-    "oxlint": "^1.67.0",
+    "oxfmt": "^0.60.0",
+    "oxlint": "^1.75.0",
     "puppeteer-core": "^24.0.0",
     "remark-directive": "^4.0.0",
-    "stylelint": "^17.12.0",
+    "stylelint": "^17.14.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^5.9.0",
     "vitest": "^4.1.7"

@@ -1,11 +1,20 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Shared baseline across the theme-family repos — keep in step with the
+  // other sites (the anu-theme-sync skill owns the canon). Repo-specific
+  // deltas go below the marked line.
   "categories": {
     "correctness": "error",
     "suspicious": "error",
     "perf": "error"
   },
   "plugins": ["typescript", "import", "unicorn"],
+  "env": {
+    "builtin": true,
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
   "jsPlugins": [
     "@e18e/eslint-plugin",
     "eslint-plugin-no-only-tests",
@@ -13,10 +22,37 @@
     "eslint-plugin-unused-imports"
   ],
   "rules": {
-    "eqeqeq": "error",
-    "import/no-unassigned-import": "off",
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "no-warning-comments": ["error", { "terms": ["@nocommit"] }],
+    "import/no-self-import": "error",
+    "no-only-tests/no-only-tests": "error",
+    "unused-imports/no-unused-imports": "error",
+    "perfectionist/sort-named-imports": "error",
+    "perfectionist/sort-heritage-clauses": "error",
+    "e18e/ban-dependencies": "error",
+    "e18e/prefer-includes": "error",
+    "e18e/prefer-array-at": "error",
+    "e18e/prefer-nullish-coalescing": "error",
+    "e18e/prefer-date-now": "error",
+    "e18e/prefer-regex-test": "error",
+    // --- repo-specific deltas below ---
+    // fixtures assert bad JS patterns as loop bodies exercising the pipeline
     "no-await-in-loop": "off",
+    // fixtures and deck internals intentionally shadow outer bindings
     "no-shadow": "off",
+    // side-effecting CSS/theme imports are the norm in Astro components
+    "import/no-unassigned-import": "off",
     "no-underscore-dangle": ["error", { "allow": ["__dirname", "__filename"] }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.svelte"],
+      "rules": {
+        // imports used only in the template are invisible to the JS-block
+        // linter, so this rule false-positives on every component
+        "unused-imports/no-unused-imports": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["dist/", ".astro/", "**/*.astro"]
 }

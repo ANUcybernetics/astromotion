@@ -85,7 +85,8 @@ After this is fixed, tested, and pushed:
   that gating so we don't try to register includes for non-deck MDX files.
 - Respect `MAX_DEPTH = 10` to avoid pathological cycles.
 - Add a regression test that simulates an include and asserts the
-parent's transform registers the partial as a watch file.
+  parent's transform registers the partial as a watch file.
+
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

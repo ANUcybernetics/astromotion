@@ -143,4 +143,5 @@ Include a `migrate.sh` script or a documented one-liner in the release notes tha
 - [ ] #11 all 7 consuming projects migrated: files renamed to \*.deck.md, dependencies updated, builds verified
 - [ ] #12 migration script or documented one-liner included in release notes
 - [ ] #13 visual regression check: use agent-browser to screenshot representative slides before and after migration, confirming rendered appearance is unchanged
+
 <!-- AC:END -->
