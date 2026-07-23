@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-07-23
+
+### Deck bg images respect the site's base path
+
+`![bg](./assets/x.avif)` backgrounds were rewritten to root-absolute
+`/src/decks/...` URLs with no base prefix, so on a site deployed under a subpath
+(`base: "/courses/x"`) every deck background 404'd — the exact failure the deck
+`<head>` URL helpers already guard against. The integration now records
+`config.base` at setup and the bg plugin prefixes rewritten URLs with it. The
+base-path build fixture gained a real `![bg]` image, and its every-internal-URL
+assertion now also reads `url(...)` refs out of inline styles, so a regression
+here fails the suite.
+
+### Clearer failures for broken `@include` graphs
+
+An `@include` cycle used to recurse to the depth cap and silently truncate the
+deck; it now fails the build with the full chain (`@include cycle: a → b → a`).
+A missing include file surfaced as a bare `ENOENT`; it now names the include
+path and the file that requested it. Nesting deeper than the cap is an error
+instead of a silent stop.
+
+### Sundry robustness
+
+- `.slide-bg` and `.split-image` set `background-repeat: no-repeat`, so
+  `![bg contain]` images no longer tile (previously worked around in consumer
+  deck themes).
+- the deck asset copier skips all `.md`/`.mdx`/`.svx`/`.svelte`/`.css` sources
+  (not just `.deck.*`), so an `@include` partial or component beside the decks
+  is no longer published verbatim into `dist/`.
+- asset-copy errors other than a missing `src/decks/` directory now fail the
+  build instead of being silently swallowed.
+- the deck favicon `<link>` only claims `type="image/svg+xml"` for actual `.svg`
+  paths.
+- dropped three unused runtime dependencies (`remark-rehype`,
+  `rehype-stringify`, `@shikijs/rehype`); added a `typecheck` script (and a
+  tsconfig that can actually run it) covering `src/`, `plugins/` and `index.ts`.
+
 ## 2026-07-22
 
 ### Presenter clock on `T`

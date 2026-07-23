@@ -20,6 +20,9 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
 const social = image ?? ogImage;
 const socialUrl = social ? absoluteUrl(social, Astro.site, Astro.url, baseUrl) : undefined;
 const faviconHref = favicon ? withBase(favicon, baseUrl) : undefined;
+// Only claim a MIME type we can actually infer; a hardcoded image/svg+xml is
+// wrong for a .png or .ico favicon.
+const faviconType = favicon?.endsWith(".svg") ? "image/svg+xml" : undefined;
 ---
 
 {fontVariables.map((cssVariable) => <Font cssVariable={cssVariable} preload />)}
@@ -49,4 +52,4 @@ const faviconHref = favicon ? withBase(favicon, baseUrl) : undefined;
 <meta name="twitter:description" content={description} />
 {socialUrl && <meta name="twitter:image" content={socialUrl} />}
 
-{faviconHref && <link rel="icon" type="image/svg+xml" href={faviconHref} />}
+{faviconHref && <link rel="icon" type={faviconType} href={faviconHref} />}

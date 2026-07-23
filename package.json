@@ -1,6 +1,6 @@
 {
   "name": "astromotion",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "description": "Astro integration for markdown-authored slide decks powered by Reveal.js, with a bit of Marp syntax",
   "license": "MIT",
   "author": "Ben Swift",
@@ -18,20 +18,18 @@
   "scripts": {
     "test": "vitest run",
     "lint": "oxlint",
+    "typecheck": "tsc --noEmit",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "stylelint": "stylelint 'theme/**/*.css'"
   },
   "dependencies": {
     "@qrgrid/core": "^0.2.4",
-    "@shikijs/rehype": "^4.1.0",
     "perfect-freehand": "^1.2.3",
-    "rehype-stringify": "^10.0.1",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "remark-mdx": "^3.1.1",
     "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.1.2",
     "remark-smartypants": "^3.0.2",
     "reveal.js": "^6.0.1",
     "unified": "^11.0.5",
@@ -40,6 +38,8 @@
   "devDependencies": {
     "@astrojs/mdx": "^7.0.0",
     "@e18e/eslint-plugin": "^0.5.0",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^24.0.0",
     "astro": "^7.1.1",
     "eslint-plugin-no-only-tests": "^3.4.0",
     "eslint-plugin-perfectionist": "^5.9.0",
@@ -51,6 +51,7 @@
     "remark-directive": "^4.0.0",
     "stylelint": "^17.12.0",
     "stylelint-config-standard": "^40.0.0",
+    "typescript": "^5.9.0",
     "vitest": "^4.1.7"
   },
   "peerDependencies": {

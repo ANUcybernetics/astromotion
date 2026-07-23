@@ -50,6 +50,28 @@ describe("remarkDeckIncludes", () => {
     ).rejects.toThrow("@include only supports .mdx files");
   });
 
+  it("throws with the include chain on a cycle", async () => {
+    const input = "{/* @include ./fixtures/includes/cycle-a.mdx */}\n";
+    const tree = unified().use(remarkParse).use(remarkMdx).parse(input);
+    await expect(
+      unified()
+        .use(remarkDeckIncludes)
+        .run(tree, { path: path.join(__dirname, "main.deck.mdx") }),
+    ).rejects.toThrow(/@include cycle: .*cycle-a\.mdx → .*cycle-b\.mdx → .*cycle-a\.mdx/);
+  });
+
+  it("names the missing file and the including file when an include is absent", async () => {
+    const input = "{/* @include ./fixtures/includes/no-such-partial.mdx */}\n";
+    const tree = unified().use(remarkParse).use(remarkMdx).parse(input);
+    await expect(
+      unified()
+        .use(remarkDeckIncludes)
+        .run(tree, { path: path.join(__dirname, "main.deck.mdx") }),
+    ).rejects.toThrow(
+      /@include file not found: \.\/fixtures\/includes\/no-such-partial\.mdx \(included from .*main\.deck\.mdx\)/,
+    );
+  });
+
   it("strips yaml frontmatter from included files", async () => {
     const input = "# Deck\n\n{/* @include ./fixtures/includes/with-frontmatter.mdx */}\n";
     const tree = unified().use(remarkParse).use(remarkMdx).parse(input);

@@ -8,7 +8,10 @@ export function collectDeckAssets(decksDir: string): string[] {
       const full = resolve(dir, entry.name);
       if (entry.isDirectory()) {
         walk(full);
-      } else if (!/\.deck\.(mdx|md|svx|svelte)$/.test(entry.name) && !entry.name.endsWith(".css")) {
+      } else if (!/\.(mdx|md|svx|svelte|css)$/.test(entry.name)) {
+        // Skip source files, not just decks: an `@include` partial or a
+        // component beside the decks is input to the build, and copying it
+        // verbatim into dist/ would publish source.
         assets.push(full);
       }
     }

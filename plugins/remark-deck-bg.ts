@@ -1,5 +1,7 @@
 import type { Root, RootContent, Paragraph, Image } from "mdast";
 import { dirname, resolve } from "node:path";
+import { buildState } from "../src/build-config.ts";
+import { withBase } from "../src/head-urls.ts";
 import { parseBgModifiers } from "../src/parse-helpers.ts";
 
 interface BgImage {
@@ -10,13 +12,17 @@ interface BgImage {
   filters?: string;
 }
 
+// The rewritten URL is root-absolute, so it needs the site's base prefix on a
+// subpath deploy — nothing downstream rewrites URLs inside inline styles, so
+// an unprefixed `/src/...` would point above the base and 404 (the same
+// failure head-urls.ts exists to prevent in the deck <head>).
 function resolveAssetUrl(url: string, deckPath: string | undefined): string {
   if (!deckPath) return url;
   if (!url.startsWith("./") && !url.startsWith("../")) return url;
   const absPath = resolve(dirname(deckPath), url);
   const srcIdx = absPath.indexOf("/src/");
   if (srcIdx === -1) return url;
-  return absPath.slice(srcIdx);
+  return withBase(absPath.slice(srcIdx), buildState.base);
 }
 
 interface MdxJsxAttribute {

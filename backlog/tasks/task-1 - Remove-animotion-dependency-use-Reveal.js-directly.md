@@ -1,9 +1,10 @@
 ---
 id: TASK-1
 title: "Remove animotion dependency, use Reveal.js directly"
-status: In Progress
+status: Done
 assignee: []
 created_date: "2026-04-02 11:23"
+updated_date: "2026-07-23 08:01"
 labels:
   - refactor
   - breaking-change

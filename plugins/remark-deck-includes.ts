@@ -30,8 +30,8 @@ function stripPositions(node: { position?: unknown; children?: unknown[] }): voi
   }
 }
 
-function resolveIncludesIn(root: Root, fromFile: string, depth: number): void {
-  if (depth > MAX_DEPTH) return;
+function resolveIncludesIn(root: Root, ancestors: string[]): void {
+  const fromFile = ancestors[ancestors.length - 1];
   for (let i = root.children.length - 1; i >= 0; i--) {
     const node = root.children[i];
     if ((node as any).type !== "mdxFlowExpression") continue;
@@ -43,9 +43,20 @@ function resolveIncludesIn(root: Root, fromFile: string, depth: number): void {
       );
     }
     const absPath = resolveIncludePath(includePath, fromFile);
-    const content = readFileSync(absPath, "utf-8");
+    if (ancestors.includes(absPath)) {
+      throw new Error(`@include cycle: ${[...ancestors, absPath].join(" → ")}`);
+    }
+    if (ancestors.length > MAX_DEPTH) {
+      throw new Error(`@include nesting deeper than ${MAX_DEPTH} levels: ${ancestors.join(" → ")}`);
+    }
+    let content: string;
+    try {
+      content = readFileSync(absPath, "utf-8");
+    } catch {
+      throw new Error(`@include file not found: ${includePath} (included from ${fromFile})`);
+    }
     const includeRoot = mdxParseProcessor.parse(content);
-    resolveIncludesIn(includeRoot, absPath, depth + 1);
+    resolveIncludesIn(includeRoot, [...ancestors, absPath]);
     const contentNodes = includeRoot.children.filter((n) => !["yaml", "toml"].includes(n.type));
     for (const contentNode of contentNodes) stripPositions(contentNode);
     root.children.splice(i, 1, ...contentNodes);
@@ -55,6 +66,6 @@ function resolveIncludesIn(root: Root, fromFile: string, depth: number): void {
 export function remarkDeckIncludes() {
   return (tree: Root, file: { path?: string }) => {
     if (!file.path?.endsWith(".deck.mdx")) return;
-    resolveIncludesIn(tree, file.path, 0);
+    resolveIncludesIn(tree, [file.path]);
   };
 }

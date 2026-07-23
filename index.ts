@@ -1,9 +1,10 @@
 import type { AstroIntegration, ShikiConfig } from "astro";
 import mdx from "@astrojs/mdx";
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectDeckAssets } from "./src/asset-collector.ts";
+import { buildState } from "./src/build-config.ts";
 import { viteDeckWatchIncludes } from "./src/vite-plugin-watch-includes.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,6 +55,7 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
     hooks: {
       "astro:config:setup"({ updateConfig, injectRoute, config }) {
         projectRoot = fileURLToPath(config.root);
+        buildState.base = config.base;
 
         const hasMdx = config.integrations.some((i) => i.name === "@astrojs/mdx");
         if (!hasMdx) {
@@ -120,19 +122,19 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
       },
       "astro:build:done"({ dir, logger }) {
         const decksDir = resolve(projectRoot, "src/decks");
-        try {
-          const assets = collectDeckAssets(decksDir);
-          for (const asset of assets) {
-            const relPath = relative(projectRoot, asset);
-            const dest = resolve(fileURLToPath(dir), relPath);
-            mkdirSync(dirname(dest), { recursive: true });
-            copyFileSync(asset, dest);
-          }
-          if (assets.length > 0) {
-            logger.info(`Copied ${assets.length} deck asset(s) to build output.`);
-          }
-        } catch {
-          // No src/decks directory — nothing to copy
+        // No src/decks directory — nothing to copy. Anything else (a broken
+        // symlink, a permission error mid-copy) should fail the build rather
+        // than leave it green with assets missing.
+        if (!existsSync(decksDir)) return;
+        const assets = collectDeckAssets(decksDir);
+        for (const asset of assets) {
+          const relPath = relative(projectRoot, asset);
+          const dest = resolve(fileURLToPath(dir), relPath);
+          mkdirSync(dirname(dest), { recursive: true });
+          copyFileSync(asset, dest);
+        }
+        if (assets.length > 0) {
+          logger.info(`Copied ${assets.length} deck asset(s) to build output.`);
         }
       },
     },

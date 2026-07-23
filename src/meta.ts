@@ -1,5 +1,5 @@
 import { parse } from "yaml";
-import { extractFrontmatter } from "./parse-helpers.js";
+import { extractFrontmatter } from "./parse-helpers.ts";
 
 interface DeckFrontmatter {
   title?: string;

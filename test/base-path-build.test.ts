@@ -55,11 +55,19 @@ async function build(outDir: string, env: Record<string, string> = {}) {
   return parseHTML(html).document;
 }
 
-/** Every internal href/src the page emits, minus anchors and absolute URLs. */
+/**
+ * Every internal URL the page emits, minus anchors and absolute URLs. Inline
+ * `style` attributes matter as much as href/src: remarkDeckBg emits
+ * `background-image: url(...)` there, which no downstream pass rewrites.
+ */
 function internalUrls(doc: Document): string[] {
-  return [...doc.querySelectorAll("[href], [src]")]
-    .map((el) => el.getAttribute("href") ?? el.getAttribute("src") ?? "")
-    .filter((u) => u.startsWith("/") && !u.startsWith("//"));
+  const attrUrls = [...doc.querySelectorAll("[href], [src]")].map(
+    (el) => el.getAttribute("href") ?? el.getAttribute("src") ?? "",
+  );
+  const styleUrls = [...doc.querySelectorAll("[style]")].flatMap((el) =>
+    [...(el.getAttribute("style") ?? "").matchAll(/url\(['"]?([^'")]+)['"]?\)/g)].map((m) => m[1]),
+  );
+  return [...attrUrls, ...styleUrls].filter((u) => u.startsWith("/") && !u.startsWith("//"));
 }
 
 describe("deck head under a base path", () => {
@@ -83,6 +91,13 @@ describe("deck head under a base path", () => {
   it("prefixes every internal URL with the base path", () => {
     const unprefixed = internalUrls(configured).filter((u) => !u.startsWith(`${BASE}/`));
     expect(unprefixed).toEqual([]);
+  });
+
+  it("base-prefixes deck bg images and copies the asset into dist", async () => {
+    const bg = configured.querySelector(".slide-bg");
+    expect(bg?.getAttribute("style")).toContain(`url('${BASE}/src/decks/assets/bg.svg')`);
+    const copied = resolve(fixture, "dist-configured/src/decks/assets/bg.svg");
+    await expect(readFile(copied, "utf8")).resolves.toContain("<svg");
   });
 
   it("emits a base-prefixed favicon when one is configured", () => {
