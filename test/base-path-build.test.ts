@@ -61,11 +61,15 @@ async function build(outDir: string, env: Record<string, string> = {}) {
  * `background-image: url(...)` there, which no downstream pass rewrites.
  */
 function internalUrls(doc: Document): string[] {
-  const attrUrls = [...doc.querySelectorAll("[href], [src]")].map(
+  const attrUrls = Array.from(
+    doc.querySelectorAll("[href], [src]"),
     (el) => el.getAttribute("href") ?? el.getAttribute("src") ?? "",
   );
   const styleUrls = [...doc.querySelectorAll("[style]")].flatMap((el) =>
-    [...(el.getAttribute("style") ?? "").matchAll(/url\(['"]?([^'")]+)['"]?\)/g)].map((m) => m[1]),
+    Array.from(
+      (el.getAttribute("style") ?? "").matchAll(/url\(['"]?([^'")]+)['"]?\)/g),
+      (m) => m[1],
+    ),
   );
   return [...attrUrls, ...styleUrls].filter((u) => u.startsWith("/") && !u.startsWith("//"));
 }

@@ -31,7 +31,7 @@ function walk(source: string, fromFile: string, visited: Set<string>, depth: num
 export function collectIncludePaths(source: string, fromFile: string): string[] {
   const visited = new Set<string>();
   walk(source, fromFile, visited, 0);
-  return Array.from(visited);
+  return [...visited];
 }
 
 type ViteServer = {
