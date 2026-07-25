@@ -1,15 +1,45 @@
 /* Ephemeral whiteboard overlay (press W in a deck). Consuming themes can
-   restyle via the custom properties: --astromotion-wb-bg for the board
-   surface, --astromotion-wb-inks for the pen palette (a comma-separated
-   colour list, read by the whiteboard script at init). */
+   restyle via the custom properties: --astromotion-wb-mode picks a light or
+   dark board (pale surface with dark default ink, or the reverse),
+   --astromotion-wb-bg for the board surface, --astromotion-wb-bg-image for an
+   image printed over that surface, and --astromotion-wb-inks for the pen
+   palette (a comma-separated colour list). The mode and the palette are read
+   by the whiteboard script at init; the script mirrors the mode onto the
+   overlay as data-mode, which is what the chrome rules below key off. */
 
 .astromotion-whiteboard {
+  /* Toolbar chrome, in the light board's ink-on-paper direction. The dark
+     board below flips the same six knobs. */
+  --wb-scrim: rgb(0 0 0 / 5%);
+  --wb-chip-edge: rgb(255 255 255 / 90%);
+  --wb-chip-fill: rgb(255 255 255 / 80%);
+  --wb-chip-dot: rgb(0 0 0 / 65%);
+  --wb-chip-ring: rgb(0 0 0 / 15%);
+  --wb-chip-ring-active: rgb(0 0 0 / 40%);
+  --wb-hint: rgb(0 0 0 / 40%);
+
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: var(--astromotion-wb-bg, #fcfcf9);
+  background-color: var(--astromotion-wb-bg, #fcfcf9);
+  background-image: var(--astromotion-wb-bg-image, none);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   cursor: crosshair;
   touch-action: none;
+}
+
+.astromotion-whiteboard[data-mode="dark"] {
+  --wb-scrim: rgb(255 255 255 / 8%);
+  --wb-chip-edge: rgb(0 0 0 / 55%);
+  --wb-chip-fill: rgb(0 0 0 / 45%);
+  --wb-chip-dot: rgb(255 255 255 / 75%);
+  --wb-chip-ring: rgb(255 255 255 / 20%);
+  --wb-chip-ring-active: rgb(255 255 255 / 55%);
+  --wb-hint: rgb(255 255 255 / 45%);
+
+  background-color: var(--astromotion-wb-bg, #131313);
 }
 
 .astromotion-whiteboard[hidden] {
@@ -33,7 +63,7 @@
   gap: 0.6rem;
   padding: 0.5rem 0.9rem;
   border-radius: 999px;
-  background: rgb(0 0 0 / 5%);
+  background: var(--wb-scrim);
   translate: -50% 0;
 }
 
@@ -41,17 +71,17 @@
   width: 1.6rem;
   height: 1.6rem;
   padding: 0;
-  border: 2px solid rgb(255 255 255 / 90%);
+  border: 2px solid var(--wb-chip-edge);
   border-radius: 50%;
   background: var(--swatch-color);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 15%);
+  box-shadow: 0 0 0 1px var(--wb-chip-ring);
   cursor: pointer;
   transition: scale 0.1s ease-out;
 }
 
 .astromotion-whiteboard-swatch[aria-pressed="true"] {
   scale: 1.25;
-  box-shadow: 0 0 0 2px rgb(0 0 0 / 40%);
+  box-shadow: 0 0 0 2px var(--wb-chip-ring-active);
 }
 
 /* Brush size buttons: same chip as the swatches, with a centred dot at half
@@ -63,10 +93,10 @@
   width: 1.6rem;
   height: 1.6rem;
   padding: 0;
-  border: 2px solid rgb(255 255 255 / 90%);
+  border: 2px solid var(--wb-chip-edge);
   border-radius: 50%;
-  background: rgb(255 255 255 / 80%);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 15%);
+  background: var(--wb-chip-fill);
+  box-shadow: 0 0 0 1px var(--wb-chip-ring);
   cursor: pointer;
   transition: scale 0.1s ease-out;
 }
@@ -76,17 +106,17 @@
   width: calc(var(--dot-size) / 2);
   height: calc(var(--dot-size) / 2);
   border-radius: 50%;
-  background: rgb(0 0 0 / 65%);
+  background: var(--wb-chip-dot);
 }
 
 .astromotion-whiteboard-size[aria-pressed="true"] {
   scale: 1.25;
-  box-shadow: 0 0 0 2px rgb(0 0 0 / 40%);
+  box-shadow: 0 0 0 2px var(--wb-chip-ring-active);
 }
 
 .astromotion-whiteboard-hint {
   margin-left: 0.4rem;
-  color: rgb(0 0 0 / 40%);
+  color: var(--wb-hint);
   font-size: 0.75rem;
   font-family: system-ui, sans-serif;
   user-select: none;

@@ -1,20 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
   applyAction,
+  backgroundImageUrl,
   beginStroke,
   boardFilename,
   BRUSH_SIZES,
+  coverRect,
   createWhiteboard,
   endStroke,
   extendStroke,
-  INK_PALETTE,
+  INK_PALETTES,
   keyAction,
   MAX_INKS,
   resolveInkPalette,
+  resolveMode,
   type WhiteboardState,
 } from "../src/whiteboard/core.ts";
 
-const PALETTE_SIZE = INK_PALETTE.length;
+const PALETTE_SIZE = INK_PALETTES.light.length;
 
 function openBoard(): WhiteboardState {
   return applyAction(createWhiteboard(), { type: "open" }, PALETTE_SIZE);
@@ -33,10 +36,32 @@ describe("createWhiteboard", () => {
 });
 
 const inks = (value: string) => (name: string) => (name === "--astromotion-wb-inks" ? value : "");
+const mode = (value: string) => (name: string) => (name === "--astromotion-wb-mode" ? value : "");
+
+describe("resolveMode", () => {
+  it("defaults to a light board when the theme says nothing", () => {
+    expect(resolveMode(mode(""))).toBe("light");
+  });
+
+  it("reads dark, however the theme spaced or cased it", () => {
+    expect(resolveMode(mode("dark"))).toBe("dark");
+    expect(resolveMode(mode("  Dark "))).toBe("dark");
+  });
+
+  it("treats anything it doesn't recognise as light", () => {
+    expect(resolveMode(mode("light"))).toBe("light");
+    expect(resolveMode(mode("charcoal"))).toBe("light");
+  });
+});
 
 describe("resolveInkPalette", () => {
   it("falls back to the default palette when the theme defines no inks", () => {
-    expect(resolveInkPalette(inks(""))).toEqual(INK_PALETTE);
+    expect(resolveInkPalette(inks(""))).toEqual(INK_PALETTES.light);
+  });
+
+  it("falls back to the mode's palette, so a dark board opens on pale ink", () => {
+    expect(resolveInkPalette(inks(""), "dark")).toEqual(INK_PALETTES.dark);
+    expect(resolveInkPalette(inks("#111, #222"), "dark")).toEqual(["#111", "#222"]);
   });
 
   it("splits the theme's comma-separated list, whatever its length", () => {
@@ -64,6 +89,58 @@ describe("resolveInkPalette", () => {
   it("caps the palette at MAX_INKS (the digit keys)", () => {
     const twelve = Array.from({ length: 12 }, (_, i) => `#${i}${i}${i}`).join(", ");
     expect(resolveInkPalette(inks(twelve))).toHaveLength(MAX_INKS);
+  });
+});
+
+describe("backgroundImageUrl", () => {
+  it("pulls the url out of a computed background-image", () => {
+    expect(backgroundImageUrl(`url("/decks/_astro/board.avif")`)).toBe("/decks/_astro/board.avif");
+    expect(backgroundImageUrl("url('board.avif')")).toBe("board.avif");
+    expect(backgroundImageUrl("url(board.avif)")).toBe("board.avif");
+  });
+
+  it("returns null for values the export can't composite", () => {
+    expect(backgroundImageUrl("none")).toBeNull();
+    expect(backgroundImageUrl("")).toBeNull();
+    expect(backgroundImageUrl("linear-gradient(#000, #fff)")).toBeNull();
+  });
+});
+
+describe("coverRect", () => {
+  it("centres the overflow when the source is wider than the box", () => {
+    expect(coverRect({ width: 200, height: 50 }, { width: 100, height: 100 })).toEqual({
+      x: -150,
+      y: 0,
+      width: 400,
+      height: 100,
+    });
+  });
+
+  it("centres the overflow when the source is taller than the box", () => {
+    expect(coverRect({ width: 50, height: 200 }, { width: 100, height: 100 })).toEqual({
+      x: 0,
+      y: -150,
+      width: 100,
+      height: 400,
+    });
+  });
+
+  it("fills the box exactly when the aspect ratios match", () => {
+    expect(coverRect({ width: 1600, height: 900 }, { width: 800, height: 450 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 450,
+    });
+  });
+
+  it("falls back to the box for a source with no intrinsic size", () => {
+    expect(coverRect({ width: 0, height: 0 }, { width: 100, height: 60 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 60,
+    });
   });
 });
 

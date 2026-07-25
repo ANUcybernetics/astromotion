@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-25 (v0.17.0)
+
+### Light or dark whiteboard, optionally on a background image
+
+The whiteboard (press **W**) was always a pale board with near-black as the
+opening pen colour. Themes can now flip it with `--astromotion-wb-mode: dark`: a
+near-black surface, a pale default ink, and toolbar chrome inverted to match
+(the mode is resolved at init and mirrored onto the overlay as `data-mode`,
+since CSS can't branch on a custom property's value). Light stays the default,
+so existing themes are untouched.
+
+`--astromotion-wb-bg-image` prints an image over the board surface, sized like a
+`cover` background — grid paper, a staff, a house-style backdrop. It's the
+caller's job to supply artwork suited to the mode. The saved PNG composites the
+image too, so a downloaded board matches the screen; a cross-origin image
+without CORS headers is skipped rather than tainting the export.
+
+Internal: `INK_PALETTE` became `INK_PALETTES` (a light/dark pair) and
+`resolveInkPalette` takes the mode as a second argument, defaulting to light.
+Both are `src/whiteboard/core.ts` internals rather than package exports.
+
 ## 2026-07-23 (v0.16.2)
 
 ### Internal: one engine for the single-directive plugins
@@ -7,8 +28,8 @@
 `remarkDeckClasses`, `remarkDeckConditionals`, `remarkDeckIds`,
 `remarkDeckAnimate` and `remarkDeckNotes` were five copies of the same
 walk-sections/extract-directive/apply loop. They now share a
-`sectionDirective(parse, apply)` helper; every named export (and its
-behaviour) is unchanged.
+`sectionDirective(parse, apply)` helper; every named export (and its behaviour)
+is unchanged.
 
 ## 2026-07-23 (v0.16.1)
 

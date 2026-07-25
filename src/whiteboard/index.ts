@@ -12,14 +12,17 @@
 
 import {
   applyAction,
+  backgroundImageUrl,
   beginStroke,
   boardFilename,
   BRUSH_SIZES,
+  coverRect,
   createWhiteboard,
   endStroke,
   extendStroke,
   keyAction,
   resolveInkPalette,
+  resolveMode,
   type WhiteboardAction,
   type WhiteboardState,
 } from "./core";
@@ -54,10 +57,14 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
 
   document.body.appendChild(overlay);
 
-  // Consuming themes define their own palette via custom properties (see
-  // resolveInkPalette); themes are static, so resolve once.
+  // Consuming themes define the mode and their own palette via custom
+  // properties (see resolveMode / resolveInkPalette); themes are static, so
+  // resolve once. The mode lands on the overlay as a data attribute, which is
+  // what the CSS keys the surface and toolbar chrome off.
   const styles = getComputedStyle(overlay);
-  const palette = resolveInkPalette((name) => styles.getPropertyValue(name));
+  const mode = resolveMode((name) => styles.getPropertyValue(name));
+  overlay.dataset.mode = mode;
+  const palette = resolveInkPalette((name) => styles.getPropertyValue(name), mode);
 
   const toolbar = document.createElement("div");
   toolbar.className = "astromotion-whiteboard-toolbar";
@@ -149,17 +156,48 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
     scheduleRender();
   };
 
+  // The theme's board background image, if it set one. Loaded lazily on the
+  // first save and kept, so a second save doesn't re-fetch. crossOrigin is
+  // set so a CORS-enabled remote image composites rather than tainting the
+  // canvas; one served without the headers just fails to load, and the save
+  // falls back to the surface colour alone.
+  let backgroundImage: Promise<HTMLImageElement | null> | null = null;
+  const loadBackgroundImage = () => {
+    backgroundImage ??= new Promise<HTMLImageElement | null>((resolve) => {
+      const url = backgroundImageUrl(styles.backgroundImage);
+      if (!url) {
+        resolve(null);
+        return;
+      }
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.addEventListener("load", () => resolve(image));
+      image.addEventListener("error", () => resolve(null));
+      image.src = url;
+    });
+    return backgroundImage;
+  };
+
   // Save the board as a PNG: composite the (transparent) stroke canvas onto
-  // the board surface colour, then hand it to the browser as a download.
-  const downloadBoard = () => {
+  // the board surface --- colour, then the background image drawn the way CSS
+  // covers the viewport with it --- then hand it to the browser as a download.
+  const downloadBoard = async () => {
     render(); // flush any pending frame so the file matches the screen
     const out = document.createElement("canvas");
     out.width = canvas.width;
     out.height = canvas.height;
     const outCtx = out.getContext("2d");
     if (!outCtx || out.width === 0) return;
-    outCtx.fillStyle = getComputedStyle(overlay).backgroundColor;
+    outCtx.fillStyle = styles.backgroundColor;
     outCtx.fillRect(0, 0, out.width, out.height);
+    const image = await loadBackgroundImage();
+    if (image) {
+      const rect = coverRect(
+        { width: image.naturalWidth, height: image.naturalHeight },
+        { width: out.width, height: out.height },
+      );
+      outCtx.drawImage(image, rect.x, rect.y, rect.width, rect.height);
+    }
     outCtx.drawImage(canvas, 0, 0);
     out.toBlob((blob) => {
       if (!blob) return;
@@ -188,7 +226,7 @@ export function initWhiteboard(deck: RevealKeyBindings): void {
       if (!action) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (action.type === "download") downloadBoard();
+      if (action.type === "download") void downloadBoard();
       else dispatch(action);
     },
     true,

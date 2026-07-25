@@ -38,9 +38,18 @@ export type WhiteboardAction =
   | { type: "download" }
   | { type: "swallow" };
 
-// Default whiteboard-marker ink, used when the consuming theme doesn't
-// define a palette of its own (see resolveInkPalette).
-export const INK_PALETTE = ["#1d1d1f", "#d62828", "#1d6fd6", "#1e9e4a"];
+// Light or dark board. The mode swaps the default surface and the default
+// ink palette --- dark ink on a pale board, or pale ink on a dark one --- and
+// flips the toolbar chrome (that half lives in CSS, keyed off data-mode).
+export type WhiteboardMode = "light" | "dark";
+
+// Default whiteboard-marker inks per mode, used when the consuming theme
+// doesn't define a palette of its own (see resolveInkPalette). The first ink
+// is the pen the board opens with, so it carries the mode's contrast.
+export const INK_PALETTES: Record<WhiteboardMode, string[]> = {
+  light: ["#1d1d1f", "#d62828", "#1d6fd6", "#1e9e4a"],
+  dark: ["#f4f4ef", "#ff6b6b", "#5eb0ff", "#4ade80"],
+};
 
 // Brush sizes in CSS px (pressure thins/thickens around each): fine for
 // writing, broad for highlighting. The two digit keys after the palette
@@ -72,13 +81,45 @@ function splitColorList(value: string): string[] {
   return colors.map((color) => color.trim()).filter(Boolean);
 }
 
+// Resolve the board mode from the theme: --astromotion-wb-mode is `light`
+// (the default, and the historical behaviour) or `dark`.
+export function resolveMode(readVar: (name: string) => string): WhiteboardMode {
+  return readVar("--astromotion-wb-mode").trim().toLowerCase() === "dark" ? "dark" : "light";
+}
+
 // Resolve the ink palette from the theme: --astromotion-wb-inks is a single
 // comma-separated colour list which replaces the default palette entirely,
 // so themes control both the colours and how many there are (capped at
 // MAX_INKS). The readVar indirection keeps this testable without a DOM.
-export function resolveInkPalette(readVar: (name: string) => string): string[] {
+export function resolveInkPalette(
+  readVar: (name: string) => string,
+  mode: WhiteboardMode = "light",
+): string[] {
   const inks = splitColorList(readVar("--astromotion-wb-inks"));
-  return inks.length > 0 ? inks.slice(0, MAX_INKS) : INK_PALETTE;
+  return inks.length > 0 ? inks.slice(0, MAX_INKS) : INK_PALETTES[mode];
+}
+
+// Pull the first url() out of a computed `background-image` value. Gradients
+// and `none` yield null: the board still paints them on screen, but the PNG
+// export can only composite a real image.
+export function backgroundImageUrl(value: string): string | null {
+  const match = /url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/.exec(value);
+  const url = (match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+  return url === "" ? null : url;
+}
+
+// `background-size: cover` in numbers, for replaying the on-screen board
+// background into the export canvas: scale the source to cover the box,
+// then centre the overflow.
+export function coverRect(
+  source: { width: number; height: number },
+  box: { width: number; height: number },
+): { x: number; y: number; width: number; height: number } {
+  if (source.width <= 0 || source.height <= 0) return { x: 0, y: 0, ...box };
+  const scale = Math.max(box.width / source.width, box.height / source.height);
+  const width = source.width * scale;
+  const height = source.height * scale;
+  return { x: (box.width - width) / 2, y: (box.height - height) / 2, width, height };
 }
 
 export function createWhiteboard(): WhiteboardState {

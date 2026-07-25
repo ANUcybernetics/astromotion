@@ -20,9 +20,9 @@ markdown processor (see the breaking-change note in CHANGELOG).
 ### .deck.mdx format
 
 Decks are authored as `.deck.mdx` files. Astro's MDX integration processes them
-through the standard remark/rehype pipeline, plus the ten custom remark
-plugins (in `plugins/`). The result is an Astro component whose default export
-is the slide content.
+through the standard remark/rehype pipeline, plus the ten custom remark plugins
+(in `plugins/`). The result is an Astro component whose default export is the
+slide content.
 
 **Plugin order matters** (each runs in sequence on the remark AST):
 
@@ -124,7 +124,12 @@ deployments --- this is intentional to fail early rather than mask content bugs.
   canvas; the drawing survives toggling (only `C` clears) but lives in memory
   only, and `D` downloads it as a timestamped PNG. Themes define the ink palette
   as a single comma-separated `--astromotion-wb-inks` custom property (up to
-  nine colours, split on top-level commas).
+  nine colours, split on top-level commas), and pick a light or dark board with
+  `--astromotion-wb-mode`. The mode is resolved at init and mirrored onto the
+  overlay as `data-mode`, which is the hook the CSS uses for the surface and
+  toolbar chrome --- CSS can't branch on a custom property's value, and the
+  deck's own `color-scheme: dark` rules out `light-dark()` here. The mode
+  supplies defaults only, so a theme that sets its own inks sets them to suit.
 
 ## Theming
 

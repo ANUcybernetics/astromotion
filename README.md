@@ -360,19 +360,46 @@ closes it. The drawing survives toggling back to the slides --- flip to the deck
 and return and it's still there --- but it lives in memory only: **C** clears
 it, and a page reload discards it.
 
-Consuming themes can restyle the board via two CSS custom properties:
-`--astromotion-wb-bg` sets the board surface, and `--astromotion-wb-inks` is a
-comma-separated colour list defining the pen palette --- any length from one to
-seven inks (the digit keys, minus the two the brush sizes claim), replacing the
-built-in four-colour palette entirely. Any CSS colour syntax works, including
-`var()` references and legacy comma-form `rgb()`. For example, ANU-flavoured
-inks:
+Consuming themes can restyle the board via four CSS custom properties:
+
+- `--astromotion-wb-mode` --- `light` (the default) or `dark`. It picks which
+  way round the board runs: a pale surface with near-black as the opening pen
+  colour, or a near-black surface with pale ink. The mode also flips the toolbar
+  chrome, so the swatches stay legible either way.
+- `--astromotion-wb-bg` --- the board surface colour, overriding the mode's
+  default (`#fcfcf9` light, `#131313` dark).
+- `--astromotion-wb-bg-image` --- an image printed over that surface, sized like
+  a `cover` background. It's the caller's job to supply artwork that suits the
+  mode: a mostly-dark image for a dark board, a mostly-pale one for a light
+  board. The image is composited into the saved PNG too, so a downloaded board
+  looks like the one on screen (a cross-origin image needs CORS headers, or it
+  is skipped and the export falls back to the surface colour).
+- `--astromotion-wb-inks` --- a comma-separated colour list defining the pen
+  palette, any length from one to seven inks (the digit keys, minus the two the
+  brush sizes claim), replacing the mode's built-in four-colour palette
+  entirely. Any CSS colour syntax works, including `var()` references and legacy
+  comma-form `rgb()`.
+
+Note that the mode only chooses the _defaults_: if your theme sets its own inks,
+switching to `dark` won't recolour them, so set a pale first ink to match. For
+example, ANU-flavoured inks on a light board:
 
 ```css
 :root {
   --astromotion-wb-bg: var(--anu-white);
   --astromotion-wb-inks:
     var(--anu-dark-grey), var(--anu-gold), var(--anu-copper), var(--anu-teal);
+}
+```
+
+and the same palette on a dark board with a background image:
+
+```css
+:root {
+  --astromotion-wb-mode: dark;
+  --astromotion-wb-bg-image: url("./assets/whiteboard-bg.avif");
+  --astromotion-wb-inks:
+    var(--anu-white), var(--anu-gold), var(--anu-copper), var(--anu-teal);
 }
 ```
 
