@@ -15,7 +15,11 @@ so existing themes are untouched.
 `cover` background — grid paper, a staff, a house-style backdrop. It's the
 caller's job to supply artwork suited to the mode. The saved PNG composites the
 image too, so a downloaded board matches the screen; a cross-origin image
-without CORS headers is skipped rather than tainting the export.
+without CORS headers is skipped rather than tainting the export. For an asset
+beside your theme file, set `background-image` on `.astromotion-whiteboard`
+directly instead — a relative `url()` inside a custom property resolves against
+where the `var()` is used, not where it's declared, which lightningcss rejects
+as ambiguous.
 
 Internal: `INK_PALETTE` became `INK_PALETTES` (a light/dark pair) and
 `resolveInkPalette` takes the mode as a second argument, defaulting to light.

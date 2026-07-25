@@ -373,7 +373,10 @@ Consuming themes can restyle the board via four CSS custom properties:
   mode: a mostly-dark image for a dark board, a mostly-pale one for a light
   board. The image is composited into the saved PNG too, so a downloaded board
   looks like the one on screen (a cross-origin image needs CORS headers, or it
-  is skipped and the export falls back to the surface colour).
+  is skipped and the export falls back to the surface colour). Use it for a URL
+  that needs no bundler resolution --- a `public/` path, an absolute URL, a data
+  URI; for an asset sitting beside your theme file, set `background-image`
+  directly (see below).
 - `--astromotion-wb-inks` --- a comma-separated colour list defining the pen
   palette, any length from one to seven inks (the digit keys, minus the two the
   brush sizes claim), replacing the mode's built-in four-colour palette
@@ -392,14 +395,22 @@ example, ANU-flavoured inks on a light board:
 }
 ```
 
-and the same palette on a dark board with a background image:
+and the same palette on a dark board carrying a bundled background image. The
+image is set as a plain rule on `.astromotion-whiteboard` rather than through
+the custom property, because a relative `url()` inside a custom property
+resolves against wherever the `var()` is _used_ (astromotion's own CSS), not
+where it's declared --- lightningcss rejects it outright as ambiguous. Declared
+this way your bundler hashes and base-prefixes it like any other asset:
 
 ```css
 :root {
   --astromotion-wb-mode: dark;
-  --astromotion-wb-bg-image: url("./assets/whiteboard-bg.avif");
   --astromotion-wb-inks:
     var(--anu-white), var(--anu-gold), var(--anu-copper), var(--anu-teal);
+}
+
+.astromotion-whiteboard {
+  background-image: url("./assets/whiteboard-bg.avif");
 }
 ```
 
