@@ -74,6 +74,25 @@ all `*.deck.mdx` files at build time and generate one static path per deck. Each
 path receives the deck's default export (`Content`) and frontmatter as props.
 Reveal.js is initialised inline in the route's `<script>` tag.
 
+### Bins (`scripts/`)
+
+Both bins --- `astromotion-pdf` (`scripts/deck-pdf.mjs`) and `astromotion-text`
+(`scripts/deck-text.mjs`, a thin CLI over `src/deck-text.mjs`) --- must be plain
+JavaScript importing only plain JavaScript. Node refuses to strip types from
+files under `node_modules`, which is where the package lives once a consumer
+installs it, so a `.ts` bin (or a `.mjs` bin importing `plugins/*.ts`) fails at
+`npx` time even though it runs fine from a checkout.
+
+That's why `src/deck-text.mjs` carries its own copies of the directive parsers
+and the `@include` walk instead of importing `src/parse-helpers.ts` and
+`plugins/remark-deck-includes.ts`. `test/deck-text.test.ts` pins the copies to
+the originals over a table of directive strings: add or change a directive in
+`parse-helpers.ts` without mirroring it there and that test fails.
+
+The text export works on the mdast source tree (parse → splice includes → strip
+the visual layer → `remark-stringify`), so it needs no build, preview server or
+browser --- unlike the PDF export, which drives a real one.
+
 ### Directive syntax
 
 MDX does not support HTML comments (`<!-- -->`). Directives use MDX expression

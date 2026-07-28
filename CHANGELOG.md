@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-28 (v0.18.0)
+
+### `astromotion-text`: export a deck's text as markdown
+
+A second bin, for reading a deck away from the screen:
+
+```sh
+npx astromotion-text src/decks/week-3.deck.mdx
+```
+
+It writes `week-3.md` --- headings, prose, lists, code and tables, with the
+visual layer stripped out. `@include` partials are spliced in the same way the
+build does it, so the export is the whole deck rather than the deck file.
+Images, backgrounds, QR codes and components leave a one-line marker
+(`(background image: bg-title.avif)`) so an image-only slide doesn't print
+blank; speaker notes and authoring comments become labelled blockquotes.
+`--no-placeholders`, `--no-notes`, `--no-comments`, `--no-title` and `--stdout`
+adjust that.
+
+Unlike `astromotion-pdf` this runs straight on the source file: no build, no
+preview server, no browser. `deckToMarkdown(deckPath, options)` is exported from
+`astromotion/src/deck-text.mjs` for programmatic use.
+
 ## 2026-07-28 (v0.17.1)
 
 ### PDF exports no longer lose overlay and background rendering

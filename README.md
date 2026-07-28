@@ -548,6 +548,56 @@ hundreds of duplicate trailing pages. If a deck exports far more slides than it
 has, hide the widget for the export (or gate it behind an `_if:` query param)
 rather than raising the cap.
 
+## Text export
+
+For reading a deck away from the screen --- printing it out, marking it up with
+a pen, typing the edits back in --- `astromotion-text` writes the deck's text as
+plain markdown:
+
+```sh
+npx astromotion-text src/decks/week-3.deck.mdx        # writes week-3.md
+npx astromotion-text src/decks/week-3.deck.mdx --stdout | less
+```
+
+Unlike the PDF export this runs straight on the source file: no build, no
+preview server, no browser. It parses the deck, splices in `@include` partials
+exactly as the build does (so the export is the whole deck, not just the deck
+file), drops everything that only exists to be looked at, and serialises what's
+left. Slides stay separated by `---`.
+
+Kept: headings, prose, lists, code blocks, tables, links, blockquotes. Replaced
+with a one-line marker so an image-only slide doesn't print blank:
+
+| In the deck                  | In the export                    |
+| ---------------------------- | -------------------------------- |
+| `![bg](./assets/title.avif)` | `(background image: title.avif)` |
+| `![a diagram](./x.png)`      | `(image: a diagram)`             |
+| `![qr](https://example.com)` | `(qr: <https://example.com>)`    |
+| `<CourseTimeline />`         | `(component: CourseTimeline)`    |
+| `{/* notes: … */}`           | `> **notes:** …`                 |
+| `{/* a note to self */}`     | `> **comment:** …`               |
+
+Dropped entirely: `import` statements and the presentation-only directives
+(`_class`, `_id`, `_if`, `_animate`). A directive astromotion doesn't recognise
+--- one your own remark plugin handles --- survives as a comment rather than
+being silently swallowed.
+
+Options:
+
+- `--stdout` --- write to stdout instead of `<slug>.md`
+- `--no-notes` --- drop speaker notes
+- `--no-comments` --- drop authoring comments
+- `--no-placeholders` --- drop the `(image: …)` / `(component: …)` markers
+- `--no-title` --- don't lead with the frontmatter title as an `h1`
+
+The same thing is available programmatically:
+
+```js
+import { deckToMarkdown } from "astromotion/src/deck-text.mjs";
+
+const md = deckToMarkdown("src/decks/week-3.deck.mdx", { comments: false });
+```
+
 ## Exports
 
 The package exports:
@@ -557,6 +607,8 @@ The package exports:
   exported for use when you manage `@astrojs/mdx` yourself
 - **`parseDeckFrontmatter(raw, slug?)`** --- parse YAML frontmatter from a deck
   file (useful for listing pages)
+- **`deckToMarkdown(deckPath, options?)`** (from
+  `astromotion/src/deck-text.mjs`) --- the text export above, as a function
 
 ## Migration from `.deck.md` / `.deck.svelte`
 

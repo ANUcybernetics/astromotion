@@ -1,0 +1,46 @@
+---
+title: Text Export
+description: Fixture for the markdown text export
+---
+
+import Widget from "../components/Widget.astro";
+
+{/* Authoring note to self */}
+
+{/* _class: hero */}
+
+# Title slide
+
+![bg](./assets/title.avif)
+
+---
+
+{/* _id: agenda */}
+{/* _animate */}
+
+## Agenda
+
+- first point with an ![inline picture](./assets/inline.png) in it
+- second point
+
+{/* notes: Say this <em>slowly</em>, then pause. */}
+
+---
+
+{/* @include ./includes/with-frontmatter.mdx */}
+
+<Widget client:load />
+
+![qr](https://example.com/handout)
+
+---
+
+## Code and tables
+
+```js
+const answer = 42;
+```
+
+| Sensor | Signal |
+| ------ | ------ |
+| tests  | fast   |
