@@ -297,6 +297,15 @@ if (compress) {
       "-sDEVICE=pdfwrite",
       "-dCompatibilityLevel=1.4",
       "-dPDFSETTINGS=/ebook",
+      // /ebook implies a colour-conversion strategy that re-encodes ICC-based
+      // images. Where a slide layers a semi-transparent overlay over one --- a
+      // `.hero` scrim over a full-bleed background --- that conversion
+      // flattens the transparency group and paints the overlay OPAQUE, so the
+      // artwork under it vanishes and the slide prints as a flat wash with
+      // only its (higher stacking context) text surviving. Leaving colours
+      // alone preserves the group; it costs ~15% file size, and the slides
+      // still downsample normally.
+      "-dColorConversionStrategy=/LeaveColorUnchanged",
       "-dNOPAUSE",
       "-dQUIET",
       "-dBATCH",

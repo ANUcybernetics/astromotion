@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-07-28 (v0.18.1)
+
+### PDF export: stop Ghostscript blanking slides that layer transparency over an image
+
+A slide that puts a semi-transparent overlay over a full-bleed background — a
+`.hero` scrim like astro-theme-university's
+`linear-gradient(to top, rgb(0 0 0 / 80%), rgb(0 0 0 / 20%))` — exported as a
+flat grey-to-black wash with the artwork gone, while the slide's text (a higher
+stacking context) survived. On a deck with a section divider per speaker that is
+twenty-odd ruined slides, and the surviving text made the export look plausible
+enough to send.
+
+The cause was the Ghostscript compression step, not the browser: `/ebook`
+implies a colour-conversion strategy that re-encodes ICC-based images, and that
+conversion flattens the transparency group and paints the overlay opaque.
+`astromotion-pdf` now passes `-dColorConversionStrategy=/LeaveColorUnchanged`,
+which preserves the group. Measured on a 182-slide deck: mean luminance on a
+divider slide goes from 0.012 (broken) back to 0.068, matching the uncompressed
+export and the live deck's 0.072. File size grows ~15%; downsampling is
+unaffected.
+
+Worth knowing if you export decks: this was invisible to any check that looked
+only at the uncompressed decktape output, and the failure is silent — no
+warning, no error, just darker slides.
+
 ## 2026-07-28 (v0.18.0)
 
 ### `astromotion-text`: export a deck's text as markdown
@@ -25,24 +50,27 @@ preview server, no browser. `deckToMarkdown(deckPath, options)` is exported from
 
 ## 2026-07-28 (v0.17.1)
 
-### PDF exports no longer lose overlay and background rendering
+> **Correction (v0.18.1).** This entry originally claimed to fix hero slides
+> printing as a flat wash with their background artwork missing. It did not —
+> the diagnosis was wrong. The culprit was the Ghostscript compression step, not
+> Chrome's colour adjustment; see v0.18.1 for the actual fix. The measurement
+> that produced the wrong conclusion compared a Ghostscript-compressed export
+> against uncompressed test output, so the difference came from the compression
+> rather than the CSS. Both scopings produce identical raw decktape output.
+
+### `print-color-adjust` now applies in the decktape export path
 
 `theme/print.css` applied `print-color-adjust: exact` only under
 `html.reveal-print`, the class Reveal sets in its `?print-pdf` view. But
 `astromotion-pdf`'s default path drives decktape, which prints the **ordinary**
 deck view one slide at a time and never sets that class — so the rule never
-applied and Chrome fell back to its default `economy` adjustment.
+applied there.
 
-The visible effect: semi-transparent overlays flattened to opaque and slide
-background images dropped. A hero scrim like astro-theme-university's
-`linear-gradient(to top, rgb(0 0 0 / 80%), rgb(0 0 0 / 20%))` printed as a solid
-grey-to-black wash, blotting out the artwork on every divider slide while the
-title text (a higher stacking context) survived — so exports looked plausible
-enough to ship.
-
-The rule is now scoped to `.reveal, .reveal *` and applies in both paths.
-`print-color-adjust` is inert outside paged contexts, so on-screen rendering is
-unchanged.
+The rule is now scoped to `.reveal, .reveal *` and applies in both paths. This
+is a correctness tidy-up rather than a fix for any observed symptom: measured on
+a deck with a semi-transparent hero scrim over full-bleed backgrounds, raw
+decktape output is identical either way. `print-color-adjust` is inert outside
+paged contexts, so on-screen rendering is unchanged.
 
 Also documented, in the script header and README: `--size` sets the browser
 viewport, not the slide canvas — the canvas is fixed at 1280x720 and Reveal
