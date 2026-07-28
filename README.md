@@ -531,6 +531,23 @@ invoke decktape by hand, do the same:
 npx decktape generic --key=ArrowRight --size=1280x720 http://localhost:4321/decks/my-talk/ output.pdf
 ```
 
+`--size` sets the browser viewport, not the slide canvas: the canvas is fixed at
+1280x720 and Reveal scales it to fit, so a larger viewport does **not** sharpen
+the export. Chrome embeds slide background images at their source resolution
+either way (measured identical at 1280x720 and 1920x1080) and text is vector ---
+only the PDF's nominal page size in points changes. Keep any override at 16:9;
+another ratio letterboxes the canvas into the page.
+
+### Runaway exports
+
+The `generic` plugin stops when a captured frame repeats, so any
+always-animating element defeats that check. A fixed overlay on `<body>` with a
+`setInterval` redraw --- a talk timer, a live clock, a marquee --- makes every
+frame differ, and the export runs to `DECKTAPE_MAX_SLIDES`, silently appending
+hundreds of duplicate trailing pages. If a deck exports far more slides than it
+has, hide the widget for the export (or gate it behind an `_if:` query param)
+rather than raising the cap.
+
 ## Exports
 
 The package exports:

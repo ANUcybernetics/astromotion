@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-07-28 (v0.17.1)
+
+### PDF exports no longer lose overlay and background rendering
+
+`theme/print.css` applied `print-color-adjust: exact` only under
+`html.reveal-print`, the class Reveal sets in its `?print-pdf` view. But
+`astromotion-pdf`'s default path drives decktape, which prints the **ordinary**
+deck view one slide at a time and never sets that class — so the rule never
+applied and Chrome fell back to its default `economy` adjustment.
+
+The visible effect: semi-transparent overlays flattened to opaque and slide
+background images dropped. A hero scrim like astro-theme-university's
+`linear-gradient(to top, rgb(0 0 0 / 80%), rgb(0 0 0 / 20%))` printed as a solid
+grey-to-black wash, blotting out the artwork on every divider slide while the
+title text (a higher stacking context) survived — so exports looked plausible
+enough to ship.
+
+The rule is now scoped to `.reveal, .reveal *` and applies in both paths.
+`print-color-adjust` is inert outside paged contexts, so on-screen rendering is
+unchanged.
+
+Also documented, in the script header and README: `--size` sets the browser
+viewport, not the slide canvas — the canvas is fixed at 1280x720 and Reveal
+scales it to fit, so a larger viewport does not sharpen the export (background
+images embed at source resolution either way; measured identical at 1280x720 and
+1920x1080). And a runaway-export note: the `generic` plugin stops when a frame
+repeats, so any always-animating element — a timer, a live clock — makes every
+frame differ and drives the export to `DECKTAPE_MAX_SLIDES` with hundreds of
+duplicate trailing pages.
+
 ## 2026-07-25 (v0.17.0)
 
 ### Light or dark whiteboard, optionally on a background image

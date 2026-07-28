@@ -29,6 +29,14 @@
 //   DECKTAPE_MAX_SLIDES   safety cap on exported slides (default 500); the
 //                         generic plugin stops at the last slide on its own
 //   DECKTAPE_VERSION      decktape version npx runs (default 3.16.1)
+//
+// Runaway exports: the generic plugin stops when a captured frame repeats, so
+// ANY always-animating element defeats it --- a fixed overlay on <body> with a
+// `setInterval` redraw (a talk timer, a live clock, a marquee) makes every
+// frame differ and the export grinds to DECKTAPE_MAX_SLIDES, silently emitting
+// hundreds of duplicate trailing pages. If a deck exports far more slides than
+// it has, that's the cause: hide the widget for the export (or gate it behind
+// an `_if:` query param) rather than raising the cap.
 
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readdirSync, renameSync, unlinkSync } from "node:fs";

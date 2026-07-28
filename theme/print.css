@@ -42,8 +42,19 @@ html.reveal-print .astromotion-whiteboard {
   display: none !important;
 }
 
-html.reveal-print * {
-  /* reveal.css ships only the -webkit- prefixed form, so Firefox drops slide
-     background colours when printing */
+/* Deliberately NOT scoped to `html.reveal-print`: decktape (see
+   scripts/deck-pdf.mjs) prints the ORDINARY deck view one slide at a time and
+   never sets that class, so a scoped rule left it on Chrome's default
+   `economy`. That flattens semi-transparent overlays to opaque and drops slide
+   background images — a `.hero` scrim like astro-theme-university's
+   `linear-gradient(to top, rgb(0 0 0 / 80%), rgb(0 0 0 / 20%))` printed as a
+   solid grey-to-black wash, blotting out the artwork on every divider slide.
+   `print-color-adjust` is inert outside paged contexts, so applying it always
+   costs nothing on screen.
+
+   reveal.css ships only the -webkit- prefixed form, so Firefox drops slide
+   background colours when printing. */
+.reveal,
+.reveal * {
   print-color-adjust: exact;
 }
