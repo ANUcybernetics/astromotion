@@ -30,6 +30,17 @@
   overflow: auto;
 }
 
+/* A flex item whose overflow is not `visible` has an automatic minimum size
+   of zero, so on a slide with too much content the flex algorithm shrinks it
+   below its own contents rather than letting anything overflow. A code block
+   is exactly such an item: it collapses to its padding and the last command
+   is silently not on screen, with nothing about the rendered slide saying so.
+   Pin the children so an overfull slide overflows visibly instead --- loud is
+   the right failure mode for a deck, and `astromotion-check` can see it. */
+.split-content > * {
+  flex-shrink: 0;
+}
+
 .qr-code {
   display: flex;
   justify-content: center;

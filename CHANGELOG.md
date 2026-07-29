@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-29 (v0.19.1)
+
+### Split slides: stop silently squashing a code block instead of overflowing
+
+The failure `astromotion-check` was written to find, fixed at the source.
+`.split-content` is a flex column, and a flex item whose overflow is not
+`visible` has an automatic minimum size of zero --- so on a slide with too much
+content the flex algorithm shrank the code block below its own contents rather
+than letting anything overflow. The block collapsed to its padding and the last
+command was simply not on screen, with nothing about the rendered slide saying
+so. `.split-content > *` is now `flex-shrink: 0`.
+
+An overfull split slide therefore now overflows visibly where it used to hide
+the overflow inside a squashed child. That is the intended change --- loud is
+the right failure mode for a deck, and it is the state `astromotion-check`
+reports --- but it does mean a deck that looked fine may now show the problem it
+always had. Run the check after bumping.
+
 ## 2026-07-29 (v0.19.0)
 
 ### `astromotion-check`: find slides that don't fit before the room does
