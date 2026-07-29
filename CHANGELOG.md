@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-29 (v0.19.2)
+
+### `astromotion-check`: don't leave a dev server running
+
+Astro detaches the dev server itself when it detects an agent environment, so
+the process the check spawns exits immediately and the real server outlives it:
+every run leaked one, and the next run found a stale server on the port serving
+modules from before the last edit (which surfaced as an unexplained HTTP 500,
+not as anything about staleness). The check now runs `astro dev stop` before
+starting and again on exit, alongside the existing process-group kill, so it
+cleans up whichever mode Astro chose.
+
 ## 2026-07-29 (v0.19.1)
 
 ### Split slides: stop silently squashing a code block instead of overflowing

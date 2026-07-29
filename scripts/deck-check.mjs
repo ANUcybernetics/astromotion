@@ -33,7 +33,7 @@
 // needs a browser and a dev server, so it is a deliberate command rather than
 // part of `astro build`.
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -129,6 +129,16 @@ async function waitForServer(target) {
   process.exit(1);
 }
 
+// Astro detaches the dev server itself when it detects an agent environment,
+// in which case the process we spawn exits immediately and the real server
+// outlives it --- so signalling our own process group is not enough to clean
+// up, and a leaked server from an earlier run serves stale modules to this
+// one. `astro dev stop` handles the detached case; the process-group kill
+// handles the foreground one. Both are best-effort.
+const stopBackgroundServer = () => spawnSync("npx", ["astro", "dev", "stop"], { stdio: "ignore" });
+
+stopBackgroundServer();
+
 // `detached` puts the dev server in its own process group so the whole tree
 // can be signalled: npx spawns astro which spawns the real server, and
 // killing just the npx wrapper leaves the server alive and the script hanging.
@@ -137,12 +147,16 @@ const server = spawn("npx", ["astro", "dev", "--port", port], {
   env: { ...process.env, ASTRO_DISABLE_DEV_TOOLBAR: "true" },
   stdio: "ignore",
 });
+let stopped = false;
 const killServer = () => {
+  if (stopped) return;
+  stopped = true;
   try {
     if (server.pid) process.kill(-server.pid, "SIGTERM");
   } catch {
     // already gone
   }
+  stopBackgroundServer();
 };
 process.on("exit", killServer);
 process.on("SIGINT", () => process.exit(130));
