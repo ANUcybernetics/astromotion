@@ -39,9 +39,10 @@
 // an `_if:` query param) rather than raising the cap.
 
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, readdirSync, renameSync, unlinkSync } from "node:fs";
-import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { renameSync, unlinkSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { findChrome, chromeArgs as resolveChromeArgs } from "../src/chrome.mjs";
 
 const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith("--"));
@@ -68,52 +69,12 @@ const prefix = (flagValue("prefix") ?? "/decks").replace(/\/+$/, "");
 const port = flagValue("port") ?? "4321";
 const url = `http://localhost:${port}${prefix}/${slug}/`;
 
-// Scan puppeteer's browser cache for a previously downloaded
-// Chrome-for-Testing binary, newest version first. A half-written cache entry
-// (a version directory without the binary inside) both breaks puppeteer's own
-// resolution and silently aborts its on-demand re-download, so only entries
-// whose binary actually exists count.
-function puppeteerCacheChrome() {
-  const cacheDir = join(homedir(), ".cache", "puppeteer", "chrome");
-  let versions;
-  try {
-    versions = readdirSync(cacheDir);
-  } catch {
-    return undefined;
-  }
-  const mac = "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
-  return versions
-    .toSorted()
-    .toReversed()
-    .flatMap((v) => [
-      join(cacheDir, v, "chrome-linux64", "chrome"),
-      join(cacheDir, v, "chrome-mac-arm64", mac),
-      join(cacheDir, v, "chrome-mac-x64", mac),
-    ])
-    .find((b) => existsSync(b));
-}
-
-// decktape drives a real browser via puppeteer, whose on-demand Chromium
-// download fails hard (and silently, under npx) if its cache holds a
-// half-written entry. Prefer an explicit override, then the usual macOS and
-// Linux install locations, then a complete binary already in puppeteer's own
-// cache --- when one is found we pass it via --chrome-path and set
-// PUPPETEER_SKIP_DOWNLOAD so puppeteer never has to find (or download) a
-// browser itself. With no match anywhere we fall back to decktape's bundled
-// Chromium, downloads and all, rather than failing on a browserless machine.
-function findChrome() {
-  const candidates = [
-    process.env.DECKTAPE_CHROME_PATH,
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/snap/bin/chromium",
-  ].filter(Boolean);
-  return candidates.find((c) => existsSync(c)) ?? puppeteerCacheChrome();
-}
+// Chrome discovery lives in src/chrome.mjs, shared with astromotion-check.
+// decktape drives a real browser via puppeteer; when we find a complete
+// binary we pass it via --chrome-path and set PUPPETEER_SKIP_DOWNLOAD so
+// puppeteer never has to find (or download) one itself. With no match
+// anywhere we fall back to decktape's bundled Chromium, downloads and all,
+// rather than failing on a browserless machine.
 
 function run(command, cmdArgs, env = process.env) {
   const result = spawnSync(command, cmdArgs, { stdio: "inherit", env });
@@ -187,10 +148,7 @@ await waitForServer(url);
 // the user only ever sees `output`.
 const rawOutput = compress ? `${output}.raw.pdf` : output;
 
-const chromeArgs = (process.env.DECKTAPE_CHROME_ARGS ?? "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+const chromeArgs = resolveChromeArgs();
 const maxSlides = process.env.DECKTAPE_MAX_SLIDES ?? "500";
 const decktapeVersion = process.env.DECKTAPE_VERSION ?? "3.16.1";
 

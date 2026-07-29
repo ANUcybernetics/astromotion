@@ -598,6 +598,63 @@ import { deckToMarkdown } from "astromotion/src/deck-text.mjs";
 const md = deckToMarkdown("src/decks/week-3.deck.mdx", { comments: false });
 ```
 
+## Overflow check
+
+A Reveal deck scales a fixed 1280x720 canvas, so "too much for one slide" is a
+layout fact rather than a matter of taste --- but it is invisible until you
+present it. `astromotion-check` walks every slide of every deck in headless
+Chrome and reports what does not fit:
+
+```sh
+npx astromotion-check                          # every deck under src/decks
+npx astromotion-check week-3 --prefix=/lectures
+```
+
+```
+✗ 2 slide issue(s):
+
+  week-3 slide 6 "Backpressure, channel by channel" — overflow: content runs 43px past the bottom of the slide
+  week-3 slide 9 "Wiring it up" — clipped: pre.astro-code hides 72px of its content below the visible box
+```
+
+Two rules, because a deck overflows in two visibly different ways:
+
+- **`overflow`** --- a text element's box extends past the canvas. Loud: the
+  last line runs off the bottom edge or under the footer.
+- **`clipped`** --- an element whose overflow is not `visible` is hiding part of
+  its own content. This is the quiet one. A code block inside a split panel is a
+  flex item, and a flex item with a non-visible overflow has an automatic
+  minimum size of zero, so on a full slide it is silently squashed and the last
+  command simply is not on screen. Nothing about the rendered slide says so.
+
+Backgrounds, split-image panels and decorative art bleed off the canvas by
+design, so only text-bearing elements are measured for `overflow`.
+
+It runs against `astro dev` rather than a production build, deliberately: a deck
+with `published: false` is absent from a production build, and those are exactly
+the decks still being written. It exits non-zero on any violation, so it can
+gate a release --- but because it needs a browser and a dev server it is a
+deliberate command, not part of `astro build`.
+
+Options:
+
+- `--prefix=/decks` --- route prefix the site serves decks under
+- `--dir=src/decks` --- where the `*.deck.mdx` files live
+- `--port=4321` --- dev server port
+- `--tolerance=4` --- canvas px of slack before a slide is reported
+- `--json` --- machine-readable output
+
+It needs [`puppeteer-core`](https://pptr.dev/) (an optional peer dependency:
+`pnpm add -D puppeteer-core`) and a local Chrome or Chromium.
+`ASTROMOTION_CHROME_PATH` overrides browser discovery and
+`ASTROMOTION_CHROME_ARGS` passes flags --- on Linux distributions that restrict
+unprivileged user namespaces you will need
+`ASTROMOTION_CHROME_ARGS=--no-sandbox`.
+
+Slides gated behind `_if:` are checked in their default state only, since the
+conditional slides are removed from the DOM before Reveal reads it; a deck whose
+`?presenters` view differs needs its own run against that URL.
+
 ## Exports
 
 The package exports:

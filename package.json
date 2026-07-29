@@ -5,6 +5,7 @@
   "license": "MIT",
   "author": "Ben Swift",
   "bin": {
+    "astromotion-check": "./scripts/deck-check.mjs",
     "astromotion-pdf": "./scripts/deck-pdf.mjs",
     "astromotion-text": "./scripts/deck-text.mjs"
   },

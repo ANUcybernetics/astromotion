@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-07-29 (v0.19.0)
+
+### `astromotion-check`: find slides that don't fit before the room does
+
+A deck scales a fixed 1280x720 canvas, so a slide either fits or it doesn't ---
+but nothing said which until it was on the projector. Worse, one failure mode
+was invisible even then: a code block inside a split panel is a flex item, and a
+flex item whose overflow is not `visible` has an automatic minimum size of zero,
+so on a full slide the block is silently squashed to its padding. The slide
+looks deliberate; the last command is simply not on screen. That shipped in a
+week-1 lecture deck, on the slide carrying the commands the room was there to
+copy.
+
+`astromotion-check` walks every slide of every deck in headless Chrome and
+reports `overflow` (a text element past the canvas edge) and `clipped` (an
+element hiding its own content). It runs against `astro dev`, not a production
+build, because a deck with `published: false` is absent from a build and those
+are exactly the decks still being written. Exits non-zero, so it can gate a
+release --- but it needs a browser and a dev server, so it stays a deliberate
+command rather than part of `astro build`.
+
+Needs `puppeteer-core` (already an optional peer for `astromotion-pdf --notes`)
+and a local Chrome. Chrome discovery moved to `src/chrome.mjs`, shared by both
+scripts; `ASTROMOTION_CHROME_PATH` / `ASTROMOTION_CHROME_ARGS` are the new
+names, with the older `DECKTAPE_*` pair still honoured.
+
+One measurement note, since the first cut of the `clipped` rule was unusable:
+`scrollHeight` counts a scroll container's bottom padding and its last child's
+bottom margin, so a perfectly fine slide reports ~100px "hidden". The rule
+measures where descendant content actually ends against the edge the box clips
+at.
+
 ## 2026-07-28 (v0.18.1)
 
 ### PDF export: stop Ghostscript blanking slides that layer transparency over an image
