@@ -54,7 +54,7 @@
     "oxlint": "^1.76.0",
     "puppeteer-core": "^24.0.0",
     "remark-directive": "^4.0.0",
-    "stylelint": "^17.14.0",
+    "stylelint": "^17.14.1",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^5.9.0",
     "vitest": "^4.1.7"

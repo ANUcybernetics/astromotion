@@ -85,7 +85,7 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0(supports-color@10.2.2)
       stylelint:
-        specifier: ^17.14.0
+        specifier: ^17.14.1
         version: 17.14.1(supports-color@10.2.2)(typescript@5.9.3)
       stylelint-config-standard:
         specifier: ^40.0.0
