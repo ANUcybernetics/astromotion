@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-07-31 (v0.19.4)
+
+### PDF export: images Safari refused to draw
+
+Ghostscript 10.07 writes every image's ICC profile out as a zero-byte stream
+while leaving the image's colour space pointing at it, so a compressed deck
+carries one broken profile shared by all its images. Poppler, pdf.js, PDFium and
+MuPDF fall back on the profile's component count and render normally --- which
+is why this went unnoticed --- but Apple's CoreGraphics doesn't, so in Safari
+and Preview the images simply don't draw and the deck arrives as text on blank
+backgrounds. Ghostscript 10.02 writes the profiles correctly, so whether an
+export is broken depends on which machine ran it.
+
+The export now rewrites an empty ICC colour space to the device space its
+component count implies (`/DeviceRGB` for three) before writing the file ---
+exactly the fallback the tolerant renderers already apply, so nothing that
+renders today changes appearance. The rewrite is padded to the same byte length,
+so it cannot disturb the rest of the file, and it does nothing at all on a
+Ghostscript that behaves.
+
+### PDF export: a live widget no longer runs the export away
+
+decktape's generic plugin decides the deck is over when a `MutationObserver`
+over the whole document sees nothing change for a second after ArrowRight. A
+widget redrawing on a `setInterval` --- a talk timer, a countdown, a marquee ---
+therefore means the export never ends: it runs to `DECKTAPE_MAX_SLIDES`, quietly
+appending hundreds of copies of the final slide. Add one such widget to a deck
+template and every deck stops exporting at once.
+
+Both capture modes now load the deck with `?astromotion-export`, which sets
+`data-astromotion-export` on `<html>` and stops `setInterval` scheduling
+anything. A live widget renders its first frame and then holds still --- what a
+still frame of a deck should look like anyway --- while `setTimeout` is left
+alone, so nothing about how the deck builds itself changes. A widget that
+animates by some other route can still run an export away; hide it with the
+attribute.
+
 ## 2026-07-30 (v0.19.3)
 
 ### QR codes: hide the decorative grid from the accessibility tree

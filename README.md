@@ -483,7 +483,8 @@ decks.sort((a, b) => a.slug.localeCompare(b.slug));
 
 The bundled `astromotion-pdf` command builds the site, starts a preview server,
 captures the deck with [decktape](https://github.com/astefanutti/decktape),
-compresses the result with Ghostscript, and cleans up:
+compresses the result with Ghostscript, repairs the colour spaces Ghostscript
+breaks on the way through (see below), and cleans up:
 
 ```sh
 npx astromotion-pdf my-talk output.pdf
@@ -538,15 +539,44 @@ either way (measured identical at 1280x720 and 1920x1080) and text is vector ---
 only the PDF's nominal page size in points changes. Keep any override at 16:9;
 another ratio letterboxes the canvas into the page.
 
-### Runaway exports
+### Broken colour profiles
 
-The `generic` plugin stops when a captured frame repeats, so any
-always-animating element defeats that check. A fixed overlay on `<body>` with a
-`setInterval` redraw --- a talk timer, a live clock, a marquee --- makes every
-frame differ, and the export runs to `DECKTAPE_MAX_SLIDES`, silently appending
-hundreds of duplicate trailing pages. If a deck exports far more slides than it
-has, hide the widget for the export (or gate it behind an `_if:` query param)
-rather than raising the cap.
+Ghostscript 10.07 writes every image's ICC profile out as a zero-byte stream
+while leaving the image's colour space pointing at it, so each image in a
+compressed deck carries a colour profile that isn't one. (Ghostscript 10.02
+doesn't, which is a good way to be handed the bug by whichever machine you
+exported on.) Poppler, pdf.js, PDFium and MuPDF fall back on the profile's
+component count and render normally --- poppler noisily, two warnings per image
+--- but Apple's CoreGraphics doesn't, so in Safari and Preview the images simply
+don't draw and the deck arrives as text on blank backgrounds.
+
+The export repairs this before it writes the file: an empty ICC colour space is
+rewritten to the device space its component count implies (`/DeviceRGB` for
+three), which is exactly the fallback the tolerant renderers already apply, so
+nothing that renders today changes appearance. The rewrite is padded to the same
+byte length, so it can't disturb the file Ghostscript wrote --- and it's a no-op
+on a Ghostscript that writes profiles properly.
+
+### Export mode
+
+Both capture modes load the deck with `?astromotion-export`. A deck served that
+way sets `data-astromotion-export` on `<html>` and stops `setInterval` from
+scheduling anything, so a live widget renders its first frame and then holds
+still. `setTimeout` is left alone (Reveal and Astro use it for one-shot startup
+work), so nothing about how the deck builds itself changes.
+
+That matters because the `generic` plugin decides the deck is over when a
+`MutationObserver` over the whole document sees nothing change for a second
+after ArrowRight. Any element that keeps redrawing --- a talk timer, a
+countdown, a marquee --- means it never stops, and the export runs to
+`DECKTAPE_MAX_SLIDES`, silently appending hundreds of copies of the final slide.
+
+Freezing timers covers the usual case. A widget animating by another route (CSS
+keyframes that mutate the DOM, a canvas driven by `requestAnimationFrame`) can
+still run an export away, so if a deck exports far more slides than it has,
+that's where to look: hide the offender for the export rather than raising the
+cap. `{/* _if: live */}` gates a whole slide behind a query param, and
+`[data-astromotion-export] .my-widget { display: none }` gates any part of one.
 
 ## Text export
 

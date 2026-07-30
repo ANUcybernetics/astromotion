@@ -5,7 +5,9 @@
 // key-driven navigation) -> Ghostscript compression (optional but on by
 // default: the raw decktape PDF rasterises every slide, so a deck with
 // full-bleed backgrounds lands at 100 MB+; Ghostscript's /ebook preset cuts
-// that to a few MB with no visible loss at presentation scale).
+// that to a few MB with no visible loss at presentation scale) -> ICC repair
+// (Ghostscript leaves every image tagged with an empty colour profile, which
+// Safari and Preview then refuse to draw --- see src/pdf-icc.mjs).
 //
 // With --notes the deck is instead printed via headless Chrome against
 // Reveal's print view (?print-pdf&showNotes=separate-page), producing a
@@ -30,19 +32,23 @@
 //                         generic plugin stops at the last slide on its own
 //   DECKTAPE_VERSION      decktape version npx runs (default 3.16.1)
 //
-// Runaway exports: the generic plugin stops when a captured frame repeats, so
-// ANY always-animating element defeats it --- a fixed overlay on <body> with a
-// `setInterval` redraw (a talk timer, a live clock, a marquee) makes every
-// frame differ and the export grinds to DECKTAPE_MAX_SLIDES, silently emitting
-// hundreds of duplicate trailing pages. If a deck exports far more slides than
-// it has, that's the cause: hide the widget for the export (or gate it behind
-// an `_if:` query param) rather than raising the cap.
+// Runaway exports: the generic plugin decides the deck is over when a
+// MutationObserver over the whole document sees nothing change for a second
+// after ArrowRight, so ANY element that keeps redrawing defeats it and the
+// export grinds to DECKTAPE_MAX_SLIDES, silently emitting hundreds of
+// duplicate trailing pages. Both capture modes therefore load the deck with
+// `?astromotion-export`, which stops repeating timers (see DeckHead.astro). A
+// widget animating by some other route --- CSS keyframes that mutate the DOM,
+// a canvas driven by requestAnimationFrame --- can still run an export away;
+// hide it for the export (`_if:` gates a whole slide, and
+// `[data-astromotion-export]` any part of one) rather than raising the cap.
 
 import { spawn, spawnSync } from "node:child_process";
-import { renameSync, unlinkSync } from "node:fs";
+import { readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { findChrome, chromeArgs as resolveChromeArgs } from "../src/chrome.mjs";
+import { repairEmptyIccColorSpaces } from "../src/pdf-icc.mjs";
 
 const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith("--"));
@@ -68,6 +74,9 @@ const compress = !flags.includes("--no-compress");
 const prefix = (flagValue("prefix") ?? "/decks").replace(/\/+$/, "");
 const port = flagValue("port") ?? "4321";
 const url = `http://localhost:${port}${prefix}/${slug}/`;
+// Both capture modes ask the deck for its still-frame behaviour: no repeating
+// timers, so a live widget can't keep the DOM changing (see DeckHead.astro).
+const exportUrl = `${url}?astromotion-export`;
 
 // Chrome discovery lives in src/chrome.mjs, shared with astromotion-check.
 // decktape drives a real browser via puppeteer; when we find a complete
@@ -174,7 +183,7 @@ async function captureNotes() {
     process.exit(1);
   }
 
-  const printUrl = `${url}?print-pdf&showNotes=separate-page`;
+  const printUrl = `${exportUrl}&print-pdf&showNotes=separate-page`;
   console.log("Printing slides + notes with headless Chrome...");
   const browser = await puppeteer.launch({
     executablePath: chromePath,
@@ -231,11 +240,24 @@ function captureSlides() {
       "--pause=2500",
       ...(chromePath ? [`--chrome-path=${chromePath}`] : []),
       ...chromeArgs.map((a) => `--chrome-arg=${a}`),
-      url,
+      exportUrl,
       rawOutput,
     ],
     3,
     chromePath ? { ...process.env, PUPPETEER_SKIP_DOWNLOAD: "1" } : process.env,
+  );
+}
+
+// Ghostscript hands back a file whose every image is tagged with an empty ICC
+// profile, which Safari and Preview refuse to draw (see src/pdf-icc.mjs). The
+// repair is a same-length byte patch, so it can't disturb the file gs wrote.
+function repairIcc(file) {
+  const { bytes, patched } = repairEmptyIccColorSpaces(readFileSync(file));
+  if (patched.length === 0) return;
+  writeFileSync(file, bytes);
+  console.log(
+    `Repaired ${patched.length} empty ICC colour space(s) → ` +
+      `${[...new Set(patched.map((p) => p.space))].join(", ")}`,
   );
 }
 
@@ -271,6 +293,7 @@ if (compress) {
       rawOutput,
     ]);
     unlinkSync(rawOutput);
+    repairIcc(output);
   } else {
     console.warn("⚠ Ghostscript not found; keeping the uncompressed PDF.");
     renameSync(rawOutput, output);

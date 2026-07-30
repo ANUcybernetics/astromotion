@@ -126,6 +126,20 @@ describe("deck head under a base path", () => {
     );
   });
 
+  // The export-mode guard freezes repeating timers so a live widget can't keep
+  // decktape's end detection from ever firing (see scripts/deck-pdf.mjs). It
+  // only works ahead of the module scripts that hydrate components, which means
+  // inline in the head --- a bundled or `type="module"` script would be
+  // deferred and run too late, with nothing about the built page saying so.
+  it("guards against runaway exports from an inline head script", () => {
+    const guards = [...configured.head.querySelectorAll("script")].filter(
+      (s) => !s.hasAttribute("src") && s.textContent?.includes("astromotion-export"),
+    );
+    expect(guards).toHaveLength(1);
+    expect(guards[0].hasAttribute("type")).toBe(false);
+    expect(guards[0].textContent).toContain("setInterval");
+  });
+
   // The fixture ships two decks: `sample` (published) and `draft`
   // (published:false). A production build must emit the first and drop the
   // second, so its URL serves nothing and Pagefind has no HTML to index.

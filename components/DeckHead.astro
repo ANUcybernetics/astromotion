@@ -53,3 +53,27 @@ const faviconType = favicon?.endsWith(".svg") ? "image/svg+xml" : undefined;
 {socialUrl && <meta name="twitter:image" content={socialUrl} />}
 
 {faviconHref && <link rel="icon" type={faviconType} href={faviconHref} />}
+
+{/*
+  Export mode. `astromotion-pdf` loads the deck with `?astromotion-export`,
+  because decktape's generic plugin decides the deck is over when a
+  MutationObserver over the whole document sees nothing change for a second
+  after ArrowRight --- so a widget that redraws on a `setInterval` (a talk
+  timer, a countdown, a marquee) means the export NEVER ends, and runs to
+  DECKTAPE_MAX_SLIDES appending hundreds of copies of the final slide.
+
+  Neutering `setInterval` leaves such a widget showing whatever it rendered on
+  its first pass and then quiet, which is what a still frame of a deck should
+  look like anyway. `setTimeout` is untouched: Reveal and Astro both use it for
+  one-shot work during startup. Consumers needing more than a frozen widget can
+  branch on the `data-astromotion-export` attribute this sets.
+
+  Inline and in the head so it runs at parse time, ahead of the deferred module
+  scripts that hydrate components.
+*/}
+<script is:inline>
+  if (new URLSearchParams(location.search).has("astromotion-export")) {
+    document.documentElement.dataset.astromotionExport = "";
+    window.setInterval = () => 0;
+  }
+</script>
