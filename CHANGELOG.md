@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-30 (v0.19.3)
+
+### QR codes: hide the decorative grid from the accessibility tree
+
+The generated `<svg>` now carries `aria-hidden="true"`. The surrounding `<a>` is
+already named by the `<span>` holding the display URL, so the grid was never
+anything but decoration — screen readers had no reason to walk it, and neither
+does anything else.
+
+The reason to bother is build time. A QR is roughly a thousand `<rect>`s, each
+with its own inline `style` carrying two animations, and post-build
+accessibility checkers walk every element: axe-core over JSDOM spent 68s on a
+single deck page that embedded one, 75.7s of it inside the `region` rule alone
+(every other rule on that page ran in about 50ms). With the attribute the same
+page scans in 1.3s, with no change in what gets reported. On the COMP4020 site
+that is the difference between a three-minute CI build and a one-minute one, and
+it compounds — the cost was per-page, so it recurred for every deck that showed
+a QR.
+
 ## 2026-07-29 (v0.19.2)
 
 ### `astromotion-check`: don't leave a dev server running

@@ -42,5 +42,10 @@ export function generateQrCode(url: string): string {
 
   const displayUrl = url.replace(/^https?:\/\/(www\.)?/, "");
 
-  return `<div class="qr-code"><a href="${url}"><svg viewBox="0 0 ${totalSize} ${totalSize}" xmlns="http://www.w3.org/2000/svg">\n${rects.join("\n")}\n</svg><span>${displayUrl}</span></a></div>`;
+  // The link is named by the <span>, so the grid itself is decoration. Hiding it
+  // also keeps it out of accessibility tooling that walks the tree per element:
+  // a QR is ~1000 <rect>s each carrying an inline animation style, and axe-core
+  // over JSDOM spent ~68s on a single such page (its `region` rule alone) before
+  // this attribute, versus ~1.3s after.
+  return `<div class="qr-code"><a href="${url}"><svg aria-hidden="true" viewBox="0 0 ${totalSize} ${totalSize}" xmlns="http://www.w3.org/2000/svg">\n${rects.join("\n")}\n</svg><span>${displayUrl}</span></a></div>`;
 }

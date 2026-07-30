@@ -15,6 +15,11 @@ describe("generateQrCode", () => {
     expect(result).toContain('href="https://example.com"');
   });
 
+  it("hides the decorative grid from the accessibility tree", () => {
+    const result = generateQrCode("https://example.com");
+    expect(result).toContain('<svg aria-hidden="true"');
+  });
+
   it("strips protocol and www from displayed URL", () => {
     const result = generateQrCode("https://www.example.com/path");
     expect(result).toContain("<span>example.com/path</span>");
