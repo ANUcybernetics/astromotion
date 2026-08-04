@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-04 (v0.19.5)
+
+### Whiteboard toolbar at one-and-a-half times the size
+
+The colour swatches, brush-size chips and key hint at the bottom of the
+whiteboard were sized for a laptop screen rather than a lecture theatre, where
+the presenter is often reaching for a swatch on a touchscreen or a tablet from
+arm's length. Every dimension in the toolbar --- chip diameter, borders, rings,
+gap, padding, hint text, and the dot that stands in for the brush width --- is
+now 1.5x what it was.
+
+Growing it exposed a latent layout bug: the toolbar is absolutely positioned at
+`left: 50%` with no `right`, so its shrink-to-fit width was capped at half the
+viewport. The old chrome fit inside that by luck; the larger chrome didn't, and
+flex shrank the circles into ellipses. The toolbar now takes
+`width: max-content` (bounded by the viewport) and the chips refuse to shrink,
+so the swatches stay round at any deck size.
+
 ## 2026-07-31 (v0.19.4)
 
 ### PDF export: images Safari refused to draw
