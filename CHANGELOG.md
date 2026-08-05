@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-08-05 (v0.19.6)
+
+### The keyboard help overlay shows itself on a deck's first load
+
+Astromotion adds key bindings a viewer has no way to discover --- `W` for the
+whiteboard, `T` for the clock --- and Reveal's `?` shortcut only helps someone
+who already suspects there is help to be had. The overlay now opens by itself
+the first time a deck is loaded in a browser tab, listing Reveal's own shortcuts
+and astromotion's alongside them. Escape dismisses it.
+
+"First time" is scoped to the tab, via `sessionStorage` keyed by the deck's
+path: a reload doesn't re-show it, a second deck opened in the same tab gets its
+own showing, and a fresh tab is treated as a fresh viewer. localStorage was the
+alternative and is worse --- a flag set months ago would suppress the overlay
+for someone who has long forgotten the keys, and would need invalidating every
+time a binding is added.
+
+The speaker-notes view (which loads the deck in an iframe) and the `?print-pdf`
+export view are both excluded, so nothing new appears in an exported PDF.
+
+One wrinkle found while building this: reveal.js 6.0.1 still declares the 5.x
+`isPrintingPDF()` in its bundled `.d.ts`, but the method no longer exists at
+runtime --- the replacement is `isPrintView()`. Calling the phantom typechecks
+cleanly and throws in the browser, and inside `initialize().then()` that
+rejection is swallowed silently. The guards are called optionally and backed by
+a plain `print-pdf` URL check for that reason.
+
 ## 2026-08-04 (v0.19.5)
 
 ### Whiteboard toolbar at one-and-a-half times the size

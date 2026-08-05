@@ -48,6 +48,7 @@ const { Content, frontmatter } = Astro.props;
   import RevealNotes from "reveal.js/plugin/notes";
 
   import { initClock } from "../src/clock";
+  import { initFirstRunHelp } from "../src/first-run-help";
   import { keepAwakeInFullscreen } from "../src/keep-awake";
   import { initWhiteboard } from "../src/whiteboard";
 
@@ -87,6 +88,8 @@ const { Content, frontmatter } = Astro.props;
   void deck.initialize().then(() => {
     initWhiteboard(deck);
     initClock(deck);
+    // Last: the help overlay lists the bindings registered before it's shown.
+    initFirstRunHelp(deck);
   });
   keepAwakeInFullscreen();
 </script>
