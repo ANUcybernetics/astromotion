@@ -42,6 +42,30 @@
   background-color: var(--astromotion-wb-bg, #131313);
 }
 
+/* The annotation surface: the same board, transparent, so the ink lands over
+   the slide rather than over a painted sheet. The chrome switches to the dark
+   treatment whatever the board's own mode, because it now has to read against
+   arbitrary slide artwork rather than a surface the theme chose. */
+.astromotion-whiteboard[data-surface="slide"] {
+  --wb-scrim: rgb(0 0 0 / 72%);
+  --wb-chip-edge: rgb(0 0 0 / 55%);
+  --wb-chip-fill: rgb(0 0 0 / 45%);
+  --wb-chip-dot: rgb(255 255 255 / 75%);
+  --wb-chip-ring: rgb(255 255 255 / 25%);
+  --wb-chip-ring-active: rgb(255 255 255 / 70%);
+  --wb-hint: rgb(255 255 255 / 80%);
+
+  background-color: transparent;
+  background-image: none;
+}
+
+/* The board's toolbar sits on a surface the theme chose; this one can land on
+   a photograph. A translucent scrim alone left the hint unreadable over bright
+   artwork, so blur what is behind it as well. */
+.astromotion-whiteboard[data-surface="slide"] .astromotion-whiteboard-toolbar {
+  backdrop-filter: blur(8px);
+}
+
 .astromotion-whiteboard[hidden] {
   display: none;
 }
@@ -69,6 +93,13 @@
   border-radius: 999px;
   background: var(--wb-scrim);
   translate: -50% 0;
+}
+
+/* Explicit, because the display above beats the UA stylesheet's [hidden] rule
+   on equal specificity. The save hides the toolbar to keep it out of the shot,
+   and silently kept it in frame without this. */
+.astromotion-whiteboard-toolbar[hidden] {
+  display: none;
 }
 
 .astromotion-whiteboard-swatch {

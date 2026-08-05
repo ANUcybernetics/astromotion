@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-08-06 (v0.20.0)
+
+### The whiteboard gets a second surface, over the slide
+
+`W` covered the slide with an opaque board, which is right for a diagram drawn
+from nothing and wrong for marking up what is already on screen. `⇧W` now opens
+the same board transparent, over the current slide. Each key toggles its own
+surface, so pressing the other crosses over with both drawings intact, and
+`Escape` closes whichever is showing.
+
+Annotations belong to a slide: navigate away and back and yours is still there,
+while closing the layer discards the lot. The ink stays positioned against the
+window rather than the slide, so a resize mid-scribble moves it out of place ---
+a deliberate trade, since an annotation is meant to last about as long as the
+point being made, and mapping into the deck's 1280x720 space to survive a
+projector change would have been the bulk of the work for a case that does not
+arise.
+
+`⇧W` could not be a Reveal key binding: Reveal drops shift-modified keys before
+they reach the binding table. Both surfaces are opened from astromotion's own
+capture-phase listener instead, and announced to the help overlay through
+`registerKeyboardShortcut`, which is also why they get a row each.
+
+### The board no longer swallows the keyboard
+
+Previously the open board claimed every unmodified key so Reveal could not
+navigate underneath it, which also meant `F`, `S` and `B` did nothing while it
+was up. Both surfaces now claim only what the pen needs --- `W`, then the
+digits, `Z`/`U`, `C`, `D` and `Escape` --- and leave every other key to the
+deck. Nothing in that set collides with Reveal's own bindings: the digits, `Z`,
+`U` and `D` are unbound, and `C` is live only while a Reveal overlay is already
+open.
+
+The trade is that an accidental space or arrow now moves the deck behind the
+opaque board, unseen. Worth it for one rule instead of two, and for the keys
+that were silently dead.
+
+### Saving an annotation captures the slide with it
+
+`D` on the board still composites the board's surface and background image. `D`
+on an annotation saves the slide _with_ the ink over it, via the browser's
+screen-capture picker --- no DOM rasteriser reproduces these decks faithfully,
+since full-bleed backgrounds, webfonts, SVG and CSS transforms are exactly what
+they get wrong, whereas a captured frame is what the room saw. The stream is
+taken once on the first save and held until the layer closes, so the share
+prompt appears once per opened layer rather than once per save. Cancelling it,
+or a browser without the API, falls back to saving the ink alone on
+transparency.
+
+Files are named for their slide, one-based to match the deck's own `#/` hash:
+`annotation-3-1-20260703-152410.png`.
+
 ## 2026-08-05 (v0.19.6)
 
 ### The keyboard help overlay shows itself on a deck's first load

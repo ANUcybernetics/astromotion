@@ -1,10 +1,10 @@
 ---
 id: TASK-4
 title: Transparent slide-annotation surface for the whiteboard
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-05 22:18'
-updated_date: '2026-08-05 22:32'
+updated_date: '2026-08-05 22:59'
 labels:
   - whiteboard
   - decks
@@ -30,21 +30,21 @@ Saving with D should write the slide and the ink together. No DOM rasteriser doe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Shift-W opens a transparent surface over the current slide, plain W opens the opaque board, and pressing the other key while one is open swaps the surface with the ink intact
-- [ ] #2 Both surfaces appear as their own row in Reveal's help overlay
-- [ ] #3 On either surface Reveal still responds to every key the pen does not claim, including F, S, B and the navigation keys
-- [ ] #4 The pen claims the digit keys, Z/U, C, D and W/Escape on both surfaces
-- [ ] #5 Annotations are kept per slide: stepping away and back shows the same ink, and a slide never drawn on starts empty
-- [ ] #6 Closing the annotation surface discards every slide's ink, while the opaque board still keeps its drawing until cleared
-- [ ] #7 Undo and clear act on the slide currently on screen
-- [ ] #8 Opening Reveal's overview closes the annotation surface rather than leaving ink floating over it
-- [ ] #9 D on the annotation surface saves a PNG of the slide with the ink over it and no toolbar in the shot
-- [ ] #10 The presenter is prompted to share at most once per opened layer, not once per save
-- [ ] #11 Cancelling the share prompt, or running on a browser without the Screen Capture API, still saves the ink on a transparent background
-- [ ] #12 D on the opaque board is unchanged, compositing the surface colour and its background image
-- [ ] #13 Annotations are ephemeral: a reload discards them and ?print-pdf renders no ink
-- [ ] #14 The key-dispatch rules and the per-slide stroke store are covered by tests in test/whiteboard-core.test.ts without a browser
-- [ ] #15 The README Whiteboard section documents the annotation surface, the shared key rule and the share prompt
+- [x] #1 Shift-W opens a transparent surface over the current slide, plain W opens the opaque board, and pressing the other key while one is open swaps the surface with the ink intact
+- [x] #2 Both surfaces appear as their own row in Reveal's help overlay
+- [x] #3 On either surface Reveal still responds to every key the pen does not claim, including F, S, B and the navigation keys
+- [x] #4 The pen claims the digit keys, Z/U, C, D and W/Escape on both surfaces
+- [x] #5 Annotations are kept per slide: stepping away and back shows the same ink, and a slide never drawn on starts empty
+- [x] #6 Closing the annotation surface discards every slide's ink, while the opaque board still keeps its drawing until cleared
+- [x] #7 Undo and clear act on the slide currently on screen
+- [x] #8 Opening Reveal's overview closes the annotation surface rather than leaving ink floating over it
+- [x] #9 D on the annotation surface saves a PNG of the slide with the ink over it and no toolbar in the shot
+- [x] #10 The presenter is prompted to share at most once per opened layer, not once per save
+- [x] #11 Cancelling the share prompt, or running on a browser without the Screen Capture API, still saves the ink on a transparent background
+- [x] #12 D on the opaque board is unchanged, compositing the surface colour and its background image
+- [x] #13 Annotations are ephemeral: a reload discards them and ?print-pdf renders no ink
+- [x] #14 The key-dispatch rules and the per-slide stroke store are covered by tests in test/whiteboard-core.test.ts without a browser
+- [x] #15 The README Whiteboard section documents the annotation surface, the shared key rule and the share prompt
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -58,3 +58,15 @@ Saving with D should write the slide and the ink together. No DOM rasteriser doe
 6. index.ts: split the save path. Board mode composites surface colour plus background image as it does now. Slide mode acquires a getDisplayMedia stream lazily on the first D, holds it until close, hides the toolbar, draws one video frame to a canvas and saves that; a cancelled prompt or a missing API falls back to the ink-only canvas on transparency.
 7. Tests in test/whiteboard-core.test.ts for the claimed-key set, the surface flip and the per-slide bucket. README Whiteboard section.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented over src/whiteboard/core.ts (surface in state, per-slide stroke buckets, explicit claimed-key set) and index.ts (capture-phase W/⇧W, registerKeyboardShortcut help rows, slidechanged/overviewshown wiring, getDisplayMedia save path), plus theme/whiteboard.css for the transparent surface.
+
+Verified live in a browser against llms-unplugged with a file: override: ⇧W opens transparent (background rgba(0,0,0,0)) and W crosses to opaque; ArrowRight advances the deck while annotating; ink is per-slide (drew on #/2, blank on #/3, restored on return); both help rows render; three consecutive saves fired one getDisplayMedia prompt and produced PNGs with slide content and ink but no toolbar; a rejected prompt fell back to a mostly-transparent ink-only PNG; board save still fully opaque.
+
+Two bugs found by that testing rather than by the tests. Opening the pen while Reveal's overview was ALREADY up left ink over the thumbnail grid (the overviewshown handler only catches an overview opened afterwards) --- ⇧W now exits the overview first. And nextCaptureFrame hung on the second save, leaving the toolbar hidden: a capture stream only delivers frames when the screen changes, so requestVideoFrameCallback may never fire on a still slide. It now races a 400ms deadline.
+
+Toolbar scrim also had to go from 45% to 72% black plus a backdrop blur --- at 45% the hint was unreadable where it crossed bright slide artwork.
+<!-- SECTION:NOTES:END -->

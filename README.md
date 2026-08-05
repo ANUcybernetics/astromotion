@@ -357,21 +357,46 @@ export view never show it.
 
 ## Whiteboard
 
-Press **W** while presenting to flip to a fullscreen whiteboard for ephemeral
-doodles (it's listed on Reveal's help overlay, press **?**). Strokes are drawn
-with [perfect-freehand](https://github.com/steveruizok/perfect-freehand), so
-they get variable-width ink: real pressure when drawing with a stylus, and
-pressure simulated from drawing speed with a mouse or trackpad.
+The whiteboard has two surfaces, and each key toggles its own (both are listed
+on Reveal's help overlay, press **?**):
 
-While the whiteboard is open it owns the keyboard (so the deck can't navigate
-underneath): the leading **digit keys** switch pen colour and the next two pick
-the brush size, fine or broad --- with the default four-colour palette that's
-**1–4** for colour and **5–6** for size (or click the toolbar buttons). **Z**
-undoes the last stroke, **C** clears the board, **D** downloads the board as a
-timestamped PNG (e.g. `whiteboard-20260703-152410.png`), and **W** or **Escape**
-closes it. The drawing survives toggling back to the slides --- flip to the deck
-and return and it's still there --- but it lives in memory only: **C** clears
-it, and a page reload discards it.
+- **W** --- the opaque board the theme paints, for a diagram drawn from nothing.
+- **⇧W** --- a transparent surface over the slide you're on, for marking up
+  what's already there: circling a term, arrowing between two boxes, ticking off
+  a list as the room works through it.
+
+Pressing the other key crosses over without losing either drawing, and
+**Escape** closes whichever is showing. Strokes are drawn with
+[perfect-freehand](https://github.com/steveruizok/perfect-freehand), so they get
+variable-width ink: real pressure when drawing with a stylus, and pressure
+simulated from drawing speed with a mouse or trackpad.
+
+The pen claims only the keys it needs --- the leading **digit keys** switch pen
+colour and the next two pick the brush size, fine or broad (with the default
+four-colour palette that's **1–4** for colour and **5–6** for size, or click the
+toolbar buttons), plus **Z** to undo, **C** to clear and **D** to save.
+Everything else belongs to the deck, so you can keep navigating with the board
+up, and **F**, **S** and **B** still work.
+
+The two surfaces remember their ink differently, because they're used
+differently. The board keeps one shared drawing until **C** clears it, so you
+can flip back to the slides and return to it. Annotations belong to a slide:
+navigate away and back and yours is still there, but closing the layer discards
+the lot. Ink is positioned against the window rather than the slide, so resizing
+mid-scribble moves it out of place --- fine for something that lives about as
+long as the point being made, and the reason annotations aren't meant to be
+kept. It's all in memory only: a reload discards it, and `?print-pdf` renders no
+ink.
+
+**D** saves what's on screen. From the board that's the board itself, composited
+onto its surface colour and background image, as
+`whiteboard-20260703-152410.png`. From an annotation it's the slide _with_ the
+ink over it, as `annotation-3-1-20260703-152410.png` (the numbers are the
+slide's, one-based, matching the deck's own `#/` hash). That one goes through
+the browser's screen-capture picker, because nothing else reproduces a slide
+faithfully --- so expect a share prompt on the first save, once per opened layer
+rather than once per save, and choose this tab. Cancel it, or use a browser
+without the API, and the ink alone is saved on a transparent background.
 
 Consuming themes can restyle the board via four CSS custom properties:
 
@@ -395,6 +420,11 @@ Consuming themes can restyle the board via four CSS custom properties:
   brush sizes claim), replacing the mode's built-in four-colour palette
   entirely. Any CSS colour syntax works, including `var()` references and legacy
   comma-form `rgb()`.
+
+All but the last describe the board. The annotation surface is transparent by
+definition, so it ignores the surface colour and image, takes the same ink
+palette, and switches its toolbar to the dark chrome whatever the board's mode
+--- it has to read against slide artwork rather than a surface the theme chose.
 
 Note that the mode only chooses the _defaults_: if your theme sets its own inks,
 switching to `dark` won't recolour them, so set a pale first ink to match. For
