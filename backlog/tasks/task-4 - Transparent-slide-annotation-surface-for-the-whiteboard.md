@@ -4,7 +4,7 @@ title: Transparent slide-annotation surface for the whiteboard
 status: To Do
 assignee: []
 created_date: '2026-08-05 22:18'
-updated_date: '2026-08-05 22:18'
+updated_date: '2026-08-05 22:32'
 labels:
   - whiteboard
   - decks
@@ -17,41 +17,44 @@ priority: medium
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Press W and the whiteboard covers the slide with an opaque board, which is right for a fresh diagram and wrong for marking up the slide already on screen --- circling a term, arrowing between two boxes, ticking off a list as the room works through it. The surface is a fixed opaque overlay (position: fixed; inset: 0 plus a background-color, theme/whiteboard.css:21-28), so there is no way to get ink over slide content today.
 
-Add a second surface to the same board: shift-W opens it transparent over the current slide, plain W keeps the opaque board. Reveal dispatches key bindings by keyCode and hands the callback the event, so both have to live on one binding (keyCode 87) that branches on event.shiftKey --- which also means the help overlay gets a single row whose description has to name both.
+Add a second surface to the same board: shift-W opens it transparent over the current slide, plain W keeps the opaque board, and either key flips an already-open board to the other surface without losing the ink.
 
-Two things make this more than a CSS change. Ink has to stick to the content, so annotation strokes are stored in the deck's 1280x720 slide coordinates rather than the viewport client coordinates the board uses, mapped through the .reveal .slides bounding rect at pointer time and back at render. A projector resize then moves the ink with the slide instead of leaving it behind. And ink has to belong to a slide, so strokes are kept per (h, v) index from deck.getIndices(), swapped on Reveal's slidechanged event, with undo and clear scoped to the slide in front of you.
+Strokes stay in viewport coordinates, exactly as the board stores them now. Mapping them into the deck's 1280x720 slide space would keep ink glued to content across a projector resize, and it is not worth the machinery --- a scribble lives about as long as the point being made. Annotations are bucketed per (h, v) slide index so stepping away and back brings them with you, and closing the layer clears the lot.
 
-Navigation has to keep working, which inverts the board's key handling: the opaque board deliberately swallows every unmodified key so Reveal cannot navigate underneath it, whereas the annotation layer must let arrows, space, N/P and Home/End through while still claiming the digits, Z, C, D and W/Escape. Fragment state is ignored --- annotations key on the slide, so the same ink shows at every fragment step.
+Key handling gets simpler rather than more complex. The board currently swallows every unmodified key so Reveal cannot navigate underneath it, which also means F, S and B do nothing while it is open. Replace that with one rule for both surfaces: the pen claims the digits, Z/U, C, D and W/Escape, and every other key belongs to the deck. Reveal's bindings were checked against that set and nothing collides --- digits are unbound, Z, U and D are unbound, and C is live only while a Reveal overlay is already open. The trade is that an accidental space or arrow now moves the deck behind the opaque board, unseen.
 
-Scope limits worth stating up front. The D export writes ink only, on a transparent background, because compositing the actual slide would need a DOM rasteriser the package does not carry and should not take on. The layer stays in memory, so a reload discards it and ?print-pdf renders nothing. The speaker-notes window is a separate document and gets no annotations. And while the layer is open it swallows pointer events, so slide links and QR codes are not clickable until it is closed.
+Two constraints in reveal.js shape the implementation. Reveal drops any shift-modified key before it reaches a custom binding (keyboard.js:170-178 --- keyCode 87 is not on the modifier whitelist), so shift-W cannot be an addKeyBinding callback and has to be claimed by astromotion's own capture-phase listener, which already runs ahead of Reveal's bubble-phase one (keyboard.js:55). The help overlay is fed separately by registerKeyboardShortcut(), so both surfaces still get a row of their own.
+
+Saving with D should write the slide and the ink together. No DOM rasteriser does that faithfully for these decks --- full-bleed backgrounds, webfonts, SVG and CSS transforms are exactly what html2canvas and the foreignObject trick get wrong --- so use the Screen Capture API instead: getDisplayMedia({ preferCurrentTab: true }) on the D keypress, which carries the transient activation the call needs, one frame drawn into a canvas, toolbar hidden for the shot. Capturing the tab picks up the ink already composited over the slide, so nothing has to be redrawn. The cost is a share prompt: acquire the stream on the first save and hold it until the layer closes, and fall back to the current ink-only PNG if the presenter cancels or the browser lacks support.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Shift-W opens the board transparent over the current slide while plain W still opens the opaque board, both from a single Reveal key binding whose help-overlay description names the two
-- [ ] #2 Ink drawn on the annotation surface stays aligned with the slide content across a window resize or a change of display
-- [ ] #3 Annotations are kept per slide: navigating away and back shows the same ink, and a slide never drawn on starts empty
-- [ ] #4 Undo and clear affect only the slide currently on screen
-- [ ] #5 With the annotation surface open Reveal still responds to its navigation keys (arrows, space, N/P, Home/End), while the digits, Z, C, D and W/Escape are claimed by the layer
-- [ ] #6 The same annotation shows at every fragment step within a slide
-- [ ] #7 The opaque board is unchanged: viewport-space ink, one shared drawing, every unmodified key swallowed
-- [ ] #8 D saves the annotation as a PNG with a transparent background, named for the slide it belongs to
-- [ ] #9 The toolbar stays legible over arbitrary slide content
-- [ ] #10 Annotations are ephemeral: a reload discards them and ?print-pdf renders no ink
-- [ ] #11 Opening Reveal's overview closes the annotation surface
-- [ ] #12 The coordinate mapping, per-slide stroke store and key-dispatch rules are covered by tests in test/whiteboard-core.test.ts without a browser
-- [ ] #13 The README Whiteboard section documents the annotation surface and its limits
+- [ ] #1 Shift-W opens a transparent surface over the current slide, plain W opens the opaque board, and pressing the other key while one is open swaps the surface with the ink intact
+- [ ] #2 Both surfaces appear as their own row in Reveal's help overlay
+- [ ] #3 On either surface Reveal still responds to every key the pen does not claim, including F, S, B and the navigation keys
+- [ ] #4 The pen claims the digit keys, Z/U, C, D and W/Escape on both surfaces
+- [ ] #5 Annotations are kept per slide: stepping away and back shows the same ink, and a slide never drawn on starts empty
+- [ ] #6 Closing the annotation surface discards every slide's ink, while the opaque board still keeps its drawing until cleared
+- [ ] #7 Undo and clear act on the slide currently on screen
+- [ ] #8 Opening Reveal's overview closes the annotation surface rather than leaving ink floating over it
+- [ ] #9 D on the annotation surface saves a PNG of the slide with the ink over it and no toolbar in the shot
+- [ ] #10 The presenter is prompted to share at most once per opened layer, not once per save
+- [ ] #11 Cancelling the share prompt, or running on a browser without the Screen Capture API, still saves the ink on a transparent background
+- [ ] #12 D on the opaque board is unchanged, compositing the surface colour and its background image
+- [ ] #13 Annotations are ephemeral: a reload discards them and ?print-pdf renders no ink
+- [ ] #14 The key-dispatch rules and the per-slide stroke store are covered by tests in test/whiteboard-core.test.ts without a browser
+- [ ] #15 The README Whiteboard section documents the annotation surface, the shared key rule and the share prompt
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. core.ts: add `surface: "board" | "slide"` to WhiteboardState; `open` carries the surface. Strokes move from a flat array to `{ board: WhiteboardStroke[], slides: Record<string, WhiteboardStroke[]> }`, with a `slideKey(h, v)` helper and undo/clear/endStroke routed through the active bucket.
-2. core.ts: `toSlidePoint(client, rect)` / `toClientPoint(slide, rect)` mapping the 1280x720 slide space through the .reveal .slides bounding rect. Pure, so it tests without a DOM.
-3. core.ts: `keyAction` takes the surface. Board keeps the swallow-everything default; slide mode returns null (pass through to Reveal) for anything outside the claimed set.
-4. index.ts: widen the RevealKeyBindings interface to the slice actually used --- addKeyBinding, getIndices, on. Branch the keyCode 87 callback on event.shiftKey; subscribe to slidechanged to swap buckets and overviewshown to close.
-5. index.ts: render maps slide-space strokes through the current rect each frame; the existing viewport path stays for board mode. Recompute the rect on resize and slidechanged rather than caching it.
-6. whiteboard.css: `[data-surface="slide"]` drops the background colour and image to transparent and strengthens the toolbar scrim.
-7. downloadBoard splits: board mode composites surface + background image as now; slide mode exports the ink canvas alone, via an `annotationFilename(indices, date)` alongside boardFilename.
-8. Tests in test/whiteboard-core.test.ts for the new pure functions; README Whiteboard section.
+1. core.ts: add `surface: "board" | "slide"` to WhiteboardState. `open` carries the surface, and re-issuing it with the other surface flips in place. Board strokes stay a flat array; slide strokes become `Record<string, WhiteboardStroke[]>` keyed by a `slideKey(h, v)` helper, with beginStroke/endStroke/undo/clear routed through whichever bucket is live. No coordinate mapping --- points stay in viewport space throughout.
+2. core.ts: replace the swallow-everything default in `keyAction` with an explicit claimed set (digits, Z/U, C, D, W/Escape). Anything else returns null and reaches Reveal. The `swallow` action drops out of WhiteboardAction entirely.
+3. index.ts: widen the Reveal interface to the slice used --- addKeyBinding, registerKeyboardShortcut, getIndices, on. Keep the plain-W addKeyBinding, claim shift-W in the existing capture-phase listener (Reveal never dispatches it, keyboard.js:170-178), and register a help row per surface.
+4. index.ts: subscribe to slidechanged to swap the live bucket, and to overviewshown to close the layer.
+5. whiteboard.css: `[data-surface="slide"]` drops background-color and background-image to transparent and strengthens the toolbar scrim so the chips stay legible over arbitrary slide content.
+6. index.ts: split the save path. Board mode composites surface colour plus background image as it does now. Slide mode acquires a getDisplayMedia stream lazily on the first D, holds it until close, hides the toolbar, draws one video frame to a canvas and saves that; a cancelled prompt or a missing API falls back to the ink-only canvas on transparency.
+7. Tests in test/whiteboard-core.test.ts for the claimed-key set, the surface flip and the per-slide bucket. README Whiteboard section.
 <!-- SECTION:PLAN:END -->
