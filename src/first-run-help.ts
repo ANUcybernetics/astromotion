@@ -62,8 +62,25 @@ function sessionStore(): ViewedStore | undefined {
   }
 }
 
+// Two different "this isn't a human reading a deck" URL flags, easy to conflate:
+// `print-pdf` is Reveal's own print view, which astromotion doesn't use, and
+// `astromotion-export` is what `astromotion-pdf` actually loads a deck with.
+// Missing the second one doesn't just mar the export, it stops it dead ---
+// decktape's generic plugin navigates by pressing ArrowRight, a key the help
+// overlay swallows, so the frame never changes, the plugin decides the deck is
+// over after one slide, and the PDF is a single page of the shortcut table.
 export function isSuppressedView(search: string): boolean {
-  return new URLSearchParams(search).has("print-pdf");
+  const params = new URLSearchParams(search);
+  return params.has("print-pdf") || params.has("astromotion-export");
+}
+
+// Any browser being driven programmatically --- decktape, `astromotion-check`,
+// a consumer's screenshot job --- is not a viewer who needs teaching the key
+// bindings. The URL flag above is the deterministic guard for astromotion's own
+// exporter; this one keeps every other driver correct by construction rather
+// than by the accident of navigating some way the overlay doesn't intercept.
+function isAutomatedView(): boolean {
+  return typeof navigator !== "undefined" && navigator.webdriver === true;
 }
 
 // Call after every other key binding is registered: Reveal builds the overlay's
@@ -73,7 +90,7 @@ export function initFirstRunHelp(deck: RevealHelp): void {
   // The speaker view loads the deck in an iframe, and ?print-pdf renders every
   // slide at once --- neither wants an overlay.
   if (deck.isSpeakerNotes?.() || deck.isPrintView?.()) return;
-  if (isSuppressedView(location.search)) return;
+  if (isSuppressedView(location.search) || isAutomatedView()) return;
   if (!claimFirstView(sessionStore(), helpSeenKey(location.pathname))) return;
   deck.toggleHelp(true);
 }

@@ -31,8 +31,14 @@ describe("helpSeenKey", () => {
 });
 
 describe("isSuppressedView", () => {
-  it("suppresses the overlay in the PDF export view", () => {
+  it("suppresses the overlay in Reveal's print view", () => {
     expect(isSuppressedView("?print-pdf&showNotes=separate-page")).toBe(true);
+  });
+
+  // The overlay swallows the ArrowRight that decktape's generic plugin navigates
+  // with, so leaving it up doesn't mar the export, it truncates it to one page.
+  it("suppresses the overlay in astromotion's own PDF export", () => {
+    expect(isSuppressedView("?astromotion-export")).toBe(true);
   });
 
   it("leaves ordinary and param-gated deck URLs alone", () => {
