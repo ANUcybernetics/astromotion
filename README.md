@@ -345,15 +345,25 @@ write your own route.
 ## Keyboard help
 
 Reveal's help overlay lists every key binding, astromotion's included, and **?**
-brings it up. Since that only helps someone who already suspects there's help,
-the overlay also opens by itself the first time a deck is loaded in a browser
-tab. **Escape** dismisses it.
+brings it up. Since that only helps someone who already suspects there's help, a
+small card appears by itself the first time a deck is loaded in a browser tab,
+saying the page is a reveal.js deck, that **←** and **→** move through it, and
+that **?** lists the rest. Any key, any click, or twelve seconds dismisses it;
+because it isn't a real modal, the arrow key that dismisses it also advances the
+slide.
 
 That "first time" is per tab, not per browser: the flag lives in
-`sessionStorage` keyed by the deck's path, so a reload doesn't re-show the
-overlay, a second deck opened in the same tab gets its own showing, and a fresh
-tab is treated as a fresh viewer. The speaker-notes view and the `?print-pdf`
-export view never show it.
+`sessionStorage` keyed by the deck's path, so a reload doesn't re-show the card,
+a second deck opened in the same tab gets its own showing, and a fresh tab is
+treated as a fresh viewer. The speaker-notes view, the `?print-pdf` export view,
+and any browser driven by automation (`navigator.webdriver`) never show it.
+
+Themes can restyle the card through `--astromotion-hint-scrim`,
+`--astromotion-hint-bg`, `--astromotion-hint-color`,
+`--astromotion-hint-border`, `--astromotion-hint-radius`,
+`--astromotion-hint-shadow`, `--astromotion-hint-padding`,
+`--astromotion-hint-font-family`, `--astromotion-hint-font-size`,
+`--astromotion-hint-kbd-bg` and `--astromotion-hint-kbd-edge`.
 
 ## Whiteboard
 

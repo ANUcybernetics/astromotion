@@ -88,7 +88,6 @@ const { Content, frontmatter } = Astro.props;
   void deck.initialize().then(() => {
     initWhiteboard(deck);
     initClock(deck);
-    // Last: the help overlay lists the bindings registered before it's shown.
     initFirstRunHelp(deck);
   });
   keepAwakeInFullscreen();
