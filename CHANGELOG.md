@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-08 (v0.21.0)
+
+### A friendlier greeting than Reveal's shortcut table
+
+Opening a deck for the first time in a tab used to pop Reveal's own help
+overlay: a full-screen black sheet of every key binding, unstyled by the deck's
+theme, dumped on someone who had just clicked a link. It taught the bindings and
+looked like an error dialog.
+
+In its place is a small themed card --- that this is a reveal.js deck, that `←`
+and `→` move through it, and that `?` lists the rest --- dismissed by any key,
+any click, or twelve seconds. It is deliberately not a real modal, so unlike the
+overlay it swallows nothing: the arrow that dismisses it also advances the
+slide.
+
+Themes can restyle it through `--astromotion-hint-scrim`,
+`--astromotion-hint-bg`, `--astromotion-hint-color`,
+`--astromotion-hint-border`, `--astromotion-hint-radius`,
+`--astromotion-hint-shadow`, `--astromotion-hint-padding`,
+`--astromotion-hint-font-family`, `--astromotion-hint-font-size`,
+`--astromotion-hint-kbd-bg` and `--astromotion-hint-kbd-edge`.
+
 ## 2026-08-06 (v0.20.0)
 
 ### The whiteboard gets a second surface, over the slide
