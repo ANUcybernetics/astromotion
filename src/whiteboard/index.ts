@@ -45,6 +45,7 @@ import { strokeOutlinePath } from "./outline";
 // reveal.js's awkward default-export typings.
 interface RevealDeck {
   registerKeyboardShortcut(key: string, description: string): void;
+  getScale(): number;
   getIndices(slide?: Element): { h: number; v: number; f?: number };
   isOverview(): boolean;
   toggleOverview(override?: boolean): void;
@@ -154,6 +155,13 @@ export function initWhiteboard(deck: RevealDeck): void {
   let state: WhiteboardState = createWhiteboard();
   let raf = 0;
   let activePointer: number | null = null;
+  // Reveal's scale: how many CSS px one deck unit is worth right now. Brush
+  // widths are in deck units, so this is what keeps the pen holding its weight
+  // against the slide on every display. Points stay in viewport coordinates
+  // (see the note on WhiteboardSurface), so it is deliberately not applied to
+  // the canvas transform --- only to the stroke width, and to the toolbar's
+  // size preview via --wb-ui-scale.
+  let deckScale = 1;
 
   const scheduleRender = () => {
     if (!raf) raf = requestAnimationFrame(render);
@@ -168,7 +176,7 @@ export function initWhiteboard(deck: RevealDeck): void {
     const strokes = state.current ? [...settled, state.current] : settled;
     for (const stroke of strokes) {
       const path = strokeOutlinePath(stroke.points, {
-        size: BRUSH_SIZES[stroke.size] ?? BRUSH_SIZES[0],
+        size: (BRUSH_SIZES[stroke.size] ?? BRUSH_SIZES[0]) * deckScale,
         pen: stroke.pen,
       });
       if (!path) continue;
@@ -185,6 +193,8 @@ export function initWhiteboard(deck: RevealDeck): void {
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(overlay.clientWidth * dpr);
     canvas.height = Math.round(overlay.clientHeight * dpr);
+    deckScale = deck.getScale();
+    overlay.style.setProperty("--wb-ui-scale", String(deckScale));
     scheduleRender();
   };
 

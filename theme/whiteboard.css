@@ -121,8 +121,12 @@
 }
 
 /* Brush size buttons: same chip as the swatches, with a centred dot at
-   three-quarters of the brush's on-canvas diameter (--dot-size, set by the
-   script) so the broad marker still fits inside the chip. */
+   three-quarters of the brush's on-canvas diameter --- --dot-size is the brush
+   in deck units (set by the script), so it takes the same --wb-ui-scale the
+   canvas applies and the dot stays a true preview of the mark you'll get. The
+   chip itself is deliberately not scaled: it is a click target for the
+   presenter's hand, not content sized against the slide. The cap keeps the
+   broad marker inside the chip once the scale outgrows it. */
 .astromotion-whiteboard-size {
   display: grid;
   flex: none;
@@ -140,8 +144,8 @@
 
 .astromotion-whiteboard-size::after {
   content: "";
-  width: calc(var(--dot-size) * 0.75);
-  height: calc(var(--dot-size) * 0.75);
+  width: min(calc(var(--dot-size) * var(--wb-ui-scale, 1) * 0.75), 70%);
+  height: min(calc(var(--dot-size) * var(--wb-ui-scale, 1) * 0.75), 70%);
   border-radius: 50%;
   background: var(--wb-chip-dot);
 }

@@ -63,10 +63,14 @@ export const INK_PALETTES: Record<WhiteboardMode, string[]> = {
   dark: ["#f4f4ef", "#ff6b6b", "#5eb0ff", "#4ade80"],
 };
 
-// Brush sizes in CSS px (pressure thins/thickens around each): fine for
-// writing, broad for highlighting. The two digit keys after the palette
-// select them.
-export const BRUSH_SIZES = [12, 36];
+// Brush sizes in deck units --- the 1280x720 design canvas, not CSS px, so
+// the DOM layer multiplies them by Reveal's scale before drawing (pressure
+// thins/thickens around each). Handwriting on a fullscreen overlay takes up
+// about the same fraction of the screen whatever its resolution, so a width
+// fixed in CSS px reads spidery on a 4K display and blobby on a 720p
+// projector --- a 2x swing between the two. Fine for writing, broad for
+// highlighting; the two digit keys after the palette select them.
+export const BRUSH_SIZES = [6, 18];
 
 // Colour keys are the leading digits and the brush sizes claim the next
 // ones, so a palette can hold at most 9 - BRUSH_SIZES.length inks.
