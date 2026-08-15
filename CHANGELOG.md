@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-15 (v0.21.1)
+
+### The whiteboard pen holds its weight on every screen
+
+Brush widths were fixed in CSS pixels, on an overlay that sits outside Reveal's
+scaled slides --- so the pen was the one thing in a deck that ignored the
+1280x720 design canvas. Slide content scales by `min(vw/1280, vh/720)`, so the
+same stroke landed twice as heavy on a 1080p projector as on a 4K display, and
+handwriting takes up roughly a constant fraction of the screen either way. The
+mark read spidery on one and blobby on the other.
+
+Sizes are now deck units, multiplied by Reveal's scale as the stroke is drawn.
+The toolbar's size preview takes the same factor, capped so the broad marker
+stays inside its chip; the chips themselves are unchanged, being click targets
+for the presenter's hand rather than content sized against the slide.
+
 ## 2026-08-08 (v0.21.0)
 
 ### A friendlier greeting than Reveal's shortcut table
