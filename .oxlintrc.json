@@ -57,6 +57,9 @@
     "no-shadow": "off",
     // side-effecting CSS/theme imports are the norm in Astro components
     "import/no-unassigned-import": "off",
+    // JSDoc examples insert a zero-width character in `*/` so the example does
+    // not terminate its surrounding comment
+    "no-irregular-whitespace": "off",
     "no-underscore-dangle": ["error", { "allow": ["__dirname", "__filename"] }]
   },
   "overrides": [
