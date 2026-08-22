@@ -10,4 +10,5 @@ minimumReleaseAgeExclude:
   - "@astrojs/mdx"
   - "@astrojs/markdown-satteri"
 overrides:
+  "nanoid@>=3.0.0 <3.3.18": "^3.3.18"
   vite: ^8.0.5
