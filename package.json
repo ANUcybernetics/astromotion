@@ -1,6 +1,6 @@
 {
   "name": "astromotion",
-  "version": "0.21.1",
+  "version": "0.22.0",
   "description": "Astro integration for markdown-authored slide decks powered by Reveal.js, with a bit of Marp syntax",
   "license": "MIT",
   "author": "Ben Swift",
@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@qrgrid/core": "^0.2.4",
+    "linkedom": "^0.18.12",
     "perfect-freehand": "^1.2.3",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
@@ -49,7 +50,6 @@
     "eslint-plugin-no-only-tests": "^3.4.0",
     "eslint-plugin-perfectionist": "^5.10.0",
     "eslint-plugin-unused-imports": "^4.4.1",
-    "linkedom": "^0.18.12",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "puppeteer-core": "^24.0.0",

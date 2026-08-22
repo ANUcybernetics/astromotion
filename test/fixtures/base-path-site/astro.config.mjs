@@ -22,6 +22,7 @@ export default defineConfig({
     astromotion({
       favicon: process.env.FIXTURE_FAVICON || undefined,
       ogImage: process.env.FIXTURE_OG_IMAGE || undefined,
+      routePrefix: process.env.FIXTURE_ROUTE_PREFIX || undefined,
     }),
   ],
 });

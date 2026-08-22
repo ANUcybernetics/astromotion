@@ -51,7 +51,8 @@ async function build(outDir: string, env: Record<string, string> = {}) {
     cwd: fixture,
     env: { ...parentEnv, ...env },
   });
-  const html = await readFile(resolve(fixture, outDir, "decks/sample/index.html"), "utf8");
+  const prefix = (env.FIXTURE_ROUTE_PREFIX ?? "/decks").replace(/^\//, "");
+  const html = await readFile(resolve(fixture, outDir, prefix, "sample/index.html"), "utf8");
   return parseHTML(html).document;
 }
 
@@ -77,6 +78,7 @@ function internalUrls(doc: Document): string[] {
 describe("deck head under a base path", () => {
   let configured: Document;
   let omitted: Document;
+  let remounted: Document;
 
   beforeAll(async () => {
     await linkPackage();
@@ -85,11 +87,13 @@ describe("deck head under a base path", () => {
       FIXTURE_OG_IMAGE: "/og-image.svg",
     });
     omitted = await build("dist-omitted");
+    remounted = await build("dist-remounted", { FIXTURE_ROUTE_PREFIX: "/lectures/" });
   }, 180_000);
 
   afterAll(async () => {
     await rm(resolve(fixture, "dist-configured"), { recursive: true, force: true });
     await rm(resolve(fixture, "dist-omitted"), { recursive: true, force: true });
+    await rm(resolve(fixture, "dist-remounted"), { recursive: true, force: true });
   });
 
   it("prefixes every internal URL with the base path", () => {
@@ -148,5 +152,11 @@ describe("deck head under a base path", () => {
     await expect(readFile(draft, "utf8")).rejects.toThrow();
     const sample = resolve(fixture, "dist-omitted/decks/sample/index.html");
     await expect(readFile(sample, "utf8")).resolves.toContain("Slide one");
+  });
+
+  it("mounts the injected route at a normalized custom prefix", async () => {
+    expect(remounted.querySelector(".reveal .slides section")?.textContent).toContain("Slide one");
+    const custom = resolve(fixture, "dist-remounted/lectures/sample/index.html");
+    await expect(readFile(custom, "utf8")).resolves.toContain('class="reveal"');
   });
 });

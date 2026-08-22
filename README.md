@@ -29,17 +29,20 @@ In your `astro.config.ts`:
 
 ```js
 import { defineConfig } from "astro/config";
-import { astromotion } from "astromotion";
+import { astromotion, deckRemarkPlugins } from "astromotion";
 
 export default defineConfig({
+  markdown: { remarkPlugins: deckRemarkPlugins },
   integrations: [astromotion()],
 });
 ```
 
-The integration registers `@astrojs/mdx` (only if no other integration has
-already done so) and adds the deck remark plugins to Astro's global markdown
-config, so it composes cleanly with themes that register mdx themselves. It also
-injects the `/decks/[...slug]` catch-all route and resolves your theme CSS.
+The integration registers `@astrojs/mdx` when no other integration has already
+done so. Add `deckRemarkPlugins` to Astro's shared markdown configuration (or
+the theme option that owns that configuration); Astro exposes one processor,
+so astromotion cannot safely retrofit plugins into an MDX integration another
+integration has already registered. It also injects the `/decks/[...slug]`
+catch-all route and resolves your theme CSS.
 Slides are server-rendered HTML by default; interactive components opt in to
 client-side hydration per component via Astro's `client:*` directives.
 
@@ -307,6 +310,8 @@ export default defineConfig({
 astromotion({
   theme: "./src/my-theme.css", // custom theme CSS path (default: built-in black theme)
   injectRoutes: true, // inject /decks/[...slug] route (default: true)
+  routePrefix: "/decks", // mount the injected route elsewhere, e.g. /lectures
+  checkStructure: true, // verify generated deck markup after builds (default: true)
   shikiConfig: { theme: "vitesse-dark" }, // full ShikiConfig (default: { theme: "vitesse-dark" })
 });
 ```
@@ -323,8 +328,16 @@ astromotion({
 });
 ```
 
-If you set `injectRoutes: false`, you'll need to create your own route pages.
-See `pages/[...slug].astro` in this package for the reference implementation.
+Use `routePrefix` when only the public mount point differs. If you set
+`injectRoutes: false`, you'll need to create your own route pages; see
+`pages/[...slug].astro` in this package for the reference implementation.
+
+After a production build, astromotion checks every generated Reveal deck for
+the wrapper, slide, background, split-layout, highlighted-code and QR structures
+its renderer promises. A site with published source decks but no built deck
+pages gets a warning instead of silently reporting that zero decks passed. Set
+`checkStructure: false` only when another build integration owns an equivalent
+check.
 
 ## Reveal.js configuration
 

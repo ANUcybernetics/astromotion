@@ -5,6 +5,7 @@ import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectDeckAssets } from "./src/asset-collector.ts";
 import { buildState } from "./src/build-config.ts";
+import { checkDecks, countSourceDecks } from "./src/deck-structure.ts";
 import { viteDeckWatchIncludes } from "./src/vite-plugin-watch-includes.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -12,6 +13,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export interface AstromotionOptions {
   theme?: string;
   injectRoutes?: boolean;
+  /** Route prefix for injected deck pages (default: "/decks"). */
+  routePrefix?: string;
+  /** Check the structure of built deck pages after a production build (default: true). */
+  checkStructure?: boolean;
   /**
    * Shiki config for deck code blocks. Accepts the full `ShikiConfig`
    * shape — either a single `theme`, or dual `themes` with optional
@@ -41,8 +46,24 @@ export interface AstromotionOptions {
   ogImage?: string;
 }
 
+export function normalizeRoutePrefix(prefix: string): string {
+  const trimmed = prefix.trim();
+  if (trimmed === "" || trimmed === "/") return "";
+  const segments = trimmed.split("/").filter(Boolean);
+  if (
+    segments.some(
+      (segment) => segment === "." || segment === ".." || !/^[A-Za-z0-9._~-]+$/.test(segment),
+    )
+  ) {
+    throw new Error(`Invalid astromotion routePrefix: ${JSON.stringify(prefix)}`);
+  }
+  return `/${segments.join("/")}`;
+}
+
 export function astromotion(options: AstromotionOptions = {}): AstroIntegration {
   const { injectRoutes = true } = options;
+  const routePrefix = normalizeRoutePrefix(options.routePrefix ?? "/decks");
+  const shouldCheckStructure = options.checkStructure !== false;
   const themePath = options.theme
     ? resolve(options.theme)
     : resolve(__dirname, "theme/default.css");
@@ -115,26 +136,52 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
 
         if (injectRoutes) {
           injectRoute({
-            pattern: "/decks/[...slug]",
+            pattern: `${routePrefix}/[...slug]`,
             entrypoint: "astromotion/pages/[...slug].astro",
           });
         }
       },
-      "astro:build:done"({ dir, logger }) {
+      async "astro:build:done"({ dir, logger }) {
         const decksDir = resolve(projectRoot, "src/decks");
-        // No src/decks directory — nothing to copy. Anything else (a broken
-        // symlink, a permission error mid-copy) should fail the build rather
-        // than leave it green with assets missing.
-        if (!existsSync(decksDir)) return;
-        const assets = collectDeckAssets(decksDir);
-        for (const asset of assets) {
-          const relPath = relative(projectRoot, asset);
-          const dest = resolve(fileURLToPath(dir), relPath);
-          mkdirSync(dirname(dest), { recursive: true });
-          copyFileSync(asset, dest);
+        // No src/decks directory means there are no source assets. Anything
+        // else (a broken symlink, a permission error mid-copy) should fail the
+        // build rather than leave it green with assets missing.
+        if (existsSync(decksDir)) {
+          const assets = collectDeckAssets(decksDir);
+          for (const asset of assets) {
+            const relPath = relative(projectRoot, asset);
+            const dest = resolve(fileURLToPath(dir), relPath);
+            mkdirSync(dirname(dest), { recursive: true });
+            copyFileSync(asset, dest);
+          }
+          if (assets.length > 0) {
+            logger.info(`Copied ${assets.length} deck asset(s) to build output.`);
+          }
         }
-        if (assets.length > 0) {
-          logger.info(`Copied ${assets.length} deck asset(s) to build output.`);
+
+        if (shouldCheckStructure) {
+          const distDir = fileURLToPath(dir);
+          const { checked, violations } = await checkDecks(distDir);
+          if (violations.length > 0) {
+            const lines = violations
+              .slice(0, 30)
+              .map((violation) => `  ${violation.page}: ${violation.rule} — ${violation.detail}`);
+            if (violations.length > 30) lines.push(`  ... and ${violations.length - 30} more`);
+            throw new Error(`Found ${violations.length} deck violation(s):\n${lines.join("\n")}`);
+          }
+
+          if (checked > 0) {
+            logger.info(`Checked ${checked} deck(s) — no structural violations.`);
+          } else {
+            const sourceDecks = await countSourceDecks(decksDir);
+            if (sourceDecks > 0) {
+              logger.warn(
+                `Found ${sourceDecks} published source deck(s) but no built deck pages (.reveal slides) in dist — deck structure checks did not run. Check the route configuration.`,
+              );
+            } else {
+              logger.info("Checked 0 decks — none to build.");
+            }
+          }
         }
       },
     },

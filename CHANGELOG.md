@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-22 (v0.22.0)
+
+### Deck routing and build integrity belong to the deck engine
+
+The integration now accepts `routePrefix`, so a site can mount the standard
+injected route at `/lectures` or another prefix without copying a custom Astro
+integration. It also checks generated deck structure after each production
+build and warns when published source decks produce no deck pages. These checks
+previously lived in a particular website theme, leaving non-theme consumers
+unprotected and coupling the theme to Reveal's internal markup.
+
+The setup documentation now states the real shared-processor contract:
+consumers that already own the MDX/markdown pipeline pass the exported
+`deckRemarkPlugins` themselves.
+
 ## 2026-08-15 (v0.21.1)
 
 ### The whiteboard pen holds its weight on every screen
