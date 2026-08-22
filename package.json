@@ -52,7 +52,7 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "oxfmt": "^0.64.0",
     "oxlint": "^1.79.0",
-    "puppeteer-core": "^24.0.0",
+    "puppeteer-core": "^25.0.0",
     "remark-directive": "^4.0.0",
     "stylelint": "^17.14.1",
     "stylelint-config-standard": "^40.0.0",
