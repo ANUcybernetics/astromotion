@@ -62,7 +62,7 @@
   "peerDependencies": {
     "@astrojs/mdx": "^7.0.0",
     "astro": "^7.0.0",
-    "puppeteer-core": ">=23"
+    "puppeteer-core": ">=25"
   },
   "peerDependenciesMeta": {
     "puppeteer-core": {

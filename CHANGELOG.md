@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-22 (v0.22.1)
+
+The optional `puppeteer-core` peer now starts at 25. Puppeteer 25 replaces its
+vulnerable `extract-zip` download path, while astromotion's existing Node 24
+floor already satisfies the new Puppeteer line.
+
 ## 2026-08-22 (v0.22.0)
 
 ### Deck routing and build integrity belong to the deck engine
