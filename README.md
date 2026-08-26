@@ -113,7 +113,7 @@ Reveal.js `<section>` element.
 
 ### Minimal example
 
-```mdx
+````mdx
 ---
 title: My Deck
 ---
@@ -136,8 +136,13 @@ import MyWidget from "../components/MyWidget.svelte";
 
 **Big statement slide**
 
-{/* notes: This is a speaker note. <em>HTML is supported.</em> */}
+```notes
+This is a speaker note, authored in markdown:
+
+- a reminder
+- another
 ```
+````
 
 ### Directives
 
@@ -161,10 +166,42 @@ syntax:
   text for headings/paragraphs) from one slide to the next. Use
   `{/* _animate: id */}` to scope independent sequences --- only slides whose
   ids match animate across their shared boundary.
-- `{/* notes: ...HTML body... */}` --- presenter notes, visible in the Reveal.js
-  speaker view (press **S**). The content is rendered as HTML.
 - `{/* @include ./path.mdx */}` --- inline slides from another `.mdx` file (see
   Include directives below)
+
+Every directive is a **single-line** comment. Prose about a slide --- speaker
+notes, and notes to whoever edits the deck next --- goes in a fence instead (see
+below), because a multi-line `{/* … */}` comment does not survive a formatter:
+prettier's markdown printer escapes the `*` inside one, and astromotion rejects
+them for that reason.
+
+### Speaker notes and authoring comments
+
+Prose _about_ a slide rather than on it goes in a fenced block, authored in
+markdown:
+
+````mdx
+## Big statement slide
+
+```notes
+- open with the question, not the answer
+- the *point* is the contrast with the [previous claim](#/claim)
+```
+
+```comment
+Why this slide is the way it is, for whoever edits the deck next.
+```
+````
+
+- ` ```notes ` --- presenter notes: rendered into
+  `<aside class="notes" aria-hidden="true">` and visible in the Reveal.js
+  speaker view (press **S**). Two fences on one slide read as one set of notes.
+- ` ```comment ` --- authoring comments: stripped from the deck entirely,
+  and surfaced again by `astromotion-text --comments`.
+
+Fences rather than comments because no formatter reflows fence contents, at any
+`proseWrap` setting --- so notes come back byte-identical from `pnpm format`,
+and the deck stays valid MDX.
 
 ### Background images
 
@@ -670,7 +707,8 @@ with a one-line marker so an image-only slide doesn't print blank:
 | `![a diagram](./x.png)`      | `(image: a diagram)`             |
 | `![qr](https://example.com)` | `(qr: <https://example.com>)`    |
 | `<CourseTimeline />`         | `(component: CourseTimeline)`    |
-| `{/* notes: … */}`           | `> **notes:** …`                 |
+| a ` ```notes ` fence         | `> **notes:** …`                 |
+| a ` ```comment ` fence       | `> **comment:** …`               |
 | `{/* a note to self */}`     | `> **comment:** …`               |
 
 Dropped entirely: `import` statements and the presentation-only directives
@@ -772,7 +810,8 @@ The package exports:
 3. Convert directive syntax from HTML comments to MDX expression syntax:
    - `<!-- @include ./path -->` → `{/* @include ./path.mdx */}`
    - `<!-- _class: name -->` → `{/* _class: name */}`
-   - `<!-- notes: ... -->` → `{/* notes: ... */}`
+   - `<!-- notes: ... -->` → a ` ```notes ` fence (see Speaker notes and
+     authoring comments)
 4. Rename any `.md` partial files used by `@include` to `.mdx`.
 5. Remove `@astrojs/svelte` and `deckPreprocessor` from your Astro config if
    they were only there for deck support. Add `@astrojs/mdx` as a dependency

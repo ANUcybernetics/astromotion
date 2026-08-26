@@ -47,13 +47,16 @@ slide content.
    `{/* _animate: id */}`) expressions to `data-auto-animate` (and
    `data-auto-animate-id`) attributes on the enclosing section, enabling
    Reveal.js auto-animate between adjacent slides
-7. `remarkDeckNotes` --- converts `{/* notes: ...HTML... */}` expressions to
-   `<aside class="notes">` elements inside the section (the element Reveal's
-   notes plugin reads for the speaker view)
-8. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
-9. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
-   and split layouts
-10. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
+7. `remarkDeckNotes` --- converts a fenced ` ```notes ` block to an
+   `<aside class="notes">` element inside the section (the element Reveal's
+   notes plugin reads for the speaker view), parsing the fence body as markdown
+8. `remarkDeckComments` --- strips fenced ` ```comment ` blocks (authoring
+   prose, kept out of the rendered deck) and rejects multi-line
+   `{/* … */}` comments, which no formatter preserves
+9. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
+10. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
+    and split layouts
+11. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
     dashes) to slide text, including content spliced in by `@include`
 
 Each plugin gates itself with `if (!file.path?.endsWith('.deck.mdx')) return` so
@@ -98,11 +101,19 @@ browser --- unlike the PDF export, which drives a real one.
 MDX does not support HTML comments (`<!-- -->`). Directives use MDX expression
 comment syntax instead:
 
-| Directive     | Syntax                                                          |
-| ------------- | --------------------------------------------------------------- |
-| Include       | `{/* @include ./path.mdx */}` or `{/* @include pkg/foo.mdx */}` |
-| Slide class   | `{/* _class: name */}`                                          |
-| Speaker notes | `{/* notes: ...HTML body... */}`                                |
+| Directive   | Syntax                                                          |
+| ----------- | --------------------------------------------------------------- |
+| Include     | `{/* @include ./path.mdx */}` or `{/* @include pkg/foo.mdx */}` |
+| Slide class | `{/* _class: name */}`                                          |
+
+Every directive is a **single-line** comment. Prose about a slide goes in a
+fence: ` ```notes ` for speaker notes, ` ```comment ` for authoring
+comments, both authored in markdown. A multi-line `{/* … */}` comment is a build
+error --- prettier's markdown printer (and oxfmt with it) escapes the `*` inside
+one, turning a valid deck into invalid MDX, and the corrupted output is a fixed
+point, so `--check` can't detect it either. Fence contents are never reflowed,
+at any `proseWrap` setting; `test/format-stability.test.ts` is the guard on
+that.
 
 Background images (`![bg ...](url)`), QR images (`![qr](url)`), and slide
 separators (`---`) are unchanged from the previous format.

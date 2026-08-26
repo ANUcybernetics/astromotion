@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-08-26 (v0.23.0)
+
+### Prose about a slide goes in a fence, not a comment
+
+Speaker notes were a multi-line MDX comment (`{/* notes: …HTML… */}`), which
+prettier's markdown printer --- the printer oxfmt reproduces byte-for-byte ---
+corrupts: it escapes the `*` in any multi-line `{/* */}` comment, turning a
+valid deck into invalid MDX. The corrupted output is a fixed point, so no
+format-check can detect it: `oxfmt . && oxfmt --check .` reports "all files use
+the correct format" on a deck it has just broken. The only thing standing
+between a deck and that was an ignore entry in each consumer's formatter config
+--- per-repo discipline a new site with decks would silently miss.
+
+Notes are now a fenced ` ```notes ` block, and authoring comments a fenced
+` ```comment ` block. No formatter reflows fence contents at any
+`proseWrap` setting, so both come back byte-identical from `pnpm format`; the
+new `test/format-stability.test.ts` pins that, and also pins the corruption the
+old syntax suffered. Notes are markdown rather than hand-written HTML, so a list
+in the notes is a markdown list --- `remarkDeckNotes` parses the fence body
+instead of injecting a raw `html` node.
+
+**Breaking**, with no compatibility window, so there is one syntax rather than a
+deprecated one nobody is forced off:
+
+- `{/* notes: … */}` is no longer recognised; a deck still using it fails the
+  build with a message showing the fence to write instead
+- a multi-line `{/* … */}` comment anywhere in a deck is a build error, since it
+  is the shape a formatter corrupts. Single-line comments and directives
+  (`_class`, `_id`, `_if`, `_animate`, `@include`, and a consumer's own) are
+  untouched.
+- `parseNotesDirectiveMdx` is gone from `src/parse-helpers.ts`, replaced by
+  `isNotesFence` / `isCommentFence` / `isLegacyNotesDirective` /
+  `isMultilineMdxComment`
+
+`astromotion-text` gains the fences on both sides: a `notes`/`comment` fence
+still becomes a `> **notes:** …` / `> **comment:** …` blockquote, but now keeps
+the body's markdown structure instead of flattening stripped HTML into reflowed
+prose.
+
 ## 2026-08-22 (v0.22.1)
 
 The optional `puppeteer-core` peer now starts at 25. Puppeteer 25 replaces its
