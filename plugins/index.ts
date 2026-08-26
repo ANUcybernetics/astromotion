@@ -5,6 +5,7 @@ import { remarkDeckConditionals } from "./remark-deck-conditionals.ts";
 import { remarkDeckIds } from "./remark-deck-ids.ts";
 import { remarkDeckAnimate } from "./remark-deck-animate.ts";
 import { remarkDeckNotes } from "./remark-deck-notes.ts";
+import { remarkDeckComments } from "./remark-deck-comments.ts";
 import { remarkDeckQr } from "./remark-deck-qr.ts";
 import { remarkDeckBg } from "./remark-deck-bg.ts";
 import { remarkDeckSmartypants } from "./remark-deck-smartypants.ts";
@@ -17,6 +18,7 @@ export const deckRemarkPlugins = [
   remarkDeckIds,
   remarkDeckAnimate,
   remarkDeckNotes,
+  remarkDeckComments,
   remarkDeckQr,
   remarkDeckBg,
   remarkDeckSmartypants,
@@ -30,6 +32,7 @@ export {
   remarkDeckIds,
   remarkDeckAnimate,
   remarkDeckNotes,
+  remarkDeckComments,
   remarkDeckQr,
   remarkDeckBg,
   remarkDeckSmartypants,

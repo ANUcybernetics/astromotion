@@ -60,8 +60,42 @@ export function parseIdDirectiveMdx(value: string): string | null {
   return id ? (id.split(/\s/)[0] ?? null) : null;
 }
 
-export function parseNotesDirectiveMdx(value: string): string | null {
-  return parseMdxDirective(value, "notes");
+/**
+ * The fence languages that carry prose *about* a slide rather than content on
+ * it: `notes` becomes the speaker-notes aside, `comment` is stripped entirely.
+ *
+ * Both are fences rather than `{/* … *​/}` comments because no formatter
+ * reflows fence contents. Prettier's markdown printer --- which oxfmt
+ * reproduces --- escapes the `*` in a multi-line MDX comment, turning a valid
+ * deck into invalid MDX, and the corrupted output is a fixed point, so a
+ * format-check can't detect it either. A fence is immune by construction, at
+ * every proseWrap setting.
+ */
+export function isNotesFence(lang: string | null | undefined): boolean {
+  return lang === "notes";
+}
+
+export function isCommentFence(lang: string | null | undefined): boolean {
+  return lang === "comment";
+}
+
+/**
+ * Detect the removed `{/* notes: … *​/}` directive, so a deck still using
+ * it fails the build instead of silently losing its notes (an mdxFlowExpression
+ * comment nobody claims just compiles to nothing).
+ */
+export function isLegacyNotesDirective(value: string): boolean {
+  const body = parseMdxFlowExpression(value);
+  return body !== null && body.startsWith("notes:");
+}
+
+/**
+ * A `{/* … *​/}` comment spanning more than one line --- the shape a
+ * formatter corrupts. Single-line directives (`_class`, `_id`, `@include`, and
+ * a consumer's own) are untouched by formatters and stay as they are.
+ */
+export function isMultilineMdxComment(value: string): boolean {
+  return parseMdxFlowExpression(value) !== null && value.includes("\n");
 }
 
 export function parseIncludeDirectiveMdx(value: string): string | null {

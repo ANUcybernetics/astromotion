@@ -9,7 +9,7 @@
 //
 // Usage: astromotion-text <deck.deck.mdx> [output.md] [options]
 //   --stdout            write to stdout instead of a file
-//   --no-notes          drop {/* notes: … */} speaker notes
+//   --no-notes          drop speaker notes
 //   --no-comments       drop authoring comments ({/* … */} blocks)
 //   --no-placeholders   drop the (image: …) / (component: …) markers
 //   --no-title          don't lead with the frontmatter title

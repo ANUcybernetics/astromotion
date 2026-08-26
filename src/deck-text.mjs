@@ -73,8 +73,21 @@ export function parseIdDirectiveMdx(value) {
   return id ? (id.split(/\s/)[0] ?? null) : null;
 }
 
-export function parseNotesDirectiveMdx(value) {
-  return parseMdxDirective(value, "notes");
+export function isNotesFence(lang) {
+  return lang === "notes";
+}
+
+export function isCommentFence(lang) {
+  return lang === "comment";
+}
+
+export function isLegacyNotesDirective(value) {
+  const body = parseMdxFlowExpression(value);
+  return body !== null && body.startsWith("notes:");
+}
+
+export function isMultilineMdxComment(value) {
+  return parseMdxFlowExpression(value) !== null && value.includes("\n");
 }
 
 export function parseIncludeDirectiveMdx(value) {
@@ -212,9 +225,28 @@ function wrap(value, width) {
   return lines.join("\n");
 }
 
-// Speaker notes and authoring comments are both prose *about* the slide, so
-// both render as a labelled blockquote --- visible whether the markdown is
-// read raw or rendered, and clearly not part of what's on screen.
+// A fenced `notes`/`comment` body is markdown, so it parses into real nodes ---
+// a list in the source stays a list here --- and keeps the source's own
+// wrapping, the same as slide prose.
+function fenceAside(label, markdown) {
+  const children = parser.parse(markdown).children;
+  const first = children[0];
+  if (first?.type === "paragraph") {
+    first.children = [{ type: "strong", children: [text(label)] }, text(" "), ...first.children];
+    return { type: "blockquote", children };
+  }
+  return {
+    type: "blockquote",
+    children: [
+      { type: "paragraph", children: [{ type: "strong", children: [text(label)] }] },
+      ...children,
+    ],
+  };
+}
+
+// A single-line `{/* … *​/}` comment is one long line of prose, so this
+// one reflows: remark-stringify never re-wraps, and an unwrapped comment prints
+// as a single very long line.
 function aside(label, body) {
   // Comments are indented to sit inside `{/* … */}` in the source, and that
   // indentation survives into the node value; a line starting with a space
@@ -235,15 +267,16 @@ function aside(label, body) {
 }
 
 // Directives that only steer presentation (`_class`, `_id`, `_if`,
-// `_animate`) leave nothing behind. `notes:` and free-form comments become
-// asides when asked for. An unrecognised directive --- a consumer's own, e.g.
+// `_animate`) leave nothing behind. A free-form single-line comment becomes an
+// aside when asked for. An unrecognised directive --- a consumer's own, e.g.
 // `{/* embed: topics/foo */}` --- is left visible as a comment rather than
-// silently dropped, so the export never quietly omits content.
+// silently dropped, so the export never quietly omits content. The two shapes
+// that no longer parse fail loudly, with the same message the build gives.
 function convertExpression(node, options) {
   const body = parseMdxFlowExpression(node.value);
   if (body === null) return null;
-  const notes = parseNotesDirectiveMdx(node.value);
-  if (notes !== null) return options.notes ? aside("notes:", stripTags(notes)) : null;
+  if (isLegacyNotesDirective(node.value)) throw new Error(legacyNotesError(node));
+  if (isMultilineMdxComment(node.value)) throw new Error(multilineCommentError(node));
   if (
     parseClassDirectiveMdx(node.value) !== null ||
     parseIdDirectiveMdx(node.value) !== null ||
@@ -275,6 +308,14 @@ function convert(node, options) {
     return node.type === "mdxJsxFlowElement" ? paragraph(label) : text(label);
   }
 
+  if (node.type === "code" && isNotesFence(node.lang)) {
+    return options.notes ? fenceAside("notes:", node.value) : null;
+  }
+
+  if (node.type === "code" && isCommentFence(node.lang)) {
+    return options.comments ? fenceAside("comment:", node.value) : null;
+  }
+
   if (node.type === "image" || node.type === "imageReference") {
     return options.placeholders ? imagePlaceholder(node) : null;
   }
@@ -304,6 +345,26 @@ function convertChildren(children, options) {
   });
 }
 
+/* ---------- removed syntax ---------- */
+
+function at(node) {
+  return node.position ? `line ${node.position.start.line}: ` : "";
+}
+
+function legacyNotesError(node) {
+  return (
+    `${at(node)}{/* notes: … */} was removed in astromotion v0.23.0. ` +
+    "Speaker notes are a fenced `notes` block, authored in markdown."
+  );
+}
+
+function multilineCommentError(node) {
+  return (
+    `${at(node)}a multi-line {/* … */} comment does not survive a formatter. ` +
+    "Use a fenced `comment` block instead."
+  );
+}
+
 /* ---------- entry point ---------- */
 
 /**
@@ -311,7 +372,7 @@ function convertChildren(children, options) {
  *
  * @param {string} deckPath - path to a `.deck.mdx` file
  * @param {object} [options]
- * @param {boolean} [options.notes=true] - keep `{/* notes: … *​/}` directives
+ * @param {boolean} [options.notes=true] - keep fenced `notes` blocks
  * @param {boolean} [options.comments=true] - keep authoring comments
  * @param {boolean} [options.placeholders=true] - mark where visuals were
  * @param {boolean} [options.title=true] - lead with the frontmatter title

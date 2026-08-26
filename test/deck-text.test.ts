@@ -22,7 +22,8 @@ describe("deck-text directive parsing matches src/parse-helpers.ts", () => {
     "/* _animate */",
     "/* _animate: shuffle */",
     "/* _animate: */",
-    "/* notes: Say this <em>slowly</em>. */",
+    "/* notes: the removed directive */",
+    "/*\n  a multi-line comment\n*/",
     "/* @include ./partial.mdx */",
     "/* @include pkg/partials/foo.mdx trailing */",
     "/* embed: topics/course-overview */",
@@ -36,7 +37,8 @@ describe("deck-text directive parsing matches src/parse-helpers.ts", () => {
     "parseClassDirectiveMdx",
     "parseIdDirectiveMdx",
     "parseIfDirectiveMdx",
-    "parseNotesDirectiveMdx",
+    "isLegacyNotesDirective",
+    "isMultilineMdxComment",
     "parseIncludeDirectiveMdx",
     "parseAnimateDirectiveMdx",
   ] as const;
@@ -48,6 +50,17 @@ describe("deck-text directive parsing matches src/parse-helpers.ts", () => {
           (exporter as Record<string, (v: string) => unknown>)[parser](directive),
           `${parser}(${JSON.stringify(directive)})`,
         ).toEqual((helpers as Record<string, (v: string) => unknown>)[parser](directive));
+      }
+    });
+  }
+
+  for (const parser of ["isNotesFence", "isCommentFence"] as const) {
+    it(parser, () => {
+      for (const lang of ["notes", "comment", "js", "", null, undefined]) {
+        expect(
+          (exporter as Record<string, (v: unknown) => unknown>)[parser](lang),
+          `${parser}(${JSON.stringify(lang)})`,
+        ).toEqual((helpers as Record<string, (v: unknown) => unknown>)[parser](lang));
       }
     });
   }
@@ -99,8 +112,26 @@ describe("deckToMarkdown", () => {
   });
 
   it("renders speaker notes and authoring comments as labelled asides", () => {
-    expect(markdown).toContain("> **notes:** Say this slowly, then pause.");
+    expect(markdown).toContain("> **notes:** Say this _slowly_, then pause.");
     expect(markdown).toContain("> **comment:** Authoring note to self");
+    expect(markdown).toContain("> **comment:** This slide earns its place");
+  });
+
+  it("keeps markdown structure inside a notes block", () => {
+    // The body is markdown now, so a list in the source stays a list here
+    // rather than being flattened into reflowed prose.
+    expect(markdown).toContain("> - one reminder\n> - another");
+  });
+
+  it("fails on syntax that no longer parses", () => {
+    for (const [name, message] of [
+      ["deck-text-legacy-notes", /was removed in astromotion/],
+      ["deck-text-multiline-comment", /does not survive a formatter/],
+    ] as const) {
+      expect(() =>
+        exporter.deckToMarkdown(path.join(__dirname, "fixtures", `${name}.deck.mdx`)),
+      ).toThrow(message);
+    }
   });
 
   it("keeps an unrecognised directive visible rather than dropping it", () => {

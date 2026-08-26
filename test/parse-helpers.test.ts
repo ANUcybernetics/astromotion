@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   extractFrontmatter,
+  isCommentFence,
+  isLegacyNotesDirective,
+  isMultilineMdxComment,
+  isNotesFence,
   parseAnimateDirectiveMdx,
   parseBgModifiers,
   parseClassDirectiveMdx,
   parseIdDirectiveMdx,
   parseIncludeDirectiveMdx,
   parseMdxFlowExpression,
-  parseNotesDirectiveMdx,
 } from "../src/parse-helpers.ts";
 
 describe("extractFrontmatter", () => {
@@ -193,21 +196,43 @@ describe("parseIdDirectiveMdx", () => {
   });
 });
 
-describe("parseNotesDirectiveMdx", () => {
-  it("extracts notes content", () => {
-    expect(parseNotesDirectiveMdx("/* notes: Remember this */")).toBe("Remember this");
+describe("isNotesFence / isCommentFence", () => {
+  it("recognises the two prose fence languages", () => {
+    expect(isNotesFence("notes")).toBe(true);
+    expect(isCommentFence("comment")).toBe(true);
   });
 
-  it("returns null for non-notes comments", () => {
-    expect(parseNotesDirectiveMdx("/* _class: banner */")).toBeNull();
+  it("leaves every other fence alone", () => {
+    for (const lang of ["js", "notes-extra", "", null, undefined]) {
+      expect(isNotesFence(lang)).toBe(false);
+      expect(isCommentFence(lang)).toBe(false);
+    }
+  });
+});
+
+describe("isLegacyNotesDirective", () => {
+  it("recognises the removed directive, on one line or several", () => {
+    expect(isLegacyNotesDirective("/* notes: Remember this */")).toBe(true);
+    expect(isLegacyNotesDirective("/* notes:\nspeaker note text\n*/")).toBe(true);
   });
 
-  it("preserves internal content", () => {
-    expect(parseNotesDirectiveMdx("/* notes: line one, line two */")).toBe("line one, line two");
+  it("returns false for anything else", () => {
+    for (const value of ["/* _class: banner */", "/* notesy: nope */", "not an expression", ""]) {
+      expect(isLegacyNotesDirective(value)).toBe(false);
+    }
+  });
+});
+
+describe("isMultilineMdxComment", () => {
+  it("flags a comment spanning more than one line", () => {
+    expect(isMultilineMdxComment("/*\n  two\n  lines\n*/")).toBe(true);
+    expect(isMultilineMdxComment("/* _class: hero\n*/")).toBe(true);
   });
 
-  it("handles multiline notes content", () => {
-    expect(parseNotesDirectiveMdx("/* notes:\nspeaker note text\n*/")).toBe("speaker note text");
+  it("leaves single-line comments and non-comments alone", () => {
+    for (const value of ["/* _class: hero */", "/* a note */", "someExpression", ""]) {
+      expect(isMultilineMdxComment(value)).toBe(false);
+    }
   });
 });
 
