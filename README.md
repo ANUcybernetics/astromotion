@@ -39,12 +39,12 @@ export default defineConfig({
 
 The integration registers `@astrojs/mdx` when no other integration has already
 done so. Add `deckRemarkPlugins` to Astro's shared markdown configuration (or
-the theme option that owns that configuration); Astro exposes one processor,
-so astromotion cannot safely retrofit plugins into an MDX integration another
+the theme option that owns that configuration); Astro exposes one processor, so
+astromotion cannot safely retrofit plugins into an MDX integration another
 integration has already registered. It also injects the `/decks/[...slug]`
-catch-all route and resolves your theme CSS.
-Slides are server-rendered HTML by default; interactive components opt in to
-client-side hydration per component via Astro's `client:*` directives.
+catch-all route and resolves your theme CSS. Slides are server-rendered HTML by
+default; interactive components opt in to client-side hydration per component
+via Astro's `client:*` directives.
 
 **Important:** deck pages must not use Astro's `<ClientRouter />` --- it
 conflicts with Reveal.js keyboard navigation.
@@ -196,8 +196,8 @@ Why this slide is the way it is, for whoever edits the deck next.
 - ` ```notes ` --- presenter notes: rendered into
   `<aside class="notes" aria-hidden="true">` and visible in the Reveal.js
   speaker view (press **S**). Two fences on one slide read as one set of notes.
-- ` ```comment ` --- authoring comments: stripped from the deck entirely,
-  and surfaced again by `astromotion-text --comments`.
+- ` ```comment ` --- authoring comments: stripped from the deck entirely, and
+  surfaced again by `astromotion-text --comments`.
 
 Fences rather than comments because no formatter reflows fence contents, at any
 `proseWrap` setting --- so notes come back byte-identical from `pnpm format`,
@@ -369,10 +369,10 @@ Use `routePrefix` when only the public mount point differs. If you set
 `injectRoutes: false`, you'll need to create your own route pages; see
 `pages/[...slug].astro` in this package for the reference implementation.
 
-After a production build, astromotion checks every generated Reveal deck for
-the wrapper, slide, background, split-layout, highlighted-code and QR structures
-its renderer promises. A site with published source decks but no built deck
-pages gets a warning instead of silently reporting that zero decks passed. Set
+After a production build, astromotion checks every generated Reveal deck for the
+wrapper, slide, background, split-layout, highlighted-code and QR structures its
+renderer promises. A site with published source decks but no built deck pages
+gets a warning instead of silently reporting that zero decks passed. Set
 `checkStructure: false` only when another build integration owns an equivalent
 check.
 

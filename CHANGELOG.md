@@ -14,12 +14,12 @@ between a deck and that was an ignore entry in each consumer's formatter config
 --- per-repo discipline a new site with decks would silently miss.
 
 Notes are now a fenced ` ```notes ` block, and authoring comments a fenced
-` ```comment ` block. No formatter reflows fence contents at any
-`proseWrap` setting, so both come back byte-identical from `pnpm format`; the
-new `test/format-stability.test.ts` pins that, and also pins the corruption the
-old syntax suffered. Notes are markdown rather than hand-written HTML, so a list
-in the notes is a markdown list --- `remarkDeckNotes` parses the fence body
-instead of injecting a raw `html` node.
+` ```comment ` block. No formatter reflows fence contents at any `proseWrap`
+setting, so both come back byte-identical from `pnpm format`; the new
+`test/format-stability.test.ts` pins that, and also pins the corruption the old
+syntax suffered. Notes are markdown rather than hand-written HTML, so a list in
+the notes is a markdown list --- `remarkDeckNotes` parses the fence body instead
+of injecting a raw `html` node.
 
 **Breaking**, with no compatibility window, so there is one syntax rather than a
 deprecated one nobody is forced off:
@@ -51,14 +51,14 @@ floor already satisfies the new Puppeteer line.
 
 The integration now accepts `routePrefix`, so a site can mount the standard
 injected route at `/lectures` or another prefix without copying a custom Astro
-integration. It also checks generated deck structure after each production
-build and warns when published source decks produce no deck pages. These checks
+integration. It also checks generated deck structure after each production build
+and warns when published source decks produce no deck pages. These checks
 previously lived in a particular website theme, leaving non-theme consumers
 unprotected and coupling the theme to Reveal's internal markup.
 
-The setup documentation now states the real shared-processor contract:
-consumers that already own the MDX/markdown pipeline pass the exported
-`deckRemarkPlugins` themselves.
+The setup documentation now states the real shared-processor contract: consumers
+that already own the MDX/markdown pipeline pass the exported `deckRemarkPlugins`
+themselves.
 
 ## 2026-08-15 (v0.21.1)
 

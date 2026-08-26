@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "proseWrap": "always",
   "ignorePatterns": ["backlog/**", "test/fixtures/**"],
   "overrides": [{ "files": ["**/*.md", "**/*.mdx"], "options": { "printWidth": 80 } }]
 }

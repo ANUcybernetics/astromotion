@@ -51,8 +51,8 @@ slide content.
    `<aside class="notes">` element inside the section (the element Reveal's
    notes plugin reads for the speaker view), parsing the fence body as markdown
 8. `remarkDeckComments` --- strips fenced ` ```comment ` blocks (authoring
-   prose, kept out of the rendered deck) and rejects multi-line
-   `{/* … */}` comments, which no formatter preserves
+   prose, kept out of the rendered deck) and rejects multi-line `{/* … */}`
+   comments, which no formatter preserves
 9. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
 10. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
     and split layouts
@@ -107,10 +107,10 @@ comment syntax instead:
 | Slide class | `{/* _class: name */}`                                          |
 
 Every directive is a **single-line** comment. Prose about a slide goes in a
-fence: ` ```notes ` for speaker notes, ` ```comment ` for authoring
-comments, both authored in markdown. A multi-line `{/* … */}` comment is a build
-error --- prettier's markdown printer (and oxfmt with it) escapes the `*` inside
-one, turning a valid deck into invalid MDX, and the corrupted output is a fixed
+fence: ` ```notes ` for speaker notes, ` ```comment ` for authoring comments,
+both authored in markdown. A multi-line `{/* … */}` comment is a build error ---
+prettier's markdown printer (and oxfmt with it) escapes the `*` inside one,
+turning a valid deck into invalid MDX, and the corrupted output is a fixed
 point, so `--check` can't detect it either. Fence contents are never reflowed,
 at any `proseWrap` setting; `test/format-stability.test.ts` is the guard on
 that.
