@@ -13,50 +13,55 @@ Consumed as a package by Astro sites --- not a standalone app.
 ## Architecture
 
 The integration (`index.ts`) registers `@astrojs/mdx`, aliases theme CSS via a
-virtual module, and injects a catch-all deck route. The ten custom remark
+virtual module, and injects a catch-all deck route. The twelve custom remark
 plugins are exported as `deckRemarkPlugins` for consumers to wire into their own
 markdown processor (see the breaking-change note in CHANGELOG).
 
 ### .deck.mdx format
 
 Decks are authored as `.deck.mdx` files. Astro's MDX integration processes them
-through the standard remark/rehype pipeline, plus the ten custom remark plugins
-(in `plugins/`). The result is an Astro component whose default export is the
-slide content.
+through the standard remark/rehype pipeline, plus the twelve custom remark
+plugins (in `plugins/`). The result is an Astro component whose default export
+is the slide content.
 
 **Plugin order matters** (each runs in sequence on the remark AST):
 
-1. `remarkDeckIncludes` --- resolves `{/* @include ./path.mdx */}` directives by
+1. `remarkDeckDirectiveGuard` --- fails the build when a slide directive arrives
+   as an inline MDX expression (two single-line `{/* … */}` comments folded onto
+   one line), which no other plugin would see. `remarkDeckIncludes` calls its
+   `assertNoInlineDirectives` on each partial while that partial's own positions
+   still exist, so the error names the partial's line.
+2. `remarkDeckIncludes` --- resolves `{/* @include ./path.mdx */}` directives by
    splicing the included AST in-place (must run first so later plugins see the
    full content). Accepts both relative paths and bare module specifiers (e.g.
    `astro-theme-anu/partials/foo.mdx`), the latter resolved via Node's package
    resolution starting from the requesting file. YAML/TOML frontmatter on the
    included file is stripped automatically, so partials can double as standalone
    Astro content with frontmatter.
-2. `remarkDeckSections` --- wraps content between `---` thematic breaks in
+3. `remarkDeckSections` --- wraps content between `---` thematic breaks in
    `<section>` elements
-3. `remarkDeckClasses` --- converts `{/* _class: name */}` expressions to
+4. `remarkDeckClasses` --- converts `{/* _class: name */}` expressions to
    `class` attributes on the enclosing section
-4. `remarkDeckConditionals` --- converts `{/* _if: name */}` expressions to
+5. `remarkDeckConditionals` --- converts `{/* _if: name */}` expressions to
    `data-deck-if` attributes on the enclosing section; the deck route drops
    those slides client-side unless the URL carries the matching query param
-5. `remarkDeckIds` --- converts `{/* _id: name */}` expressions to `id`
+6. `remarkDeckIds` --- converts `{/* _id: name */}` expressions to `id`
    attributes on the enclosing section, which is what makes Reveal.js named
    links (`#/name`) resolve to that slide
-6. `remarkDeckAnimate` --- converts `{/* _animate */}` (and
+7. `remarkDeckAnimate` --- converts `{/* _animate */}` (and
    `{/* _animate: id */}`) expressions to `data-auto-animate` (and
    `data-auto-animate-id`) attributes on the enclosing section, enabling
    Reveal.js auto-animate between adjacent slides
-7. `remarkDeckNotes` --- converts a fenced ` ```notes ` block to an
+8. `remarkDeckNotes` --- converts a fenced ` ```notes ` block to an
    `<aside class="notes">` element inside the section (the element Reveal's
    notes plugin reads for the speaker view), parsing the fence body as markdown
-8. `remarkDeckComments` --- strips fenced ` ```comment ` blocks (authoring
+9. `remarkDeckComments` --- strips fenced ` ```comment ` blocks (authoring
    prose, kept out of the rendered deck) and rejects multi-line `{/* … */}`
    comments, which no formatter preserves
-9. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
-10. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
+10. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
+11. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
     and split layouts
-11. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
+12. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
     dashes) to slide text, including content spliced in by `@include`
 
 Each plugin gates itself with `if (!file.path?.endsWith('.deck.mdx')) return` so

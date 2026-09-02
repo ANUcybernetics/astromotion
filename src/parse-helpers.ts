@@ -90,6 +90,24 @@ export function isLegacyNotesDirective(value: string): boolean {
 }
 
 /**
+ * Does this `{/* … *​/}` comment name a directive astromotion claims? Asked of
+ * an expression found in *inline* position, where none of the plugins would
+ * ever see it --- so the answer decides whether to fail the build rather than
+ * which attribute to set. Delegating to the real parsers keeps the two in
+ * step: a directive added below is guarded the day it exists.
+ */
+export function isSlideDirective(value: string): boolean {
+  const parsers = [
+    parseClassDirectiveMdx,
+    parseIfDirectiveMdx,
+    parseIdDirectiveMdx,
+    parseAnimateDirectiveMdx,
+    parseIncludeDirectiveMdx,
+  ];
+  return parsers.some((parse) => parse(value) !== null) || isLegacyNotesDirective(value);
+}
+
+/**
  * A `{/* … *​/}` comment spanning more than one line --- the shape a
  * formatter corrupts. Single-line directives (`_class`, `_id`, `@include`, and
  * a consumer's own) are untouched by formatters and stay as they are.

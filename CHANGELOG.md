@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### A folded directive pair is a build error, not a silent loss
+
+A slide directive only works as a flow expression --- a `{/* … */}` comment
+alone on its line. Prettier's markdown printer, which oxfmt reproduces, folds
+two adjacent single-line comments onto one line; MDX then parses both as inline
+expressions inside a paragraph, where none of the directive plugins look. The
+slide lost its `_class` and `_id` with no build error and nothing to see until
+someone noticed the layout had gone. The folded output is a stable fixed point,
+so a format-check could not catch it either.
+
+`remarkDeckDirectiveGuard` now rejects an inline `_class`, `_if`, `_id`,
+`_animate`, `@include` or legacy `notes:` with the file and line, and the fix (a
+blank line between the two directives). `remarkDeckIncludes` runs the same check
+on each partial before splicing it, so the error names the partial rather than
+the deck that included it. A `{/* … */}` comment that is not a directive is
+still ignored wherever it appears.
+
 ## 2026-08-26 (v0.23.0)
 
 ### Prose about a slide goes in a fence, not a comment

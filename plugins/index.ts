@@ -1,3 +1,4 @@
+import { remarkDeckDirectiveGuard } from "./remark-deck-directive-guard.ts";
 import { remarkDeckIncludes } from "./remark-deck-includes.ts";
 import { remarkDeckSections } from "./remark-deck-sections.ts";
 import { remarkDeckClasses } from "./remark-deck-classes.ts";
@@ -11,6 +12,7 @@ import { remarkDeckBg } from "./remark-deck-bg.ts";
 import { remarkDeckSmartypants } from "./remark-deck-smartypants.ts";
 
 export const deckRemarkPlugins = [
+  remarkDeckDirectiveGuard,
   remarkDeckIncludes,
   remarkDeckSections,
   remarkDeckClasses,
@@ -25,6 +27,7 @@ export const deckRemarkPlugins = [
 ];
 
 export {
+  remarkDeckDirectiveGuard,
   remarkDeckIncludes,
   remarkDeckSections,
   remarkDeckClasses,

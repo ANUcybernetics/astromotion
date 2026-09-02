@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdx from "remark-mdx";
 import { parseIncludeDirectiveMdx, resolveIncludePath } from "../src/parse-helpers.ts";
+import { assertNoInlineDirectives } from "./remark-deck-directive-guard.ts";
 
 const MAX_DEPTH = 10;
 
@@ -58,6 +59,9 @@ function resolveIncludesIn(root: Root, ancestors: string[]): void {
       throw new Error(`@include file not found: ${includePath} (included from ${fromFile})`);
     }
     const includeRoot = mdxParseProcessor.parse(content);
+    // While the partial's own positions still mean something: once spliced,
+    // stripPositions below leaves nothing to name a line with.
+    assertNoInlineDirectives(includeRoot, absPath);
     resolveIncludesIn(includeRoot, [...ancestors, absPath]);
     const contentNodes = includeRoot.children.filter((n) => !["yaml", "toml"].includes(n.type));
     for (const contentNode of contentNodes) stripPositions(contentNode);
