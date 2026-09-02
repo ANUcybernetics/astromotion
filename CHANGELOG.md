@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2026-09-02 (v0.24.0)
 
 ### A folded directive pair is a build error, not a silent loss
 
