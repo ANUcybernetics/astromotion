@@ -12,17 +12,21 @@ interface Props {
   title: string;
   description?: string;
   image?: string;
+  /** Unlisted deck: builds at its URL for anyone with the link, but stays out
+   *  of the indexes — emits `<meta name="robots" content="noindex">` and marks
+   *  the page `data-pagefind-ignore="all"` so a site search skips it. */
+  unlisted?: boolean;
 }
 
-const { title, description, image } = Astro.props;
+const { title, description, image, unlisted = false } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <DeckHead title={title} description={description} image={image} />
+    <DeckHead title={title} description={description} image={image} unlisted={unlisted} />
   </head>
-  <body>
+  <body data-pagefind-ignore={unlisted ? "all" : undefined}>
     <slot />
   </body>
 </html>

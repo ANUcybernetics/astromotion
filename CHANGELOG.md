@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-03 (v0.24.1)
+
+### An unlisted deck is built, but not indexed
+
+`published: false` was the only way to hold a deck back, and it works by
+removing the page: no route, no HTML, nothing to link to. That is right for a
+deck still being written and wrong for one meant to be shared with the people
+who have the link and nobody else --- a talk to one audience, a deck that
+belongs to no series the site lists.
+
+`unlisted: true` is the other half of the pair. The deck builds at its own URL,
+and comes out of the indexes instead: the page emits
+`<meta name="robots" content="noindex">` and carries
+`data-pagefind-ignore="all"`, so a site search skips it. The two flags compose
+--- an unlisted deck can also be unpublished while it is being written.
+astromotion owns the page only; a consumer that lists decks from a content
+collection has to honour the flag in that listing too.
+
 ## 2026-09-02 (v0.24.0)
 
 ### A folded directive pair is a build error, not a silent loss

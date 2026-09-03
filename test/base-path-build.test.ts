@@ -144,14 +144,29 @@ describe("deck head under a base path", () => {
     expect(guards[0].textContent).toContain("setInterval");
   });
 
-  // The fixture ships two decks: `sample` (published) and `draft`
-  // (published:false). A production build must emit the first and drop the
+  // The fixture ships three decks: `sample` (published), `draft`
+  // (published:false) and `hidden` (unlisted). A production build must emit the first and drop the
   // second, so its URL serves nothing and Pagefind has no HTML to index.
   it("drops a published:false deck from the production build", async () => {
     const draft = resolve(fixture, "dist-omitted/decks/draft/index.html");
     await expect(readFile(draft, "utf8")).rejects.toThrow();
     const sample = resolve(fixture, "dist-omitted/decks/sample/index.html");
     await expect(readFile(sample, "utf8")).resolves.toContain("Slide one");
+  });
+
+  // `unlisted` is the other half of the pair: `published: false` removes the
+  // page, `unlisted: true` keeps it at its URL and takes it out of the
+  // indexes instead — a link you can hand out, that search doesn't surface.
+  it("builds an unlisted deck but marks it noindex and pagefind-ignored", async () => {
+    const built = resolve(fixture, "dist-omitted/decks/hidden/index.html");
+    const doc = parseHTML(await readFile(built, "utf8")).document;
+    expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex");
+    expect(doc.body.getAttribute("data-pagefind-ignore")).toBe("all");
+  });
+
+  it("leaves a listed deck indexable", async () => {
+    expect(configured.querySelector('meta[name="robots"]')).toBeNull();
+    expect(configured.body.hasAttribute("data-pagefind-ignore")).toBe(false);
   });
 
   it("mounts the injected route at a normalized custom prefix", async () => {
