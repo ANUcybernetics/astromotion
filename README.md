@@ -599,6 +599,7 @@ decks.sort((a, b) => a.slug.localeCompare(b.slug));
 
 The bundled `astromotion-pdf` command builds the site, starts a preview server,
 captures the deck with [decktape](https://github.com/astefanutti/decktape),
+flattens the capture's transparency with poppler's `pdftocairo` (see below),
 compresses the result with Ghostscript, repairs the colour spaces Ghostscript
 breaks on the way through (see below), and cleans up:
 
@@ -614,8 +615,8 @@ Options:
 - `--no-compress` --- keep the raw decktape PDF. The raw capture rasterises
   every slide, so decks with full-bleed backgrounds land at 100 MB+;
   Ghostscript's `/ebook` preset cuts that to a few MB with no visible loss at
-  presentation scale. If `gs` isn't installed the script keeps the raw PDF and
-  says so.
+  presentation scale. Compression needs both `gs` and `pdftocairo`
+  (poppler-utils); with either missing the script keeps the raw PDF and says so.
 - `--notes` --- export a presenter guide instead: each slide followed by a page
   of its speaker notes (default output `<slug>-notes.pdf`). This mode skips
   decktape and prints Reveal's `?print-pdf&showNotes=separate-page` view with
@@ -654,6 +655,29 @@ the export. Chrome embeds slide background images at their source resolution
 either way (measured identical at 1280x720 and 1920x1080) and text is vector ---
 only the PDF's nominal page size in points changes. Keep any override at 16:9;
 another ratio letterboxes the canvas into the page.
+
+### Erased translucent overlays
+
+Ghostscript's `pdfwrite` cannot reproduce the shading Chrome emits for a
+gradient whose alpha varies. Chrome splits one into two pieces --- a colour
+layer, written as a function-based (`ShadingType 1`) shading pattern, behind a
+luminosity soft mask carrying the alpha ramp. `pdfwrite` keeps the mask,
+converts the colour layer into a form XObject, and then writes that form with an
+empty content stream. There is nothing left to mask, so the overlay vanishes.
+
+On a deck this shows up as the `hero` scrim: the gradient that darkens a
+full-bleed background so the title stays legible over it disappears, and the
+slide prints as white text on undimmed artwork. No preset, compatibility level
+or colour-conversion strategy avoids it (`/ebook`, `/printer` and `/default`,
+PDF 1.4 through 1.7, all tested on Ghostscript 10.02), and the same erasure
+takes any other translucent overlay a deck paints with it.
+
+So the export flattens the capture with `pdftocairo -pdf` before Ghostscript
+sees it. Poppler composites every transparency group down to plain opaque marks
+--- text stays text, fonts stay embedded --- and Ghostscript then compresses a
+file whose overlays are already part of the artwork. Because the failure is
+invisible in a file listing, a missing `pdftocairo` skips compression rather
+than risking a silently wrong deck.
 
 ### Broken colour profiles
 

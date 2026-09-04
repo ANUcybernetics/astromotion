@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-04 (v0.24.2)
+
+### Translucent overlays survive the PDF export
+
+A `hero` slide darkens its full-bleed background with a gradient scrim so the
+title stays legible over the artwork. In an exported PDF the scrim was not
+there: the text sat on undimmed background, which is the one thing the scrim
+exists to prevent.
+
+Ghostscript's `pdfwrite` was erasing it. Chrome writes a gradient whose alpha
+varies as two pieces --- a colour layer, as a function-based (`ShadingType 1`)
+shading pattern, behind a luminosity soft mask holding the alpha ramp.
+`pdfwrite` keeps the mask, converts the colour layer into a form XObject, and
+writes that form with an empty content stream, leaving the mask nothing to
+reveal. No preset, compatibility level or colour-conversion strategy avoids it,
+and it takes any translucent overlay a deck paints, not just the hero scrim.
+
+The export now flattens the capture with `pdftocairo -pdf` before Ghostscript
+sees it. Poppler composites the transparency groups down to opaque marks ---
+text stays text, fonts stay embedded --- so Ghostscript compresses a file whose
+overlays are already part of the artwork. Compressed size is unchanged.
+
+Compression therefore wants poppler-utils alongside Ghostscript. Without it the
+export keeps the uncompressed PDF and says why, rather than emitting a small one
+with its overlays quietly missing.
+
 ## 2026-09-03 (v0.24.1)
 
 ### An unlisted deck is built, but not indexed

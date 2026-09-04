@@ -2,12 +2,13 @@
 // Export an astromotion deck to PDF.
 //
 // Pipeline: astro build -> astro preview -> decktape (generic plugin,
-// key-driven navigation) -> Ghostscript compression (optional but on by
-// default: the raw decktape PDF rasterises every slide, so a deck with
-// full-bleed backgrounds lands at 100 MB+; Ghostscript's /ebook preset cuts
-// that to a few MB with no visible loss at presentation scale) -> ICC repair
-// (Ghostscript leaves every image tagged with an empty colour profile, which
-// Safari and Preview then refuse to draw --- see src/pdf-icc.mjs).
+// key-driven navigation) -> pdftocairo transparency flattening -> Ghostscript
+// compression (optional but on by default: the raw decktape PDF rasterises
+// every slide, so a deck with full-bleed backgrounds lands at 100 MB+;
+// Ghostscript's /ebook preset cuts that to a few MB with no visible loss at
+// presentation scale) -> ICC repair (Ghostscript leaves every image tagged
+// with an empty colour profile, which Safari and Preview then refuse to draw
+// --- see src/pdf-icc.mjs).
 //
 // With --notes the deck is instead printed via headless Chrome against
 // Reveal's print view (?print-pdf&showNotes=separate-page), producing a
@@ -261,6 +262,31 @@ function repairIcc(file) {
   );
 }
 
+// Ghostscript's pdfwrite cannot reproduce the shading Chrome emits for a
+// gradient whose alpha varies --- a `.hero` scrim, or any translucent overlay.
+// Chrome splits such a gradient into a colour layer (a function-based,
+// ShadingType 1 pattern) behind a luminosity soft mask; pdfwrite keeps the
+// mask, converts the colour layer to a form XObject, and writes that form
+// EMPTY. The overlay disappears and the slide prints with its text sitting on
+// undimmed artwork. No preset, compatibility level or colour-conversion
+// strategy avoids it (all of /ebook /printer /default, PDF 1.4 through 1.7,
+// tested on gs 10.02).
+//
+// So flatten the transparency before gs ever sees it. pdftocairo composites
+// every group down to plain opaque marks, keeps text as text and fonts
+// embedded, and leaves a file gs then compresses without touching an overlay
+// that no longer exists.
+//
+// Without poppler we do NOT compress: a correct large PDF beats a small one
+// with washed-out slides, and this failure is invisible in a file listing.
+function flattenTransparency(file) {
+  const flat = `${file}.flat.pdf`;
+  const result = spawnSync("pdftocairo", ["-pdf", file, flat], { stdio: "ignore" });
+  if (result.status !== 0) return false;
+  renameSync(flat, file);
+  return true;
+}
+
 if (notes) {
   await captureNotes();
 } else {
@@ -271,20 +297,33 @@ killServer();
 
 if (compress) {
   const hasGhostscript = spawnSync("gs", ["--version"], { stdio: "ignore" }).status === 0;
-  if (hasGhostscript) {
+  const hasPoppler = spawnSync("pdftocairo", ["-v"], { stdio: "ignore" }).status === 0;
+  if (!hasGhostscript) {
+    console.warn("⚠ Ghostscript not found; keeping the uncompressed PDF.");
+    renameSync(rawOutput, output);
+  } else if (!hasPoppler) {
+    console.warn(
+      "⚠ pdftocairo (poppler-utils) not found; keeping the uncompressed PDF.\n" +
+        "  Ghostscript on its own silently erases translucent overlays --- a\n" +
+        "  hero scrim prints as undimmed artwork --- and a wrong PDF looks the\n" +
+        "  same as a right one in a file listing. Install poppler-utils to get\n" +
+        "  a compressed deck.",
+    );
+    renameSync(rawOutput, output);
+  } else {
+    console.log("Flattening transparency with pdftocairo...");
+    if (!flattenTransparency(rawOutput)) {
+      console.error("\n✗ pdftocairo failed to flatten the deck");
+      process.exit(1);
+    }
     console.log("Compressing with Ghostscript...");
     run("gs", [
       "-sDEVICE=pdfwrite",
       "-dCompatibilityLevel=1.4",
       "-dPDFSETTINGS=/ebook",
-      // /ebook implies a colour-conversion strategy that re-encodes ICC-based
-      // images. Where a slide layers a semi-transparent overlay over one --- a
-      // `.hero` scrim over a full-bleed background --- that conversion
-      // flattens the transparency group and paints the overlay OPAQUE, so the
-      // artwork under it vanishes and the slide prints as a flat wash with
-      // only its (higher stacking context) text surviving. Leaving colours
-      // alone preserves the group; it costs ~15% file size, and the slides
-      // still downsample normally.
+      // /ebook re-encodes ICC-based images, which shifts the flattened
+      // artwork's colour for no gain at presentation scale. Leaving colours
+      // alone costs ~15% file size; the slides still downsample normally.
       "-dColorConversionStrategy=/LeaveColorUnchanged",
       "-dNOPAUSE",
       "-dQUIET",
@@ -294,9 +333,6 @@ if (compress) {
     ]);
     unlinkSync(rawOutput);
     repairIcc(output);
-  } else {
-    console.warn("⚠ Ghostscript not found; keeping the uncompressed PDF.");
-    renameSync(rawOutput, output);
   }
 }
 
