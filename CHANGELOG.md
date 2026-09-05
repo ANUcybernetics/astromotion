@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-05 (v0.24.3)
+
+### No blank page after the last speaker-notes page
+
+A `--notes` export whose closing slide had speaker notes ended with a blank page
+in the deck background colour. Reveal drops the forced page break from the last
+slide page, but the separate-page notes element it inserts after that slide
+keeps its own `page-break-after: always`, and Chrome obliges with an empty
+trailing page. The print stylesheet now clears the break on a notes element that
+is the last thing in the deck.
+
 ## 2026-09-04 (v0.24.2)
 
 ### Translucent overlays survive the PDF export

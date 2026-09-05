@@ -38,6 +38,15 @@ html.reveal-print .reveal .speaker-notes-pdf[data-layout="separate-page"] {
   padding: 48px;
 }
 
+/* Reveal exempts the last `.pdf-page` from its `page-break-after: always`,
+   but a separate-page notes element is inserted as the page's next sibling,
+   so when the closing slide has notes that element is the real last page and
+   still carries the forced break. Chrome honours it with a blank trailing
+   page painted in the deck background. */
+html.reveal-print .reveal .speaker-notes-pdf[data-layout="separate-page"]:last-child {
+  break-after: avoid;
+}
+
 html.reveal-print .astromotion-whiteboard {
   display: none !important;
 }
