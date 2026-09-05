@@ -600,8 +600,7 @@ decks.sort((a, b) => a.slug.localeCompare(b.slug));
 The bundled `astromotion-pdf` command exports the projection deck by default,
 and a presenter guide (`--notes`) or a lectern handout (`--handout`) on request.
 For the deck it builds the site, starts a preview server, captures it with
-[decktape](https://github.com/astefanutti/decktape), flattens the capture's
-transparency with poppler's `pdftocairo` (see below), compresses the result with
+[decktape](https://github.com/astefanutti/decktape), compresses the result with
 Ghostscript, repairs the colour spaces Ghostscript breaks on the way through
 (see below), and cleans up:
 
