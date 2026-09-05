@@ -1,9 +1,10 @@
 ---
 id: TASK-5
 title: 'astromotion-pdf leaks its preview server, breaking the next decks:check'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-26 07:42'
+updated_date: '2026-09-05 05:29'
 labels: []
 dependencies: []
 ---
@@ -23,3 +24,9 @@ The symptom lands somewhere else entirely: the next `astromotion-check` run in a
 - [ ] #1 Running astromotion-pdf leaves no server listening on the port when it exits, on success or failure
 - [ ] #2 astromotion-check run straight after an astromotion-pdf export finds the port free
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Fixed in scripts/deck-pdf.mjs: stopBackgroundServer() (npx astro preview stop) runs before the preview is spawned and again from killServer, alongside the process-group kill. Verified on daysy 2026-09-05: an export on port 4399 that previously left a node daemon holding the port exits with the port free.
+<!-- SECTION:NOTES:END -->
