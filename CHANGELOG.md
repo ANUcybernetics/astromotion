@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-05 (v0.25.1)
+
+### Export runs Ghostscript alone again
+
+Both `pdftocairo` passes are gone from `astromotion-pdf`: the flattening pass
+before Ghostscript (v0.24.2) and the re-emit after it (v0.24.4). Each existed to
+keep a CSS-gradient hero scrim alive through some renderer, and
+astro-theme-university v0.14.3 replaces that scrim with a PNG alpha ramp, which
+every writer and renderer draws the same without help. Dropping the passes also
+stops poppler's brighter reading of translucent SVG fills being baked into the
+exported file, so SVG-backed slides now match the browser in Preview, MuPDF and
+Chrome, and `poppler-utils` is no longer needed for a compressed export. The
+README's overlay section now states the constraint: a translucent overlay must
+be an image with an alpha channel.
+
+### astromotion-pdf stops its preview server
+
+Astro 7 daemonises `astro preview`, so the process holding the port was outside
+the group the script killed on exit and was left running. The next export, or
+`astromotion-check` in any repo, then found the port taken by a server from
+whichever site ran last and failed with "never became ready". The script now
+runs `astro preview stop` before it starts and again on exit, as
+`astromotion-check` already did for `astro dev`.
 ## 2026-09-05 (v0.25.0)
 
 ### `--handout`: slides and notes three to a landscape page
@@ -22,6 +45,7 @@ line. On paper it earns nothing --- a page of prose facing a slide is
 self-evidently the notes --- and in the handout it costs a line out of every
 row. The `--notes` export loses it too, so a downstream tool that keyed off that
 string to tell a notes page from a slide page needs another signal.
+||||||| parent of 6cf1e5b (pdf: run Ghostscript alone and stop the preview daemon on exit)
 
 ## 2026-09-05 (v0.24.4)
 
