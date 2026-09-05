@@ -12,12 +12,13 @@
 // compressed file in a structure macOS Quartz draws correctly (see
 // flattenTransparency).
 //
-// With --notes the deck is instead printed via headless Chrome against
-// Reveal's print view (?print-pdf&showNotes=separate-page), producing a
-// presenter guide with each slide followed by its speaker-notes page.
-// decktape can't do this (it screenshots slides one by one), so this mode
-// drives Chrome directly through puppeteer-core --- an optional peer
-// dependency your project must install to use --notes.
+// With --notes or --handout the deck is instead printed via headless Chrome
+// against Reveal's print view (?print-pdf&showNotes=separate-page): --notes
+// gives a presenter guide with each slide followed by its speaker-notes page,
+// --handout imposes the same material three rows to a landscape A4 page with
+// each slide beside its own notes. decktape can't do either (it screenshots
+// slides one by one), so both drive Chrome directly through puppeteer-core ---
+// an optional peer dependency your project must install to use them.
 //
 // Usage: astromotion-pdf <slug> [output.pdf] [options]
 //   --prefix=/decks   route prefix the site serves decks under
@@ -26,6 +27,9 @@
 //   --notes           presenter guide: slides + interleaved speaker-notes
 //                     pages (default output <slug>-notes.pdf; requires
 //                     puppeteer-core and a local Chrome/Chromium)
+//   --handout         lectern handout: three slide-and-notes rows to a
+//                     landscape A4 page (default output <slug>-handout.pdf;
+//                     same requirements as --notes)
 //
 // Environment:
 //   DECKTAPE_CHROME_PATH  Chrome/Chromium binary (overrides discovery)
@@ -66,13 +70,19 @@ const flagValue = (name) =>
 const slug = positional[0];
 if (!slug) {
   console.error(
-    "Usage: astromotion-pdf <slug> [output.pdf] [--prefix=/decks] [--port=4321] [--no-compress] [--notes]",
+    "Usage: astromotion-pdf <slug> [output.pdf] [--prefix=/decks] [--port=4321] [--no-compress] [--notes] [--handout]",
   );
   process.exit(1);
 }
 
 const notes = flags.includes("--notes");
-const output = resolve(positional[1] ?? `${slug}${notes ? "-notes" : ""}.pdf`);
+const handout = flags.includes("--handout");
+if (notes && handout) {
+  console.error("✗ --notes and --handout are separate outputs; run the export once for each.");
+  process.exit(1);
+}
+const suffix = notes ? "-notes" : handout ? "-handout" : "";
+const output = resolve(positional[1] ?? `${slug}${suffix}.pdf`);
 const compress = !flags.includes("--no-compress");
 const prefix = (flagValue("prefix") ?? "/decks").replace(/\/+$/, "");
 const port = flagValue("port") ?? "4321";
@@ -164,14 +174,18 @@ const chromeArgs = resolveChromeArgs();
 const maxSlides = process.env.DECKTAPE_MAX_SLIDES ?? "500";
 const decktapeVersion = process.env.DECKTAPE_VERSION ?? "3.16.1";
 
-// Presenter-guide mode: load Reveal's print view and let Chrome print it.
-// `preferCSSPageSize: true` is essential --- Reveal declares
-// `@page { size: 1280px 720px }`, and letting Chrome letterbox that onto
-// A4/letter drifts the page breaks (see theme/print.css).
-async function captureNotes() {
+// Presenter-guide and handout modes: load Reveal's print view and let Chrome
+// print it. `preferCSSPageSize: true` is essential --- the page size comes
+// from a CSS `@page` rule (Reveal's own `1280px 720px` for --notes, the
+// landscape A4 the handout swaps in for it), and letting Chrome letterbox that
+// onto its default paper drifts every page break (see theme/print.css).
+//
+// `prepare` runs in the page once it has settled and before the print, and is
+// where --handout rewrites the DOM.
+async function printWithChrome(mode, query, prepare) {
   if (!chromePath) {
     console.error(
-      "✗ --notes needs a Chrome/Chromium binary (install one or set DECKTAPE_CHROME_PATH).",
+      `✗ ${mode} needs a Chrome/Chromium binary (install one or set DECKTAPE_CHROME_PATH).`,
     );
     process.exit(1);
   }
@@ -180,14 +194,13 @@ async function captureNotes() {
     ({ default: puppeteer } = await import("puppeteer-core"));
   } catch {
     console.error(
-      "✗ --notes requires puppeteer-core (an optional peer dependency).\n" +
+      `✗ ${mode} requires puppeteer-core (an optional peer dependency).\n` +
         "  Install it in your project: pnpm add -D puppeteer-core",
     );
     process.exit(1);
   }
 
-  const printUrl = `${exportUrl}&print-pdf&showNotes=separate-page`;
-  console.log("Printing slides + notes with headless Chrome...");
+  const printUrl = `${exportUrl}&print-pdf&showNotes=separate-page${query}`;
   const browser = await puppeteer.launch({
     executablePath: chromePath,
     args: chromeArgs,
@@ -207,6 +220,7 @@ async function captureNotes() {
     // Same settling pause decktape mode uses (--load-pause): backgrounds and
     // late layout work have no load event to await.
     await new Promise((r) => setTimeout(r, 5000));
+    if (prepare) await page.evaluate(prepare);
     await page.pdf({
       path: rawOutput,
       preferCSSPageSize: true,
@@ -216,6 +230,93 @@ async function captureNotes() {
   } finally {
     await browser.close();
   }
+}
+
+function captureNotes() {
+  console.log("Printing slides + notes with headless Chrome...");
+  return printWithChrome("--notes", "");
+}
+
+// The handout is the notes print view re-imposed: Reveal leaves `.slides`
+// holding a flat run of `.pdf-page` elements, each followed by the
+// `.speaker-notes-pdf` page for that slide (a slide without notes gets none),
+// and this pairs them up into rows that theme/print.css lays out three to a
+// landscape A4 page.
+//
+// `pdfSeparateFragments=false` is what makes the pairing one row per slide:
+// left on, Reveal emits a page per fragment step and hangs the notes off the
+// first of them, so a slide with a three-step build would take four rows, one
+// carrying the notes and three blank beside a nearly identical thumbnail. Off,
+// each slide prints once with its build complete --- which is what a lectern
+// copy wants anyway.
+function captureHandout() {
+  console.log("Printing handout with headless Chrome...");
+  return printWithChrome("--handout", "&pdfSeparateFragments=false", () => {
+    const slides = document.querySelector(".reveal .slides");
+    const children = [...slides.children];
+
+    // The canvas size has to be read before the rewrite: `.pdf-page` gets its
+    // width from filling `.slides`, so once it sits in a thumbnail box it
+    // would measure 88mm rather than the deck's own 1280px.
+    const first = children.find((el) => el.classList.contains("pdf-page"));
+    if (!first) throw new Error("handout: the print view produced no slide pages");
+    const canvasWidth = first.offsetWidth;
+    const canvasHeight = first.offsetHeight;
+
+    const boxes = [];
+    for (let i = 0; i < children.length; i++) {
+      const slide = children[i];
+      if (!slide.classList.contains("pdf-page")) continue;
+
+      const row = document.createElement("div");
+      row.className = "astromotion-handout-row";
+      slides.insertBefore(row, slide);
+
+      const box = document.createElement("div");
+      box.className = "astromotion-handout-slide";
+      row.appendChild(box);
+      box.appendChild(slide);
+      slide.style.width = `${canvasWidth}px`;
+      slide.style.height = `${canvasHeight}px`;
+      boxes.push(box);
+
+      const next = children[i + 1];
+      const notes = next?.classList.contains("speaker-notes-pdf")
+        ? next
+        : Object.assign(document.createElement("div"), {
+            className: "speaker-notes speaker-notes-pdf",
+          });
+      // A stand-in for a slide with no notes still needs the attribute the
+      // notes styles key off, so the empty cell measures like a full one.
+      notes.setAttribute("data-layout", "separate-page");
+      row.appendChild(notes);
+      if (notes === next) i++;
+    }
+
+    document.documentElement.classList.add("astromotion-handout");
+
+    // Reveal sizes the printed page by injecting `@page { size: <slide> }`
+    // into a <style> element; the handout is landscape A4, so drop that rule
+    // and write our own. Only Reveal's rule matches: the deck's own CSS
+    // arrives as a linked stylesheet, and this is the one @page in the
+    // document that names a size.
+    for (const style of document.head.querySelectorAll("style")) {
+      if (/@page\s*\{[^}]*\bsize\b/.test(style.textContent)) style.remove();
+    }
+    const pageRule = document.createElement("style");
+    pageRule.textContent = "@page { size: A4 landscape; margin: 6mm 10mm; }";
+    document.head.appendChild(pageRule);
+
+    // The thumbnail's width is set in millimetres by the stylesheet and the
+    // canvas is in pixels, so the scale between them can only be measured, and
+    // only once the row is laid out. The height then has to be written back as
+    // a definite length rather than left to `aspect-ratio`: a grid item with an
+    // auto height stretches to the row, and Chrome resolves that stretch
+    // differently when paginating than it does on screen.
+    const scale = boxes[0].getBoundingClientRect().width / canvasWidth;
+    document.documentElement.style.setProperty("--astromotion-handout-slide-scale", `${scale}`);
+    for (const box of boxes) box.style.height = `${canvasHeight * scale}px`;
+  });
 }
 
 // decktape's `reveal` plugin can't drive astromotion decks: it requires a
@@ -301,6 +402,8 @@ function flattenTransparency(file) {
 
 if (notes) {
   await captureNotes();
+} else if (handout) {
+  await captureHandout();
 } else {
   captureSlides();
 }

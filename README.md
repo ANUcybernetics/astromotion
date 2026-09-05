@@ -597,11 +597,13 @@ decks.sort((a, b) => a.slug.localeCompare(b.slug));
 
 ## PDF export
 
-The bundled `astromotion-pdf` command builds the site, starts a preview server,
-captures the deck with [decktape](https://github.com/astefanutti/decktape),
-flattens the capture's transparency with poppler's `pdftocairo` (see below),
-compresses the result with Ghostscript, repairs the colour spaces Ghostscript
-breaks on the way through (see below), and cleans up:
+The bundled `astromotion-pdf` command exports the projection deck by default,
+and a presenter guide (`--notes`) or a lectern handout (`--handout`) on request.
+For the deck it builds the site, starts a preview server, captures it with
+[decktape](https://github.com/astefanutti/decktape), flattens the capture's
+transparency with poppler's `pdftocairo` (see below), compresses the result with
+Ghostscript, repairs the colour spaces Ghostscript breaks on the way through
+(see below), and cleans up:
 
 ```sh
 npx astromotion-pdf my-talk output.pdf
@@ -626,6 +628,16 @@ Options:
   (`pnpm add -D puppeteer-core`) and a local Chrome/Chromium --- unlike decktape
   mode there's no bundled-browser fallback. The `DECKTAPE_CHROME_PATH` /
   `DECKTAPE_CHROME_ARGS` variables apply here too.
+- `--handout` --- export a lectern handout instead (default output
+  `<slug>-handout.pdf`): the same slides and notes imposed three rows to a
+  landscape A4 page, each slide thumbnail beside its own notes. Prints through
+  headless Chrome like `--notes`, and has the same requirements. One row per
+  slide, with any fragment build shown complete, and the notes set as live text
+  rather than a scaled image --- a row whose notes run past its height clips
+  rather than reflowing the page. The layout is `html.astromotion-handout` in
+  `theme/print.css`, so a consuming theme can retune the row geometry
+  (`--astromotion-handout-slide-width`, `--astromotion-handout-row-height`, and
+  the gutter and gap beside them).
 
 Environment variables:
 

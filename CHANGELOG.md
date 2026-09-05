@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-05 (v0.25.0)
+
+### `--handout`: slides and notes three to a landscape page
+
+`astromotion-pdf --handout` exports a lectern copy of the deck: each slide as a
+thumbnail down the left of a landscape A4 page with its speaker notes beside it,
+three rows to a page. It prints the same `?print-pdf&showNotes=separate-page`
+view `--notes` uses, then pairs each slide page with the notes page that follows
+it and lets `theme/print.css` impose the rows, so the notes stay live text
+rather than a scaled picture of a page. Fragment builds print once, with the
+build complete, rather than a near-identical row per step.
+
+A consuming theme can retune the geometry through the custom properties on
+`html.astromotion-handout` (thumbnail width, row height, gutter, row gap).
+
+### No "Speaker notes" label on printed notes pages
+
+Reveal heads every separate-page notes element with a dimmed "Speaker notes"
+line. On paper it earns nothing --- a page of prose facing a slide is
+self-evidently the notes --- and in the handout it costs a line out of every
+row. The `--notes` export loses it too, so a downstream tool that keyed off that
+string to tell a notes page from a slide page needs another signal.
+
 ## 2026-09-05 (v0.24.4)
 
 ### Hero scrims draw correctly in Preview and Safari

@@ -38,6 +38,14 @@ html.reveal-print .reveal .speaker-notes-pdf[data-layout="separate-page"] {
   padding: 48px;
 }
 
+/* Reveal labels every separate-page notes element "Speaker notes" through a
+   ::before. On paper the label earns nothing --- a page of prose facing a
+   slide is self-evidently the notes --- and in the handout layout below it
+   costs a line out of every row. */
+html.reveal-print .reveal .speaker-notes-pdf::before {
+  content: none;
+}
+
 /* Reveal exempts the last `.pdf-page` from its `page-break-after: always`,
    but a separate-page notes element is inserted as the page's next sibling,
    so when the closing slide has notes that element is the real last page and
@@ -66,4 +74,110 @@ html.reveal-print .astromotion-whiteboard {
 .reveal,
 .reveal * {
   print-color-adjust: exact;
+}
+
+/* Handout layout: `astromotion-pdf --handout` prints the same
+   `?print-pdf&showNotes=separate-page` view imposed three rows to a landscape
+   A4 page, each slide beside its own speaker notes. scripts/deck-pdf.mjs does
+   the DOM half --- it wraps each slide page and the notes page that follows it
+   in a `.astromotion-handout-row`, restores the slide canvas geometry it
+   measured before the rewrite, and stamps `astromotion-handout` on <html> ---
+   and everything below is the layout. The two halves meet at
+   `--astromotion-handout-slide-scale`, which the script measures once the row
+   exists (the thumbnail's width is set here, in mm, and the canvas is in px).
+
+   Row heights are fixed and overflow is hidden, so a slide whose notes run
+   longer than the row is clipped rather than pushing the grid down the page.
+   Three rows of 62mm and two 5mm gaps come to 196mm, inside the 198mm the
+   @page margins leave. */
+html.astromotion-handout {
+  --astromotion-handout-slide-width: 88mm;
+  --astromotion-handout-gutter: 5mm;
+  --astromotion-handout-row-height: 62mm;
+  --astromotion-handout-row-gap: 5mm;
+
+  background: #fff;
+}
+
+/* Reveal's print view pins the body to one slide page (1280x720px, set
+   inline), which is exactly the wrong shape for a handout. */
+html.astromotion-handout body {
+  width: auto !important;
+  height: auto !important;
+  background: #fff;
+}
+
+html.astromotion-handout .reveal,
+html.astromotion-handout .reveal .slides {
+  display: block;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+html.astromotion-handout .astromotion-handout-row {
+  display: grid;
+  grid-template-columns: var(--astromotion-handout-slide-width) 1fr;
+  column-gap: var(--astromotion-handout-gutter);
+  height: var(--astromotion-handout-row-height);
+  margin-block-end: var(--astromotion-handout-row-gap);
+  overflow: hidden;
+  break-inside: avoid;
+}
+
+/* Break by counting rows rather than trusting the heights to add up: a
+   fractional millimetre of rounding would otherwise push a fourth row onto
+   the next page and leave every page after it one row short. Three rows per
+   page is baked into the selector --- `nth-child()` takes no custom property
+   --- so a different row count means changing this `3n` and the row height
+   above together. */
+html.astromotion-handout .astromotion-handout-row:nth-child(3n) {
+  margin-block-end: 0;
+  break-after: page;
+}
+
+html.astromotion-handout .astromotion-handout-row:last-child {
+  break-after: avoid;
+}
+
+/* Width here, height from the script (which sizes it to the slide canvas it
+   measured); `align-self: start` so the grid never stretches the frame past
+   the thumbnail inside it. */
+html.astromotion-handout .astromotion-handout-slide {
+  align-self: start;
+  width: var(--astromotion-handout-slide-width);
+  overflow: hidden;
+  border: 0.4pt solid #a0a0a0;
+}
+
+/* Moving a slide into its row restarts every CSS animation on it, and the
+   print follows immediately --- a `.hero` title that fades up over 0.6s prints
+   mid-fade, or blank. No animation survives a static export anyway, so hold
+   everything at its resting state. */
+html.astromotion-handout .reveal * {
+  animation: none !important;
+}
+
+html.astromotion-handout .astromotion-handout-slide .pdf-page {
+  transform: scale(var(--astromotion-handout-slide-scale, 0.26));
+  transform-origin: top left;
+  break-after: auto;
+}
+
+html.astromotion-handout .reveal .speaker-notes-pdf[data-layout="separate-page"] {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  font-size: 2.7mm;
+  line-height: 1.35;
+  background: transparent;
+  break-after: auto;
+}
+
+html.astromotion-handout .reveal .speaker-notes-pdf :is(p, ul, ol) {
+  margin-block: 0 0.6em;
+}
+
+html.astromotion-handout .reveal .speaker-notes-pdf :is(p, ul, ol):last-child {
+  margin-block-end: 0;
 }
