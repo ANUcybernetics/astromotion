@@ -8,7 +8,9 @@
 // Ghostscript's /ebook preset cuts that to a few MB with no visible loss at
 // presentation scale) -> ICC repair (Ghostscript leaves every image tagged
 // with an empty colour profile, which Safari and Preview then refuse to draw
-// --- see src/pdf-icc.mjs).
+// --- see src/pdf-icc.mjs) -> a second pdftocairo pass, which re-emits the
+// compressed file in a structure macOS Quartz draws correctly (see
+// flattenTransparency).
 //
 // With --notes the deck is instead printed via headless Chrome against
 // Reveal's print view (?print-pdf&showNotes=separate-page), producing a
@@ -279,6 +281,16 @@ function repairIcc(file) {
 //
 // Without poppler we do NOT compress: a correct large PDF beats a small one
 // with washed-out slides, and this failure is invisible in a file listing.
+//
+// The same pass runs AGAIN after Ghostscript. pdfwrite keeps a multiply-
+// blended overlay (astro-theme-university's hero scrim is an opaque grey
+// gradient under /BM /Multiply) but rewrites it as a form XObject sharing the
+// page's transparency group, and macOS Quartz --- Preview, Safari, Quick Look
+// --- draws that form as a near-uniform ~75% darkening of the whole slide
+// instead of the gradient. poppler, MuPDF and Chrome's PDFium draw it
+// correctly, so the file looks fine everywhere except on a Mac. Re-emitting
+// through cairo restores a structure Quartz handles; the JPEGs Ghostscript
+// produced pass through untouched, so the size barely moves.
 function flattenTransparency(file) {
   const flat = `${file}.flat.pdf`;
   const result = spawnSync("pdftocairo", ["-pdf", file, flat], { stdio: "ignore" });
@@ -333,6 +345,11 @@ if (compress) {
     ]);
     unlinkSync(rawOutput);
     repairIcc(output);
+    console.log("Re-emitting with pdftocairo for Quartz...");
+    if (!flattenTransparency(output)) {
+      console.error("\n✗ pdftocairo failed to re-emit the compressed deck");
+      process.exit(1);
+    }
   }
 }
 

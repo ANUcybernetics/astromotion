@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-05 (v0.24.4)
+
+### Hero scrims draw correctly in Preview and Safari
+
+The v0.24.2 export was right in poppler, MuPDF and Chrome's PDF viewer but wrong
+on a Mac: Preview, Safari and Quick Look drew every hero slide as a near-uniform
+75% darkening of the artwork instead of the bottom-weighted gradient.
+Ghostscript keeps the multiply-blended scrim but rewrites it as a form XObject
+sharing the page's transparency group, and Quartz mishandles that arrangement.
+
+The export now runs pdftocairo a second time, after Ghostscript and the ICC
+repair. cairo re-emits the compressed file in a structure Quartz draws
+correctly, passing Ghostscript's JPEGs through untouched, so the file grows by a
+few percent and text stays text.
+
 ## 2026-09-05 (v0.24.3)
 
 ### No blank page after the last speaker-notes page
