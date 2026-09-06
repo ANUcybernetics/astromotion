@@ -1,11 +1,16 @@
 import { parse } from "yaml";
 import { extractFrontmatter } from "./parse-helpers.ts";
 
-interface DeckFrontmatter {
+export interface DeckFrontmatter {
   title?: string;
   description?: string;
   author?: string;
   image?: string;
+  // `published: false` drops the deck from a production build; `listed: false`
+  // builds it but marks the page noindex and pagefind-ignored. Both default to
+  // true when absent. See the README.
+  published?: boolean;
+  listed?: boolean;
 }
 
 interface DeckMeta {

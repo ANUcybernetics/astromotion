@@ -35,7 +35,7 @@ const { Content, frontmatter } = Astro.props;
   title={frontmatter.title ?? "Deck"}
   description={frontmatter.description}
   image={frontmatter.image}
-  unlisted={frontmatter.unlisted === true}
+  listed={frontmatter.listed !== false}
 >
   <div class="reveal" role="main">
     <div class="slides">

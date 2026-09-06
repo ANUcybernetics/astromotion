@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-07 (v0.27.0)
+
+### `unlisted: true` is now `listed: false` (breaking)
+
+The frontmatter flag that keeps a built deck out of the indexes is renamed from
+`unlisted: true` to `listed: false`, so it reads as the pair of
+`published: false`: two positive nouns, both defaulting to true, both an
+explicit `false` to hold a deck back. `unlisted` is no longer read; a deck that
+still sets it builds as a listed deck. The `DeckLayout` and `DeckHead` prop is
+`listed` (default true) for the same reason, and `DeckFrontmatter` is exported
+from `src/meta.ts` with `published` and `listed` on it, so a consumer parsing
+frontmatter with `parseDeckFrontmatter` no longer has to cast for them.
+
 ## 2026-09-07 (v0.26.0)
 
 ### The overflow check measures the gutter, and split columns no longer scroll

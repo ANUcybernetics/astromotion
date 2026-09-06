@@ -8,10 +8,10 @@ interface Props {
   title: string;
   description?: string;
   image?: string;
-  unlisted?: boolean;
+  listed?: boolean;
 }
 
-const { title, description = "Slide deck", image, unlisted = false } = Astro.props;
+const { title, description = "Slide deck", image, listed = true } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
 
@@ -32,7 +32,7 @@ const faviconType = favicon?.endsWith(".svg") ? "image/svg+xml" : undefined;
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="generator" content={Astro.generator} />
 <meta name="description" content={description} />
-{unlisted && <meta name="robots" content="noindex" />}
+{!listed && <meta name="robots" content="noindex" />}
 <title>{title}</title>
 
 <meta property="og:title" content={title} />

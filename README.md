@@ -98,7 +98,7 @@ title: My Talk
 description: A talk about things
 image: /og-image.png
 published: false
-unlisted: true
+listed: false
 ---
 ```
 
@@ -108,16 +108,17 @@ for this deck. These are used for the page `<title>` and Open Graph / Twitter
 Card meta tags; when neither `image` nor `ogImage` is set, the social-image tags
 are omitted.
 
-`published` and `unlisted` are two different ways to keep a deck back, and they
-compose. `published: false` drops the deck from a production build entirely ---
-no route, no HTML, nothing to index --- while the dev server still serves it, so
-it is the flag for a deck still being written. `unlisted: true` keeps the deck
-in the build at its own URL, and takes it out of the indexes instead: the page
-emits `<meta name="robots" content="noindex">` and carries
-`data-pagefind-ignore="all"`, so a link works for whoever holds it while search
-engines and the site's own search skip it. A deck a consumer lists somewhere ---
-a grid, a content collection --- needs that listing to honour the flag too;
-astromotion only owns the page.
+`published` and `listed` are two different ways to keep a deck back, and they
+compose. Both default to true. `published: false` drops the deck from a
+production build entirely --- no route, no HTML, nothing to index --- while the
+dev server still serves it, so it is the flag for a deck still being written.
+`listed: false` keeps the deck in the build at its own URL, and takes it out of
+the indexes instead: the page emits `<meta name="robots" content="noindex">` and
+carries `data-pagefind-ignore="all"`, so a link works for whoever holds it while
+search engines and the site's own search skip it. A deck a consumer lists
+somewhere --- a grid, a content collection --- needs that listing to honour the
+flag too; astromotion only owns the page. The parsed frontmatter type,
+`DeckFrontmatter` from `astromotion/src/meta.ts`, carries both flags.
 
 ### Slide syntax
 

@@ -145,7 +145,7 @@ describe("deck head under a base path", () => {
   });
 
   // The fixture ships three decks: `sample` (published), `draft`
-  // (published:false) and `hidden` (unlisted). A production build must emit the first and drop the
+  // (published:false) and `hidden` (listed:false). A production build must emit the first and drop the
   // second, so its URL serves nothing and Pagefind has no HTML to index.
   it("drops a published:false deck from the production build", async () => {
     const draft = resolve(fixture, "dist-omitted/decks/draft/index.html");
@@ -154,10 +154,10 @@ describe("deck head under a base path", () => {
     await expect(readFile(sample, "utf8")).resolves.toContain("Slide one");
   });
 
-  // `unlisted` is the other half of the pair: `published: false` removes the
-  // page, `unlisted: true` keeps it at its URL and takes it out of the
+  // `listed` is the other half of the pair: `published: false` removes the
+  // page, `listed: false` keeps it at its URL and takes it out of the
   // indexes instead — a link you can hand out, that search doesn't surface.
-  it("builds an unlisted deck but marks it noindex and pagefind-ignored", async () => {
+  it("builds a listed:false deck but marks it noindex and pagefind-ignored", async () => {
     const built = resolve(fixture, "dist-omitted/decks/hidden/index.html");
     const doc = parseHTML(await readFile(built, "utf8")).document;
     expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex");
