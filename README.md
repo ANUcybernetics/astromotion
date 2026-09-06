@@ -363,6 +363,7 @@ astromotion({
   routePrefix: "/decks", // mount the injected route elsewhere, e.g. /lectures
   checkStructure: true, // verify generated deck markup after builds (default: true)
   shikiConfig: { theme: "vitesse-dark" }, // full ShikiConfig (default: { theme: "vitesse-dark" })
+  fontVariables: ["--font-deck"], // cssVariable names from astro.config's `fonts`; each is preloaded in every deck head
 });
 ```
 
