@@ -23,11 +23,16 @@
   flex-shrink: 0;
 }
 
+/* Not a scroll container, deliberately: an overfull split column spills off
+   the canvas the way every other slide does. As `overflow: auto` it grew a
+   scrollbar on the projector as soon as the content reached the theme's
+   gutter, because scrollable overflow counts the last child's trailing margin
+   and the column's own padding --- a visible artefact on slides that were
+   otherwise fine. */
 .split-content {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  overflow: auto;
 }
 
 /* A flex item whose overflow is not `visible` has an automatic minimum size

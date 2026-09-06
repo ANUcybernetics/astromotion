@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-07 (v0.26.0)
+
+### The overflow check measures the gutter, and split columns no longer scroll
+
+`astromotion-check` now measures text against the slide's content area (the
+padding box minus the theme's gutter) rather than the canvas edge, and text
+inside a split layout against its own column's padding. A slide whose last line
+sits in the gutter is already too full; measuring at the canvas edge let it pass
+by up to 64px. Entrance animations are jumped to their end state before a slide
+is measured, so a hero title fading up from a `translateY` is measured where it
+settles rather than mid-flight.
+
+A third rule, `scrollbar`, reports a scroll container whose scrollable area
+outgrows its box even though nothing inside is hidden: the browser draws a
+scrollbar on the slide. Scrollable overflow counts the last child's trailing
+margin and the container's own end padding, so a column whose content merely
+reached the gutter drew one --- which is why `.split-content` in `base.css` is
+no longer `overflow: auto`. An overfull split column now spills off the canvas
+like every other slide, and the check reports it as `overflow`.
+
+Expect decks that passed v0.25 to report `overflow` on slides whose text reaches
+into the bottom gutter; those are the slides that grew a scrollbar in Chrome.
+
+`scripts/release.sh` commits as `release: astromotion vX.Y.Z`, matching the rest
+of the family.
+
 ## 2026-09-06 (v0.25.2)
 
 `@astrojs/mdx`'s peer range now accepts 8 alongside 7, with

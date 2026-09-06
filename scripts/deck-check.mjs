@@ -222,6 +222,21 @@ for (const slug of slugs) {
     await page.evaluate(
       () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
     );
+    // Entrance animations (a hero title fading up from a translateY) are
+    // mid-flight two frames after the slide becomes current, and a box
+    // measured then is not where the audience sees it settle. Jump every
+    // finite animation to its end state; infinite ones are decorative loops
+    // (a morphing QR code) that `finish()` refuses anyway.
+    await page.evaluate(() => {
+      for (const animation of document.getAnimations()) {
+        if (animation.effect?.getComputedTiming().iterations === Infinity) continue;
+        try {
+          animation.finish();
+        } catch {
+          // an animation that cannot be finished is not one worth waiting for
+        }
+      }
+    });
 
     // measureSlide closes over nothing, so puppeteer's toString() serialisation
     // carries it into the page intact.

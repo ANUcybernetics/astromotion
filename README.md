@@ -799,22 +799,35 @@ npx astromotion-check week-3 --prefix=/lectures
 ```
 ✗ 2 slide issue(s):
 
-  week-3 slide 6 "Backpressure, channel by channel" — overflow: content runs 43px past the bottom of the slide
+  week-3 slide 6 "Backpressure, channel by channel" — overflow: content runs 43px below the content area (the slide's gutter there is 64px)
   week-3 slide 9 "Wiring it up" — clipped: pre.astro-code hides 72px of its content below the visible box
 ```
 
-Two rules, because a deck overflows in two visibly different ways:
+Three rules, because a deck overflows in three visibly different ways:
 
-- **`overflow`** --- a text element's box extends past the canvas. Loud: the
-  last line runs off the bottom edge or under the footer.
+- **`overflow`** --- a text element's box extends past the slide's content area,
+  into the gutter the theme pads the slide with. Loud: the last line runs into
+  the margin, under the footer, or off the bottom edge. The gutter is the
+  measure rather than the canvas edge because a slide whose last line sits in
+  the padding is already too full --- and on a split slide that is where a
+  scrollbar would appear, not 64px later at the edge of the canvas.
 - **`clipped`** --- an element whose overflow is not `visible` is hiding part of
   its own content. This is the quiet one. A code block inside a split panel is a
   flex item, and a flex item with a non-visible overflow has an automatic
   minimum size of zero, so on a full slide it is silently squashed and the last
   command simply is not on screen. Nothing about the rendered slide says so.
+- **`scrollbar`** --- a scroll container (`overflow: auto` or `scroll`) whose
+  scrollable area is larger than its box, so the browser draws a scrollbar on
+  the slide even though every child is inside the visible box. Scrollable
+  overflow counts the last child's trailing margin and the container's own end
+  padding, so a column whose content merely reaches the gutter still scrolls by
+  margin plus padding. Astromotion's own split column is not a scroll container
+  for exactly this reason; the rule is there for a theme that adds one.
 
 Backgrounds, split-image panels and decorative art bleed off the canvas by
-design, so only text-bearing elements are measured for `overflow`.
+design, so only text-bearing elements are measured for `overflow`. Entrance
+animations are jumped to their end state before a slide is measured, so a title
+that fades up from below is measured where it settles.
 
 It runs against `astro dev` rather than a production build, deliberately: a deck
 with `published: false` is absent from a production build, and those are exactly

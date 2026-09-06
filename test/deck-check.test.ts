@@ -4,27 +4,45 @@ import { describe, expect, it } from "vitest";
 import { measureSlide, TEXT_SELECTOR } from "../src/deck-check.mjs";
 
 // measureSlide runs inside the browser, so the unit under test is its
-// arithmetic, not the DOM. These stubs hand it exactly the three things it
-// reads: a present section, the elements a selector matches, and computed
-// overflow. Rects are in rendered pixels; the section is 900 tall so the
-// scale is 900/720 = 1.25, which also proves the conversion back to canvas
-// units happens.
+// arithmetic, not the DOM. These stubs hand it exactly the things it reads:
+// a present section, the elements a selector matches, computed overflow and
+// padding, and a scroll container's scroll geometry. Rects are in rendered
+// pixels; the section is 900 tall so the scale is 900/720 = 1.25, which also
+// proves the conversion back to canvas units happens. The section pads 80
+// rendered px (64 canvas px, the theme's 4rem gutter) on every side, so its
+// content area ends at 820 down and 1520 across.
 type Rect = { bottom: number; height: number; right: number; width: number };
 
-function el(
-  tag: string,
-  rect: Partial<Rect>,
-  extra: Partial<{ children: unknown[]; className: string; overflow: string }> = {},
-) {
+type Extra = Partial<{
+  children: unknown[];
+  className: string;
+  clientHeight: number;
+  clientWidth: number;
+  column: unknown;
+  overflow: string;
+  padding: number;
+  scrollHeight: number;
+  scrollWidth: number;
+}>;
+
+function el(tag: string, rect: Partial<Rect>, extra: Extra = {}) {
   const full: Rect = { bottom: 0, height: 10, right: 0, width: 10, ...rect };
   return {
     className: extra.className ?? "",
+    clientHeight: extra.clientHeight ?? 0,
+    clientWidth: extra.clientWidth ?? 0,
+    closest: () => extra.column ?? null,
     getBoundingClientRect: () => full,
     overflow: extra.overflow ?? "visible",
+    padding: extra.padding ?? 0,
     querySelectorAll: () => extra.children ?? [],
+    scrollHeight: extra.scrollHeight ?? 0,
+    scrollWidth: extra.scrollWidth ?? 0,
     tagName: tag.toUpperCase(),
   };
 }
+
+const SECTION_PADDING = 80;
 
 function withSlide(
   { all = [] as unknown[], heading = "", text = [] as unknown[] },
@@ -32,17 +50,21 @@ function withSlide(
 ) {
   const section = {
     getBoundingClientRect: () => ({ bottom: 900, height: 900, right: 1600, width: 1600 }),
+    padding: SECTION_PADDING,
     querySelector: () => (heading ? { textContent: heading } : null),
     querySelectorAll: (selector: string) => (selector === "*" ? all : text),
   };
   const globals = globalThis as unknown as Record<string, unknown>;
   const prior = { doc: globals.document, gcs: globals.getComputedStyle };
   globals.document = { querySelector: () => section };
-  globals.getComputedStyle = (node: { overflow: string }) => ({
+  globals.getComputedStyle = (node: { overflow: string; padding: number }) => ({
     borderBottomWidth: "0px",
     borderRightWidth: "0px",
     overflow: node.overflow,
     overflowX: node.overflow,
+    overflowY: node.overflow,
+    paddingBottom: `${node.padding}px`,
+    paddingRight: `${node.padding}px`,
   });
   try {
     return run();
@@ -53,7 +75,7 @@ function withSlide(
 }
 
 describe("measureSlide", () => {
-  it("passes a slide whose content sits inside the canvas", () => {
+  it("passes a slide whose content sits inside the content area", () => {
     const result = withSlide({ text: [el("P", { bottom: 800, right: 900 })] }, () =>
       measureSlide(TEXT_SELECTOR, 4),
     );
@@ -61,17 +83,49 @@ describe("measureSlide", () => {
   });
 
   it("reports vertical overflow in canvas units, not rendered pixels", () => {
-    // 125 rendered px past the bottom, on a 1.25 scale, is 100 canvas px.
-    const result = withSlide({ text: [el("UL", { bottom: 1025, right: 900 })] }, () =>
+    // 125 rendered px below the content area, on a 1.25 scale, is 100 canvas
+    // px --- and the gutter it ran into is reported in the same units.
+    const result = withSlide({ text: [el("UL", { bottom: 945, right: 900 })] }, () =>
       measureSlide(TEXT_SELECTOR, 4),
     );
     expect(result.violations).toHaveLength(1);
     expect(result.violations[0].rule).toBe("overflow");
-    expect(result.violations[0].detail).toContain("100px past the bottom");
+    expect(result.violations[0].detail).toContain("100px below the content area");
+    expect(result.violations[0].detail).toContain("gutter there is 64px");
+  });
+
+  it("measures against the gutter, not the canvas edge", () => {
+    // Inside the canvas (900) but 30 rendered px into the bottom padding: the
+    // slide is already too full, and this is where a scroll container would
+    // start drawing a scrollbar.
+    const result = withSlide({ text: [el("P", { bottom: 850, right: 900 })] }, () =>
+      measureSlide(TEXT_SELECTOR, 4),
+    );
+    expect(result.violations).toHaveLength(1);
+    expect(result.violations[0].detail).toContain("24px below the content area");
+  });
+
+  it("reports horizontal overflow separately", () => {
+    const result = withSlide({ text: [el("PRE", { bottom: 500, right: 1600 })] }, () =>
+      measureSlide(TEXT_SELECTOR, 4),
+    );
+    expect(result.violations).toHaveLength(1);
+    expect(result.violations[0].detail).toContain("64px right of the content area");
+  });
+
+  it("measures text inside a split column against that column's padding", () => {
+    // A split layout escapes the section's padding and pads its own column
+    // (here 40 rendered px), so the same paragraph that would be 30px into the
+    // section's gutter is 10px inside the column's content area.
+    const column = el("DIV", { bottom: 900, height: 900, right: 960, width: 960 }, { padding: 40 });
+    const result = withSlide({ text: [el("P", { bottom: 850, right: 900 }, { column })] }, () =>
+      measureSlide(TEXT_SELECTOR, 4),
+    );
+    expect(result.violations).toEqual([]);
   });
 
   it("ignores overflow within the tolerance", () => {
-    const result = withSlide({ text: [el("P", { bottom: 903, right: 900 })] }, () =>
+    const result = withSlide({ text: [el("P", { bottom: 823, right: 900 })] }, () =>
       measureSlide(TEXT_SELECTOR, 4),
     );
     expect(result.violations).toEqual([]);
@@ -94,15 +148,50 @@ describe("measureSlide", () => {
     expect(result.violations[0].detail).toContain("below");
   });
 
-  it("does not blame a scroll container for its last child's bottom margin", () => {
-    // The regression that made the first cut of this rule unusable: a fine
-    // slide whose scrollHeight exceeds clientHeight by padding + margin, with
-    // every child comfortably inside the visible box.
-    const list = el("UL", { bottom: 713, height: 300, right: 900, width: 700 });
+  it("reports a scroll container that draws a scrollbar without hiding anything", () => {
+    // Every child sits inside the visible box, but the scrollable area counts
+    // the list's trailing margin and the column's bottom padding, so the
+    // browser draws a scrollbar: 130 rendered px of scroll, 104 canvas px.
+    const list = el("UL", { bottom: 890, height: 300, right: 900, width: 700 });
     const content = el(
       "DIV",
-      { bottom: 720, height: 720, right: 960, width: 960 },
-      { children: [list], className: "split-content", overflow: "auto" },
+      { bottom: 900, height: 900, right: 960, width: 960 },
+      {
+        children: [list],
+        className: "split-content",
+        clientHeight: 900,
+        overflow: "auto",
+        scrollHeight: 1030,
+      },
+    );
+    const result = withSlide({ all: [content] }, () => measureSlide(TEXT_SELECTOR, 4));
+    expect(result.violations).toHaveLength(1);
+    expect(result.violations[0].rule).toBe("scrollbar");
+    expect(result.violations[0].detail).toContain("div.split-content scrolls 104px vertically");
+  });
+
+  it("does not also call a clipped container scrolling", () => {
+    const line = el("SPAN", { bottom: 590, height: 20, right: 700, width: 400 });
+    const pre = el(
+      "PRE",
+      { bottom: 500, height: 43, right: 800, width: 600 },
+      {
+        children: [line],
+        className: "astro-code",
+        clientHeight: 43,
+        overflow: "auto",
+        scrollHeight: 133,
+      },
+    );
+    const result = withSlide({ all: [pre] }, () => measureSlide(TEXT_SELECTOR, 4));
+    expect(result.violations.map((v: { rule: string }) => v.rule)).toEqual(["clipped"]);
+  });
+
+  it("does not blame overflow: hidden for scrollable area it never shows", () => {
+    const content = el(
+      "DIV",
+      { bottom: 900, height: 900, right: 960, width: 960 },
+      { clientHeight: 900, overflow: "hidden", scrollHeight: 1030 },
     );
     const result = withSlide({ all: [content] }, () => measureSlide(TEXT_SELECTOR, 4));
     expect(result.violations).toEqual([]);
