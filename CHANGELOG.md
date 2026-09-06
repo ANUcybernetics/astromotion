@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-06 (v0.25.2)
+
+`@astrojs/mdx`'s peer range now accepts 8 alongside 7, with
+`@astrojs/markdown-remark` added at ^7.3.0 since astro 7.3.1 no longer bundles
+it by default for consumers on the documented
+`markdown.remarkPlugins: deckRemarkPlugins` path. Astro, oxlint, stylelint,
+puppeteer-core, eslint-plugin-perfectionist and typescript (now on 6) all move
+to their latest versions across the family. The repo also gets its first GitHub
+Actions workflow, running typecheck, lint, format:check and test on every push
+to main and pull request.
+
 ## 2026-09-05 (v0.25.1)
 
 ### Export runs Ghostscript alone again
