@@ -47,7 +47,7 @@ fi
 echo "astromotion: $old -> $new (tag: $tag)"
 
 git add package.json
-git commit -m "chore(release): astromotion $tag"
+git commit -m "release: astromotion $tag"
 
 msg="astromotion $tag"
 [[ -n "$reason" ]] && msg="$msg"$'\n\n'"$reason"
