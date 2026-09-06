@@ -3,9 +3,14 @@
 Astro integration for markdown-authored slide decks powered by Reveal.js.
 Consumed as a package by Astro sites --- not a standalone app.
 
+The README is the reference for deck-authoring syntax and consumer options; keep
+it in step when you change a plugin or an option.
+
 ## Commands
 
 - `pnpm test` --- vitest
+- `pnpm typecheck`, `pnpm lint`, `pnpm format:check` --- the rest of what CI
+  runs (`.github/workflows/ci.yml`)
 - `scripts/release.sh <patch|minor|major|x.y.z> [reason]` --- bump version,
   commit, annotated-tag `vX.Y.Z`, push. Refuses if dirty / off main / out of
   sync. See the anu-theme-sync skill for when to release.
@@ -13,179 +18,87 @@ Consumed as a package by Astro sites --- not a standalone app.
 ## Architecture
 
 The integration (`index.ts`) registers `@astrojs/mdx`, aliases theme CSS via a
-virtual module, and injects a catch-all deck route. The twelve custom remark
-plugins are exported as `deckRemarkPlugins` for consumers to wire into their own
-markdown processor (see the breaking-change note in CHANGELOG).
+virtual module, and injects a catch-all deck route. The twelve remark plugins in
+`plugins/` are also exported as `deckRemarkPlugins`, for consumers who manage
+`@astrojs/mdx` themselves.
 
 ### .deck.mdx format
 
-Decks are authored as `.deck.mdx` files. Astro's MDX integration processes them
-through the standard remark/rehype pipeline, plus the twelve custom remark
-plugins (in `plugins/`). The result is an Astro component whose default export
-is the slide content.
-
-**Plugin order matters** (each runs in sequence on the remark AST):
-
-1. `remarkDeckDirectiveGuard` --- fails the build when a slide directive arrives
-   as an inline MDX expression (two single-line `{/* … */}` comments folded onto
-   one line), which no other plugin would see. `remarkDeckIncludes` calls its
-   `assertNoInlineDirectives` on each partial while that partial's own positions
-   still exist, so the error names the partial's line.
-2. `remarkDeckIncludes` --- resolves `{/* @include ./path.mdx */}` directives by
-   splicing the included AST in-place (must run first so later plugins see the
-   full content). Accepts both relative paths and bare module specifiers (e.g.
-   `astro-theme-anu/partials/foo.mdx`), the latter resolved via Node's package
-   resolution starting from the requesting file. YAML/TOML frontmatter on the
-   included file is stripped automatically, so partials can double as standalone
-   Astro content with frontmatter.
-3. `remarkDeckSections` --- wraps content between `---` thematic breaks in
-   `<section>` elements
-4. `remarkDeckClasses` --- converts `{/* _class: name */}` expressions to
-   `class` attributes on the enclosing section
-5. `remarkDeckConditionals` --- converts `{/* _if: name */}` expressions to
-   `data-deck-if` attributes on the enclosing section; the deck route drops
-   those slides client-side unless the URL carries the matching query param
-6. `remarkDeckIds` --- converts `{/* _id: name */}` expressions to `id`
-   attributes on the enclosing section, which is what makes Reveal.js named
-   links (`#/name`) resolve to that slide
-7. `remarkDeckAnimate` --- converts `{/* _animate */}` (and
-   `{/* _animate: id */}`) expressions to `data-auto-animate` (and
-   `data-auto-animate-id`) attributes on the enclosing section, enabling
-   Reveal.js auto-animate between adjacent slides
-8. `remarkDeckNotes` --- converts a fenced ` ```notes ` block to an
-   `<aside class="notes">` element inside the section (the element Reveal's
-   notes plugin reads for the speaker view), parsing the fence body as markdown
-9. `remarkDeckComments` --- strips fenced ` ```comment ` blocks (authoring
-   prose, kept out of the rendered deck) and rejects multi-line `{/* … */}`
-   comments, which no formatter preserves
-10. `remarkDeckQr` --- converts `![qr](url)` images to inline SVG QR codes
-11. `remarkDeckBg` --- converts `![bg ...](url)` images to background elements
-    and split layouts
-12. `remarkDeckSmartypants` --- applies oldschool smartypants (curly quotes, em
-    dashes) to slide text, including content spliced in by `@include`
+`plugins/index.ts` holds the canonical plugin order, and that order is
+load-bearing: `remarkDeckIncludes` splices partials in place so everything after
+it sees the whole deck, and `remarkDeckSections` builds the sections that the
+class, id, conditional and animate plugins annotate.
 
 Each plugin gates itself with `if (!file.path?.endsWith('.deck.mdx')) return` so
-it silently ignores non-deck MDX files.
+it ignores non-deck MDX. A new plugin must do the same.
 
-### Components
-
-Any framework Astro supports (Svelte, React, Vue, Solid, etc.) can be imported
-at the top of a `.deck.mdx` file and used directly in slide content. Hydration
-is opt-in per component via Astro's `client:*` directives (`client:load`,
-`client:visible`, `client:only`, etc.). Slides without interactive components
-render as zero-JS server-rendered HTML.
+Every directive is a **single-line** `{/* … */}` comment, and a multi-line one
+is a build error --- prettier's markdown printer (and oxfmt with it) escapes the
+`*` inside one, turning a valid deck into invalid MDX, and the corrupted output
+is a fixed point, so `--check` can't detect it either. Prose about a slide goes
+in a ` ```notes ` or ` ```comment ` fence instead: fence contents are never
+reflowed, at any `proseWrap` setting, and `test/format-stability.test.ts` is the
+guard on that.
 
 ### Catch-all route
 
-`pages/[...slug].astro` uses `import.meta.glob({ eager: true })` to enumerate
-all `*.deck.mdx` files at build time and generate one static path per deck. Each
-path receives the deck's default export (`Content`) and frontmatter as props.
-Reveal.js is initialised inline in the route's `<script>` tag.
+`pages/[...slug].astro` enumerates `*.deck.mdx` with
+`import.meta.glob({ eager: true })` to generate one static path per deck, and
+initialises Reveal.js inline in the route's `<script>`.
 
 ### Bins (`scripts/`)
 
-Both bins --- `astromotion-pdf` (`scripts/deck-pdf.mjs`) and `astromotion-text`
-(`scripts/deck-text.mjs`, a thin CLI over `src/deck-text.mjs`) --- must be plain
-JavaScript importing only plain JavaScript. Node refuses to strip types from
-files under `node_modules`, which is where the package lives once a consumer
-installs it, so a `.ts` bin (or a `.mjs` bin importing `plugins/*.ts`) fails at
-`npx` time even though it runs fine from a checkout.
+The three bins --- `astromotion-check` (`scripts/deck-check.mjs`),
+`astromotion-pdf` (`scripts/deck-pdf.mjs`) and `astromotion-text`
+(`scripts/deck-text.mjs`) --- must be plain JavaScript importing only plain
+JavaScript. Node refuses to strip types from files under `node_modules`, which
+is where the package lives once a consumer installs it, so a `.ts` bin (or a
+`.mjs` bin importing `plugins/*.ts`) fails at `npx` time even though it runs
+fine from a checkout.
 
 That's why `src/deck-text.mjs` carries its own copies of the directive parsers
 and the `@include` walk instead of importing `src/parse-helpers.ts` and
 `plugins/remark-deck-includes.ts`. `test/deck-text.test.ts` pins the copies to
-the originals over a table of directive strings: add or change a directive in
-`parse-helpers.ts` without mirroring it there and that test fails.
-
-The text export works on the mdast source tree (parse → splice includes → strip
-the visual layer → `remark-stringify`), so it needs no build, preview server or
-browser --- unlike the PDF export, which drives a real one.
-
-### Directive syntax
-
-MDX does not support HTML comments (`<!-- -->`). Directives use MDX expression
-comment syntax instead:
-
-| Directive   | Syntax                                                          |
-| ----------- | --------------------------------------------------------------- |
-| Include     | `{/* @include ./path.mdx */}` or `{/* @include pkg/foo.mdx */}` |
-| Slide class | `{/* _class: name */}`                                          |
-
-Every directive is a **single-line** comment. Prose about a slide goes in a
-fence: ` ```notes ` for speaker notes, ` ```comment ` for authoring comments,
-both authored in markdown. A multi-line `{/* … */}` comment is a build error ---
-prettier's markdown printer (and oxfmt with it) escapes the `*` inside one,
-turning a valid deck into invalid MDX, and the corrupted output is a fixed
-point, so `--check` can't detect it either. Fence contents are never reflowed,
-at any `proseWrap` setting; `test/format-stability.test.ts` is the guard on
-that.
-
-Background images (`![bg ...](url)`), QR images (`![qr](url)`), and slide
-separators (`---`) are unchanged from the previous format.
+the originals: add or change a directive in `parse-helpers.ts` without mirroring
+it there and that test fails.
 
 ## Image paths
 
-Deck images must use relative paths (e.g. `./assets/photo.jpg`). Relative paths
-are resolved at build time via Astro's asset pipeline. Absolute paths
-(`/images/...`) are passed through unmodified and will 404 on subpath
-deployments --- this is intentional to fail early rather than mask content bugs.
+Deck images must use relative paths (e.g. `./assets/photo.jpg`), resolved at
+build time by Astro's asset pipeline. Absolute paths (`/images/...`) pass
+through unmodified and 404 on subpath deployments --- intentional, to fail early
+rather than mask content bugs.
 
 ## Key design decisions
 
-- Slides render onto a fixed 1280×720 canvas, scaled to fit the viewport via
-  Reveal.js's built-in `transform: scale()` layout. `maxScale: 4` lifts Reveal's
-  default 2.0 cap so 4K monitors fill rather than letterbox. Slides look
-  pixel-identical at any viewport because the rem/px units are anchored to the
-  canvas, not the viewport.
-- `display: "grid"` in Reveal.js options + matching `display: grid` in
-  `theme/base.css` so consuming themes can use `place-content: center` on
+- Slides render onto a fixed 1280×720 canvas, scaled to fit the viewport by
+  Reveal.js's `transform: scale()` layout. `maxScale: 4` lifts Reveal's default
+  2.0 cap so 4K monitors fill rather than letterbox. Units are anchored to the
+  canvas, not the viewport, so slides look pixel-identical at any viewport size.
+- `display: "grid"` in the Reveal.js options plus a matching `display: grid` in
+  `theme/base.css`, so consuming themes can use `place-content: center` on
   sections (Reveal sets `display` inline on the active section, so the config
   option is what propagates `grid` rather than the default `block`).
-- Speaker notes render as `<aside class="notes" aria-hidden="true">` and the
-  deck route registers Reveal's notes plugin, so the speaker view (press **S**)
-  shows them. Reveal core CSS hides `aside.notes` (`display:none`) so the
-  audience never sees it; `aria-hidden` keeps the presenter-only aside from
-  registering as a complementary landmark in static a11y scans (which don't
-  apply reveal's CSS, so they'd otherwise treat the aside as a visible landmark
-  nested inside `<main>`).
 - Deck pages must not use Astro's `<ClientRouter />` (conflicts with Reveal.js
   keyboard navigation).
-- The ephemeral whiteboard (press **W**) splits into pure state/geometry modules
+- The whiteboard splits into pure state and geometry modules
   (`src/whiteboard/core.ts`, `src/whiteboard/outline.ts` --- unit tested, no
-  DOM) and a thin overlay controller (`src/whiteboard/index.ts`). Opening goes
-  through Reveal's `addKeyBinding` so it appears on the help overlay; while
-  open, a capture-phase keydown listener claims all unmodified keys so Reveal
-  never navigates underneath. Strokes are perfect-freehand outlines filled on a
-  canvas; the drawing survives toggling (only `C` clears) but lives in memory
-  only, and `D` downloads it as a timestamped PNG. Themes define the ink palette
-  as a single comma-separated `--astromotion-wb-inks` custom property (up to
-  nine colours, split on top-level commas), and pick a light or dark board with
-  `--astromotion-wb-mode`. The mode is resolved at init and mirrored onto the
-  overlay as `data-mode`, which is the hook the CSS uses for the surface and
-  toolbar chrome --- CSS can't branch on a custom property's value, and the
-  deck's own `color-scheme: dark` rules out `light-dark()` here. The mode
-  supplies defaults only, so a theme that sets its own inks sets them to suit.
+  DOM) and a thin overlay controller (`src/whiteboard/index.ts`); keep new logic
+  on the pure side. The header of `src/whiteboard/index.ts` covers the key
+  handling and why it bypasses `addKeyBinding`.
 
 ## Theming
 
-`theme/base.css` is always imported and provides two things: unlayered
-structural CSS (backgrounds, splits, QR codes) and an `@layer astromotion` block
-that maps `--r-*` CSS variables to `.reveal` and `.reveal .slides section`
-properties (fonts, colours, heading sizes, links, code, Shiki highlighting).
+`theme/base.css` is always imported and provides unlayered structural CSS
+(backgrounds, splits, QR codes) plus an `@layer astromotion` block mapping
+`--r-*` variables onto `.reveal` and `.reveal .slides section`. Consuming themes
+only need to set `--r-*` in `:root`; anything they need to override outright
+goes in an unlayered rule, which automatically wins.
 
-Consuming themes only need to set `--r-*` variables in `:root`; the layer
-handles mapping them to elements. For ANU-specific overrides (e.g. gold
-background on h1), the consuming theme adds unlayered rules which automatically
-win.
+## Fonts
 
-The consuming project provides visual theme CSS via the integration's `theme`
-option.
-
-## Fonts (Astro fonts API)
-
-`fontVariables: string[]` lets consumers wire decks into Astro's top-level
-`fonts` config without editing astromotion components. Each entry is a
-`cssVariable` name; astromotion exposes the array as `virtual:astromotion/fonts`
-and `DeckHead.astro` renders `<Font cssVariable={v} preload />` for each. Fonts
-must still be declared in `astro.config`'s `fonts` array --- this option is only
-the bridge between that config and the deck `<head>`.
+`fontVariables: string[]` bridges Astro's top-level `fonts` config into deck
+`<head>`s without editing astromotion components: each entry is a `cssVariable`
+name, exposed as `virtual:astromotion/fonts` and rendered by `DeckHead.astro` as
+`<Font cssVariable={v} preload />`. The fonts must still be declared in
+`astro.config`'s `fonts` array.
