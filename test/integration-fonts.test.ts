@@ -9,7 +9,11 @@ function virtualFontsModule(options: AstromotionOptions, fonts: { cssVariable: s
   const plugins: { name: string; load?: (id: string) => string | null }[] = [];
   const hooks = integration.hooks as Record<string, (args: unknown) => unknown>;
   hooks["astro:config:setup"]({
-    config: { root: new URL("file:///fixture/"), base: "/", integrations: [{ name: "@astrojs/mdx" }] },
+    config: {
+      root: new URL("file:///fixture/"),
+      base: "/",
+      integrations: [{ name: "@astrojs/mdx" }],
+    },
     updateConfig: (patch: { vite?: { plugins?: typeof plugins } }) => {
       plugins.push(...(patch.vite?.plugins ?? []));
     },

@@ -6,10 +6,10 @@
 
 `fontVariables` now defaults to the `cssVariable` of every entry in the final
 `fonts` config, read at `astro:config:done` so fonts a theme integration adds
-count whatever the integration order. Previously the default was none, so a
-deck theme referencing a font the site had registered for its other pages
-rendered in the system fallback unless the consumer repeated the variable name
-here --- a gap a locally installed copy of the font hides completely. Setting
+count whatever the integration order. Previously the default was none, so a deck
+theme referencing a font the site had registered for its other pages rendered in
+the system fallback unless the consumer repeated the variable name here --- a
+gap a locally installed copy of the font hides completely. Setting
 `fontVariables` explicitly still narrows the list.
 
 ## 2026-09-07 (v0.27.0)
