@@ -27,8 +27,11 @@ export interface AstromotionOptions {
    * `cssVariable` names registered via Astro's top-level `fonts` config.
    * For each variable, astromotion injects `<Font cssVariable={v} preload />`
    * into the deck `<head>` so deck pages get self-hosted fonts with
-   * automatic preloading. The fonts themselves must be declared in
-   * `astro.config`'s `fonts` array.
+   * automatic preloading. Defaults to every font in the final config's
+   * `fonts` array --- including ones a theme integration registers --- since
+   * a deck theme's `font-family` can only resolve against those. Set it to
+   * narrow the list; the fonts themselves must be declared in
+   * `astro.config`'s `fonts` array either way.
    */
   fontVariables?: string[];
   /**
@@ -67,7 +70,7 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
   const themePath = options.theme
     ? resolve(options.theme)
     : resolve(__dirname, "theme/default.css");
-  const fontVariables = options.fontVariables ?? [];
+  let fontVariables = options.fontVariables ?? [];
 
   let projectRoot = "";
 
@@ -139,6 +142,14 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
             pattern: `${routePrefix}/[...slug]`,
             entrypoint: "astromotion/pages/[...slug].astro",
           });
+        }
+      },
+      // The final config is only known here: a theme integration listed
+      // before astromotion registers its fonts through updateConfig, and one
+      // listed after it wouldn't be visible in config:setup at all.
+      "astro:config:done"({ config }) {
+        if (options.fontVariables === undefined) {
+          fontVariables = (config.fonts ?? []).map((font) => font.cssVariable);
         }
       },
       async "astro:build:done"({ dir, logger }) {
