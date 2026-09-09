@@ -88,14 +88,23 @@ html.reveal-print .astromotion-whiteboard {
 
    Row heights are fixed and overflow is hidden, so a slide whose notes run
    longer than the row is clipped rather than pushing the grid down the page.
-   Three rows of 62mm and two 5mm gaps come to 196mm, inside the 198mm the
-   @page margins leave. */
+   Three rows of 60mm and two 5mm gaps come to exactly the 190mm the @page
+   margins leave. Those margins are 10mm all round rather than the smallest
+   that fits: under the ~6.35mm most consumer printers cannot reach, the top
+   and bottom rows graze the dead zone, which is what forces a reader into
+   shrink-to-fit. Reclaiming the space means clipped rows. */
 html.astromotion-handout {
   --astromotion-handout-slide-width: 88mm;
   --astromotion-handout-gutter: 5mm;
-  --astromotion-handout-row-height: 62mm;
+  --astromotion-handout-row-height: 60mm;
   --astromotion-handout-row-gap: 5mm;
 
+  /* Chrome paints the @page margins from the UA canvas colour, which a deck's
+     `color-scheme: dark` turns near-black --- and no author background reaches
+     them, root included, so every handout page printed a solid dark frame.
+     `color-scheme` is the only lever; `background` below still covers the
+     content box. */
+  color-scheme: light;
   background: #fff;
 }
 

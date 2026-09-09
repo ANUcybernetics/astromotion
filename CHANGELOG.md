@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-09 (v0.28.1)
+
+### Handouts print inside the page, on a white one
+
+`astromotion-pdf --handout` now prints A4 landscape with a 10mm margin all round
+(was 6mm top and bottom), and the three rows shrink from 62mm to 60mm to fit.
+Under the ~6.35mm most consumer printers cannot reach, the top and bottom rows
+grazed the dead zone, so the handout only printed whole via shrink-to-fit.
+
+Those margins also printed as a solid dark frame. Chrome paints the `@page`
+margins from the UA canvas colour, which a deck's `color-scheme: dark` turns
+near-black, and no author background reaches them --- not the root's, not the
+body's --- so the handout root now sets `color-scheme: light`. Presenter guides
+(`--notes`) are untouched: slide pages stay full-bleed at the deck canvas size.
+
 ## 2026-09-07 (v0.28.0)
 
 ### Deck pages get every font the site registers

@@ -327,7 +327,7 @@ function captureHandout() {
       if (/@page\s*\{[^}]*\bsize\b/.test(style.textContent)) style.remove();
     }
     const pageRule = document.createElement("style");
-    pageRule.textContent = "@page { size: A4 landscape; margin: 6mm 10mm; }";
+    pageRule.textContent = "@page { size: A4 landscape; margin: 10mm; }";
     document.head.appendChild(pageRule);
 
     // The thumbnail's width is set in millimetres by the stylesheet and the
