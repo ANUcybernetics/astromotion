@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-11 (v0.29.0)
+
+### One export run, several artefacts
+
+`astromotion-pdf` now takes more than one mode at a time --- `--slides`,
+`--notes` and `--handout` in any combination --- and they share the one
+`astro build` and preview server instead of each invocation repeating both.
+Naming no mode still means the projection deck, so existing calls are unchanged.
+
+Each mode flag carries its own output path (`--notes=guide.pdf`), which is how a
+multi-mode run names its files; the positional path still works when a single
+mode was asked for, and a run naming several refuses it rather than picking one
+to apply it to.
+
+The build is all the modes share: each captures and compresses separately, and
+capture is most of the wall clock (decktape pauses between slides), so this buys
+the build back, not a share of the total.
+
 ## 2026-09-09 (v0.28.1)
 
 ### Handouts print inside the page, on a white one

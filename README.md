@@ -610,6 +610,19 @@ Ghostscript, repairs the colour spaces Ghostscript breaks on the way through
 npx astromotion-pdf my-talk output.pdf
 ```
 
+Ask for several modes in one run and they share the build and the preview
+server. Each mode flag then takes its own output path, since the positional
+argument names only one file:
+
+```sh
+npx astromotion-pdf my-talk --slides=deck.pdf --notes=guide.pdf
+```
+
+The build is the only thing the modes share --- each still captures and
+compresses on its own, and capture dominates the run (decktape pauses between
+slides), so this saves the build rather than a proportion of the total. Naming
+no mode at all means `--slides`, so every existing invocation keeps working.
+
 Options:
 
 - `--prefix=/decks` --- route prefix the site serves decks under (pass this if
@@ -620,16 +633,17 @@ Options:
   Ghostscript's `/ebook` preset cuts that to a few MB with no visible loss at
   presentation scale. Compression needs `gs`; with it missing the script keeps
   the raw PDF and says so.
-- `--notes` --- export a presenter guide instead: each slide followed by a page
-  of its speaker notes (default output `<slug>-notes.pdf`). This mode skips
-  decktape and prints Reveal's `?print-pdf&showNotes=separate-page` view with
-  headless Chrome (`preferCSSPageSize: true`, so the page size comes from
-  Reveal's `@page` rule). It needs the optional
-  [puppeteer-core](https://pptr.dev) peer dependency
-  (`pnpm add -D puppeteer-core`) and a local Chrome/Chromium --- unlike decktape
-  mode there's no bundled-browser fallback. The `DECKTAPE_CHROME_PATH` /
-  `DECKTAPE_CHROME_ARGS` variables apply here too.
-- `--handout` --- export a lectern handout instead (default output
+- `--slides` --- the projection deck. This is what you get when no mode is
+  named, so it only needs saying to ask for the deck alongside another mode.
+- `--notes` --- export a presenter guide: each slide followed by a page of its
+  speaker notes (default output `<slug>-notes.pdf`). This mode skips decktape
+  and prints Reveal's `?print-pdf&showNotes=separate-page` view with headless
+  Chrome (`preferCSSPageSize: true`, so the page size comes from Reveal's
+  `@page` rule). It needs the optional [puppeteer-core](https://pptr.dev) peer
+  dependency (`pnpm add -D puppeteer-core`) and a local Chrome/Chromium ---
+  unlike decktape mode there's no bundled-browser fallback. The
+  `DECKTAPE_CHROME_PATH` / `DECKTAPE_CHROME_ARGS` variables apply here too.
+- `--handout` --- export a lectern handout (default output
   `<slug>-handout.pdf`): the same slides and notes imposed three rows to a
   landscape A4 page, each slide thumbnail beside its own notes. Prints through
   headless Chrome like `--notes`, and has the same requirements. One row per
@@ -639,6 +653,10 @@ Options:
   `theme/print.css`, so a consuming theme can retune the row geometry
   (`--astromotion-handout-slide-width`, `--astromotion-handout-row-height`, and
   the gutter and gap beside them).
+
+Every mode flag also accepts its own output path in the `--notes=guide.pdf`
+form. A run that names one mode may use the positional path instead; a run that
+names several must give each mode its own, and says so rather than guessing.
 
 Environment variables:
 

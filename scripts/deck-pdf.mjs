@@ -27,16 +27,28 @@
 // slides one by one), so both drive Chrome directly through puppeteer-core ---
 // an optional peer dependency your project must install to use them.
 //
+// Several modes may be asked for at once, and then share the one `astro build`
+// and preview server. That is the only thing they share: each mode captures
+// and compresses separately, and capture dominates the run (decktape pauses
+// per slide), so asking for three modes together saves the build, not two
+// thirds of the time.
+//
 // Usage: astromotion-pdf <slug> [output.pdf] [options]
 //   --prefix=/decks   route prefix the site serves decks under
 //   --port=4321       preview server port
 //   --no-compress     skip Ghostscript and keep the raw decktape PDF
+//   --slides          the projection deck (the default when no mode is named;
+//                     name it explicitly to ask for it alongside another mode)
 //   --notes           presenter guide: slides + interleaved speaker-notes
 //                     pages (default output <slug>-notes.pdf; requires
 //                     puppeteer-core and a local Chrome/Chromium)
 //   --handout         lectern handout: three slide-and-notes rows to a
 //                     landscape A4 page (default output <slug>-handout.pdf;
 //                     same requirements as --notes)
+//
+// Each mode flag also takes its own output path --- `--notes=guide.pdf` ---
+// which is how a multi-mode run names its files. The positional output path
+// names one file, so it is only accepted when one mode was asked for.
 //
 // Environment:
 //   DECKTAPE_CHROME_PATH  Chrome/Chromium binary (overrides discovery)
@@ -63,6 +75,7 @@ import { resolve } from "node:path";
 
 import { findChrome, chromeArgs as resolveChromeArgs } from "../src/chrome.mjs";
 import { repairEmptyIccColorSpaces } from "../src/pdf-icc.mjs";
+import { resolveModes } from "../src/pdf-modes.mjs";
 
 const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith("--"));
@@ -77,19 +90,28 @@ const flagValue = (name) =>
 const slug = positional[0];
 if (!slug) {
   console.error(
-    "Usage: astromotion-pdf <slug> [output.pdf] [--prefix=/decks] [--port=4321] [--no-compress] [--notes] [--handout]",
+    "Usage: astromotion-pdf <slug> [output.pdf] [--prefix=/decks] [--port=4321]" +
+      " [--no-compress] [--slides[=path]] [--notes[=path]] [--handout[=path]]",
   );
   process.exit(1);
 }
 
-const notes = flags.includes("--notes");
-const handout = flags.includes("--handout");
-if (notes && handout) {
-  console.error("✗ --notes and --handout are separate outputs; run the export once for each.");
+// Which artefacts this run produces, and where each goes (src/pdf-modes.mjs).
+const {
+  modes,
+  outputs,
+  error: modeError,
+} = resolveModes({
+  flags,
+  positionalOutput: positional[1],
+  slug,
+  flagValue,
+  resolvePath: resolve,
+});
+if (modeError) {
+  console.error(`✗ ${modeError}`);
   process.exit(1);
 }
-const suffix = notes ? "-notes" : handout ? "-handout" : "";
-const output = resolve(positional[1] ?? `${slug}${suffix}.pdf`);
 const compress = !flags.includes("--no-compress");
 const prefix = (flagValue("prefix") ?? "/decks").replace(/\/+$/, "");
 const port = flagValue("port") ?? "4321";
@@ -189,10 +211,6 @@ process.on("exit", killServer);
 
 await waitForServer(url);
 
-// If we're compressing, decktape writes a raw file we hand to Ghostscript;
-// the user only ever sees `output`.
-const rawOutput = compress ? `${output}.raw.pdf` : output;
-
 const chromeArgs = resolveChromeArgs();
 const maxSlides = process.env.DECKTAPE_MAX_SLIDES ?? "500";
 const decktapeVersion = process.env.DECKTAPE_VERSION ?? "3.16.1";
@@ -205,7 +223,7 @@ const decktapeVersion = process.env.DECKTAPE_VERSION ?? "3.16.1";
 //
 // `prepare` runs in the page once it has settled and before the print, and is
 // where --handout rewrites the DOM.
-async function printWithChrome(mode, query, prepare) {
+async function printWithChrome(mode, rawOutput, query, prepare) {
   if (!chromePath) {
     console.error(
       `✗ ${mode} needs a Chrome/Chromium binary (install one or set DECKTAPE_CHROME_PATH).`,
@@ -255,9 +273,9 @@ async function printWithChrome(mode, query, prepare) {
   }
 }
 
-function captureNotes() {
+function captureNotes(rawOutput) {
   console.log("Printing slides + notes with headless Chrome...");
-  return printWithChrome("--notes", "");
+  return printWithChrome("--notes", rawOutput, "");
 }
 
 // The handout is the notes print view re-imposed: Reveal leaves `.slides`
@@ -272,9 +290,9 @@ function captureNotes() {
 // carrying the notes and three blank beside a nearly identical thumbnail. Off,
 // each slide prints once with its build complete --- which is what a lectern
 // copy wants anyway.
-function captureHandout() {
+function captureHandout(rawOutput) {
   console.log("Printing handout with headless Chrome...");
-  return printWithChrome("--handout", "&pdfSeparateFragments=false", () => {
+  return printWithChrome("--handout", rawOutput, "&pdfSeparateFragments=false", () => {
     const slides = document.querySelector(".reveal .slides");
     const children = [...slides.children];
 
@@ -350,7 +368,7 @@ function captureHandout() {
 // frame repeats --- no Reveal API needed, so it's robust across reveal.js
 // versions. Each frame is captured in its settled state, so auto-animate
 // slides export correctly.
-function captureSlides() {
+function captureSlides(rawOutput) {
   console.log("Capturing slides with decktape...");
   runWithRetry(
     "npx",
@@ -388,43 +406,55 @@ function repairIcc(file) {
   );
 }
 
-if (notes) {
-  await captureNotes();
-} else if (handout) {
-  await captureHandout();
-} else {
-  captureSlides();
+const captures = { slides: captureSlides, notes: captureNotes, handout: captureHandout };
+
+// If we're compressing, the capture writes a raw file we hand to Ghostscript;
+// the caller only ever sees the mode's own output path.
+const rawOutputs = Object.fromEntries(
+  modes.map((m) => [m, compress ? `${outputs[m]}.raw.pdf` : outputs[m]]),
+);
+
+// Capture every mode against the one preview server, then take the server
+// down: it exists for the captures and nothing after them needs it. A leaked
+// preview daemon breaks the NEXT export, so the window it is up for stays as
+// narrow as the work requires.
+for (const mode of modes) {
+  await captures[mode](rawOutputs[mode]);
 }
 
 killServer();
 
 if (compress) {
   const hasGhostscript = spawnSync("gs", ["--version"], { stdio: "ignore" }).status === 0;
-  if (hasGhostscript) {
-    console.log("Compressing with Ghostscript...");
-    run("gs", [
-      "-sDEVICE=pdfwrite",
-      "-dCompatibilityLevel=1.4",
-      "-dPDFSETTINGS=/ebook",
-      // /ebook re-encodes ICC-based images, which shifts the artwork's
-      // colour for no gain at presentation scale. Leaving colours alone costs
-      // ~15% file size; the slides still downsample normally.
-      "-dColorConversionStrategy=/LeaveColorUnchanged",
-      "-dNOPAUSE",
-      "-dQUIET",
-      "-dBATCH",
-      `-sOutputFile=${output}`,
-      rawOutput,
-    ]);
-    unlinkSync(rawOutput);
-    repairIcc(output);
-  } else {
-    console.warn("⚠ Ghostscript not found; keeping the uncompressed PDF.");
-    renameSync(rawOutput, output);
+  for (const mode of modes) {
+    const output = outputs[mode];
+    const rawOutput = rawOutputs[mode];
+    if (hasGhostscript) {
+      console.log(`Compressing ${mode} with Ghostscript...`);
+      run("gs", [
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.4",
+        "-dPDFSETTINGS=/ebook",
+        // /ebook re-encodes ICC-based images, which shifts the artwork's
+        // colour for no gain at presentation scale. Leaving colours alone costs
+        // ~15% file size; the slides still downsample normally.
+        "-dColorConversionStrategy=/LeaveColorUnchanged",
+        "-dNOPAUSE",
+        "-dQUIET",
+        "-dBATCH",
+        `-sOutputFile=${output}`,
+        rawOutput,
+      ]);
+      unlinkSync(rawOutput);
+      repairIcc(output);
+    } else {
+      console.warn("⚠ Ghostscript not found; keeping the uncompressed PDF.");
+      renameSync(rawOutput, output);
+    }
   }
 }
 
-console.log(`\n✓ Wrote ${output}`);
+console.log(`\n${modes.map((m) => `✓ Wrote ${outputs[m]}`).join("\n")}`);
 
 // decktape (and its Chromium) can leave handles open that keep the event loop
 // alive even after the PDF is written, so exit explicitly once it's done.
