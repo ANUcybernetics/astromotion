@@ -37,28 +37,28 @@
     "remark-parse": "^11.0.0",
     "remark-smartypants": "^3.0.2",
     "remark-stringify": "^11.0.0",
-    "reveal.js": "^6.0.1",
+    "reveal.js": "^6.0.2",
     "unified": "^11.0.5",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@astrojs/markdown-remark": "^7.3.0",
-    "@astrojs/mdx": "^8.0.0",
+    "@astrojs/markdown-remark": "^7.3.1",
+    "@astrojs/mdx": "^8.0.1",
     "@e18e/eslint-plugin": "^0.8.0",
     "@types/mdast": "^4.0.4",
     "@types/node": "^24.0.0",
-    "astro": "^7.3.1",
+    "astro": "^7.3.2",
     "eslint-plugin-no-only-tests": "^3.4.0",
     "eslint-plugin-perfectionist": "^5.11.0",
     "eslint-plugin-unused-imports": "^4.4.1",
-    "oxfmt": "^0.66.0",
-    "oxlint": "^1.81.0",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
     "puppeteer-core": "^25.10.0",
     "remark-directive": "^4.0.0",
     "stylelint": "^17.15.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.0"
   },
   "peerDependencies": {
     "@astrojs/mdx": "^7.0.0 || ^8.0.0",
