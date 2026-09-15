@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-15 (v0.30.1)
+
+### Consumers can type-check the new export
+
+`src/deck-text.d.mts` types `deck-text.mjs`, which `src/deck-entries.ts` imports
+and which had no declarations. The file ships as TypeScript, so a consumer
+type-checks it under its own tsconfig: without `allowJs` there --- the ordinary
+case --- v0.30.0 failed `pnpm typecheck` in every consumer that installed it,
+whether or not it called `deckTextEntries`.
+
 ## 2026-09-15 (v0.30.0)
 
 ### Decks can be read by something other than a browser

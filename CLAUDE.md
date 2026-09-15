@@ -62,6 +62,13 @@ and the `@include` walk instead of importing `src/parse-helpers.ts` and
 the originals: add or change a directive in `parse-helpers.ts` without mirroring
 it there and that test fails.
 
+`src/deck-text.d.mts` types that file by hand, and must stay in step with its
+exports. `src/deck-entries.ts` imports it and ships as TypeScript, so every
+consumer type-checks the import under its own tsconfig: without the
+declarations, a consumer with no `allowJs` fails on `pnpm typecheck` for a
+package it merely installed. Keep this package's tsconfig free of `allowJs` so
+the repo's own typecheck reproduces a consumer's.
+
 ## Image paths
 
 Deck images must use relative paths (e.g. `./assets/photo.jpg`), resolved at
