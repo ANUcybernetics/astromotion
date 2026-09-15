@@ -80,6 +80,8 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
       "astro:config:setup"({ updateConfig, injectRoute, config }) {
         projectRoot = fileURLToPath(config.root);
         buildState.base = config.base;
+        buildState.root = projectRoot;
+        buildState.routePrefix = routePrefix;
 
         const hasMdx = config.integrations.some((i) => i.name === "@astrojs/mdx");
         if (!hasMdx) {
@@ -200,4 +202,7 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
 }
 
 export { deckRemarkPlugins } from "./plugins/index.ts";
+export { deckTextEntries } from "./src/deck-entries.ts";
+export type { DeckTextEntriesOptions, DeckTextEntry, DeckTextOptions } from "./src/deck-entries.ts";
+export { DECKS_DIR, deckSlugFromPath } from "./src/deck-slug.ts";
 export { parseDeckFrontmatter } from "./src/meta.ts";

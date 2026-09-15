@@ -7,6 +7,11 @@
     "skipLibCheck": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
+    // src/deck-text.mjs is deliberately plain JavaScript (see CLAUDE.md) and
+    // src/deck-entries.ts imports it. allowJs infers its signature from the
+    // JSDoc rather than duplicating it in a hand-written .d.mts; checkJs stays
+    // off, so the .mjs files themselves are not type-checked.
+    "allowJs": true,
     "types": ["node"]
   },
   "include": ["src", "plugins", "index.ts", "virtual.d.ts"]

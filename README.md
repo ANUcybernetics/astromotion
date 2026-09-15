@@ -803,6 +803,38 @@ import { deckToMarkdown } from "astromotion/src/deck-text.mjs";
 const md = deckToMarkdown("src/decks/week-3.deck.mdx", { comments: false });
 ```
 
+### Decks in a text index
+
+`deckTextEntries()` pairs that text with the URL each deck builds at, for a site
+generator putting the decks into an index of its own --- an `llms.txt`, say. It
+reads every published, listed deck under `src/decks`:
+
+```js
+import { deckTextEntries } from "astromotion";
+
+const entries = await deckTextEntries();
+// [{ url: "/lectures/week-3/", title: "Week 3: Backpressure",
+//    description: "…", body: "## Backpressure\n\n…" }]
+```
+
+Called with no arguments inside a build hook, it uses the project root and
+`routePrefix` the integration resolved during `astro:config:setup` --- so it
+returns the right URLs whether the integration was registered by you or by a
+theme, with the prefix declared in one place only. `{ root, routePrefix }`
+override both for use outside a build, and `{ text }` forwards options to
+`deckToMarkdown`.
+
+Two differences from the CLI's defaults, both because the output is destined for
+publication rather than a printout: authoring comments are dropped (they're
+stripped from the built HTML, so an index carrying them would publish something
+the site itself doesn't), and the title is left off the body, since it travels
+as a field on the entry. Pass `text: { comments: true }` or
+`text: { title: true }` to get them back.
+
+Decks marked `published: false` are skipped, since no route is built for them
+and the entry would point at a 404; `listed: false` decks are skipped too, being
+decks their author kept out of every index.
+
 ## Overflow check
 
 A Reveal deck scales a fixed 1280x720 canvas, so "too much for one slide" is a
@@ -884,6 +916,11 @@ The package exports:
   file (useful for listing pages)
 - **`deckToMarkdown(deckPath, options?)`** (from
   `astromotion/src/deck-text.mjs`) --- the text export above, as a function
+- **`deckTextEntries(options?)`** --- every published deck as
+  `{ url, title, description, body }`, for a site generator building a text
+  index of the decks
+- **`deckSlugFromPath(path)`** and **`DECKS_DIR`** --- the deck-path-to-route
+  mapping the injected route uses, for anything that needs to agree with it
 
 ## Migration from `.deck.md` / `.deck.svelte`
 

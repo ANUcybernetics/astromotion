@@ -1,5 +1,6 @@
 ---
 import DeckLayout from "../components/DeckLayout.astro";
+import { deckSlugFromPath } from "../src/deck-slug.ts";
 
 interface DeckModule {
   default: any;
@@ -17,10 +18,8 @@ export async function getStaticPaths() {
     // strict `=== false` so only an explicit opt-out hides a deck.
     .filter(([, mod]) => !(import.meta.env.PROD && mod.frontmatter?.published === false))
     .map(([filePath, mod]) => {
-      const match = filePath.match(/\/src\/decks\/(.+)\.deck\.mdx$/);
-      if (!match) throw new Error(`Unexpected deck path: ${filePath}`);
-      const name = match[1];
-      const slug = name.endsWith("/slides") ? name.slice(0, -"/slides".length) : name;
+      const slug = deckSlugFromPath(filePath);
+      if (!slug) throw new Error(`Unexpected deck path: ${filePath}`);
       return {
         params: { slug },
         props: { Content: mod.default, frontmatter: mod.frontmatter ?? {} },

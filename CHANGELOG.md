@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-15 (v0.30.0)
+
+### Decks can be read by something other than a browser
+
+`deckTextEntries()` returns every published deck as
+`{ url, title, description, body }` --- the markdown `astromotion-text` already
+produced, paired with the route the deck builds at. The pairing is the new part:
+the decks directory and the slug rule are astromotion's, so nothing outside the
+package could work out a deck's URL, and a site generator wanting the decks in a
+text index had no way to ask.
+
+Called with no arguments in a build hook it uses the project root and
+`routePrefix` recorded during `astro:config:setup`, so a consumer that registers
+`astromotion()` by hand keeps declaring its prefix in exactly one place and a
+theme reading the entries back gets URLs that match the routes. Authoring
+comments are dropped by default and the title is left out of the body, since
+both are wrong for an index; `text` overrides either.
+
+`deckSlugFromPath` and `DECKS_DIR` are exported alongside it, and the injected
+deck route now uses them rather than its own copy of the mapping --- one rule,
+so a text index and the route it points at can't disagree.
+
 ## 2026-09-11 (v0.29.0)
 
 ### One export run, several artefacts
