@@ -72,6 +72,31 @@ describe("remarkDeckBg", () => {
     expect(styleOf(section.children[0])).toContain("url('/test-base/src/decks/assets/photo.jpg')");
   });
 
+  // A project checked out under a directory called `src` (~/src/project) used
+  // to have its URLs cut at the home-directory segment instead of the project
+  // root, silently producing backgrounds that 404.
+  it("rewrites asset URLs for a checkout nested under a src directory", async () => {
+    const input = "# Title\n\n![bg](./assets/photo.jpg)\n";
+    const tree = unified().use(remarkParse).parse(input);
+    await unified()
+      .use(remarkDeckSections)
+      .use(remarkDeckBg)
+      .run(tree, { path: "/home/ben/src/sites/proj/src/decks/test.deck.mdx" });
+    const section = tree.children[0] as any;
+    expect(styleOf(section.children[0])).toContain("url('/src/decks/assets/photo.jpg')");
+  });
+
+  it("leaves an asset that resolves outside the project root alone", async () => {
+    const input = "# Title\n\n![bg](../../../outside.jpg)\n";
+    const tree = unified().use(remarkParse).parse(input);
+    await unified()
+      .use(remarkDeckSections)
+      .use(remarkDeckBg)
+      .run(tree, { path: "/proj/src/decks/test.deck.mdx" });
+    const section = tree.children[0] as any;
+    expect(styleOf(section.children[0])).toContain("url('../../../outside.jpg')");
+  });
+
   it("applies filter modifiers", async () => {
     const input = "# Title\n\n![bg brightness:0.5 blur:2px](./photo.jpg)\n";
     const tree = unified().use(remarkParse).parse(input);

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-16 (v0.30.2)
+
+### Deck background URLs no longer depend on where the project is checked out
+
+A deck's `![bg](./assets/x.jpg)` is served from wherever the build copies it:
+`dist/<the asset's path relative to the project root>`. The URL was guessed at
+instead --- the absolute path cut at its first `/src/` segment --- so a checkout
+that itself lived under a directory called `src` (`~/src/project`) was cut at
+the home directory, and every deck built with a background that 404s. Nothing
+failed: the URL is inside an inline style, which no link checker reads.
+
+Both sides now derive the path from the project root through one function, and
+the root comes from the deck's own location under `src/decks` rather than a
+substring search. Thanks to @cpmpercussion for the report and the diagnosis
+(#4).
+
 ## 2026-09-15 (v0.30.1)
 
 ### Consumers can type-check the new export

@@ -1,6 +1,7 @@
 import type { Image, Paragraph, Root, RootContent } from "mdast";
 import { dirname, resolve } from "node:path";
 import { buildState } from "../src/build-config.ts";
+import { deckAssetPath, deckProjectRoot } from "../src/deck-assets.ts";
 import { withBase } from "../src/head-urls.ts";
 import { parseBgModifiers } from "../src/parse-helpers.ts";
 
@@ -19,10 +20,11 @@ interface BgImage {
 function resolveAssetUrl(url: string, deckPath: string | undefined): string {
   if (!deckPath) return url;
   if (!url.startsWith("./") && !url.startsWith("../")) return url;
-  const absPath = resolve(dirname(deckPath), url);
-  const srcIdx = absPath.indexOf("/src/");
-  if (srcIdx === -1) return url;
-  return withBase(absPath.slice(srcIdx), buildState.base);
+  const root = deckProjectRoot(deckPath);
+  if (root === null) return url;
+  const assetPath = deckAssetPath(root, resolve(dirname(deckPath), url));
+  if (assetPath === null) return url;
+  return withBase(`/${assetPath}`, buildState.base);
 }
 
 interface MdxJsxAttribute {

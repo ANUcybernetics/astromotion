@@ -1,10 +1,11 @@
 import type { AstroIntegration, ShikiConfig } from "astro";
 import mdx from "@astrojs/mdx";
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";
-import { dirname, relative, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectDeckAssets } from "./src/asset-collector.ts";
 import { buildState } from "./src/build-config.ts";
+import { deckAssetPath } from "./src/deck-assets.ts";
 import { checkDecks, countSourceDecks } from "./src/deck-structure.ts";
 import { viteDeckWatchIncludes } from "./src/vite-plugin-watch-includes.ts";
 
@@ -162,7 +163,9 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
         if (existsSync(decksDir)) {
           const assets = collectDeckAssets(decksDir);
           for (const asset of assets) {
-            const relPath = relative(projectRoot, asset);
+            // Same mapping the deck pages use for their asset URLs.
+            const relPath = deckAssetPath(projectRoot, asset);
+            if (relPath === null) continue;
             const dest = resolve(fileURLToPath(dir), relPath);
             mkdirSync(dirname(dest), { recursive: true });
             copyFileSync(asset, dest);
