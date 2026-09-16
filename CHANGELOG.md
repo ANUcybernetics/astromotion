@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-16 (v0.31.0)
+
+### `listed: false` is `unlisted: true` again (breaking)
+
+The frontmatter flag that keeps a built deck out of the indexes goes back to
+`unlisted: true`, the spelling `astro-theme-university` and
+`astro-course-university` read on every content collection. v0.27.0 renamed it
+to `listed: false` to pair with `published: false`, and the pairing read well on
+its own, but a deck is one file with several readers: a course site's graph and
+listings dropped an `unlisted: true` deck while astromotion, reading `listed`,
+built it indexable and handed it to the site's llms.txt. One word for one thing
+across the family beats a tidy pair inside one package.
+
+The retired key is an error now, not a no-op: a deck that still says
+`listed: false` fails the build, from the injected route and from
+`deckTextEntries()` alike, with the replacement in the message. The `DeckLayout`
+and `DeckHead` prop is `unlisted` (default false) to match, and
+`DeckFrontmatter` carries `unlisted` in place of `listed`.
+
 ## 2026-09-16 (v0.30.2)
 
 ### Deck background URLs no longer depend on where the project is checked out

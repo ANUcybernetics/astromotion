@@ -90,7 +90,7 @@ describe("deckTextEntries", () => {
     const root = await project({
       "shown.deck.mdx": deck("title: Shown"),
       "draft.deck.mdx": deck("title: Draft\npublished: false"),
-      "hidden.deck.mdx": deck("title: Hidden\nlisted: false"),
+      "hidden.deck.mdx": deck("title: Hidden\nunlisted: true"),
     });
 
     const entries = await deckTextEntries({ root, routePrefix: "/decks" });

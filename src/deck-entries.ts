@@ -79,7 +79,7 @@ async function collectDeckFiles(dir: string): Promise<string[]> {
  * Read every published, listed deck under `src/decks` as a text entry.
  *
  * Skips `published: false` (no route is built for it, so an entry would point
- * at a 404) and `listed: false` (built, but kept out of every index --- which
+ * at a 404) and `unlisted: true` (built, but kept out of every index --- which
  * is what a text index is).
  */
 export async function deckTextEntries(
@@ -98,7 +98,7 @@ export async function deckTextEntries(
 
     const source = await readFile(file, "utf-8");
     const { data } = parseDeckFrontmatter(source, slug);
-    if (data.published === false || data.listed === false) continue;
+    if (data.published === false || data.unlisted === true) continue;
 
     const description = typeof data.description === "string" ? data.description.trim() : "";
 

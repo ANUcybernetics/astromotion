@@ -98,7 +98,7 @@ title: My Talk
 description: A talk about things
 image: /og-image.png
 published: false
-listed: false
+unlisted: true
 ---
 ```
 
@@ -108,17 +108,25 @@ for this deck. These are used for the page `<title>` and Open Graph / Twitter
 Card meta tags; when neither `image` nor `ogImage` is set, the social-image tags
 are omitted.
 
-`published` and `listed` are two different ways to keep a deck back, and they
-compose. Both default to true. `published: false` drops the deck from a
-production build entirely --- no route, no HTML, nothing to index --- while the
-dev server still serves it, so it is the flag for a deck still being written.
-`listed: false` keeps the deck in the build at its own URL, and takes it out of
-the indexes instead: the page emits `<meta name="robots" content="noindex">` and
-carries `data-pagefind-ignore="all"`, so a link works for whoever holds it while
-search engines and the site's own search skip it. A deck a consumer lists
-somewhere --- a grid, a content collection --- needs that listing to honour the
-flag too; astromotion only owns the page. The parsed frontmatter type,
-`DeckFrontmatter` from `astromotion/src/meta.ts`, carries both flags.
+`published` and `unlisted` are two different ways to keep a deck back, and they
+compose. Absent, a deck is published and listed. `published: false` drops the
+deck from a production build entirely --- no route, no HTML, nothing to index
+--- while the dev server still serves it, so it is the flag for a deck still
+being written. `unlisted: true` keeps the deck in the build at its own URL, and
+takes it out of the indexes instead: the page emits
+`<meta name="robots" content="noindex">` and carries
+`data-pagefind-ignore="all"`, and `deckTextEntries()` skips it, so a link works
+for whoever holds it while search engines, the site's own search and its text
+index all pass it by. A deck a consumer lists somewhere --- a grid, a content
+collection --- needs that listing to honour the flag too; astromotion only owns
+the page. The parsed frontmatter type, `DeckFrontmatter` from
+`astromotion/src/meta.ts`, carries both flags.
+
+The spelling is shared with the wider family (`astro-theme-university` and
+`astro-course-university` read `unlisted: true` on every content collection), so
+one word means one thing across a site. The retired `listed: false` fails the
+build rather than being ignored: a flag nobody reads would put the deck back
+into every index without a word.
 
 ### Slide syntax
 
@@ -832,8 +840,8 @@ as a field on the entry. Pass `text: { comments: true }` or
 `text: { title: true }` to get them back.
 
 Decks marked `published: false` are skipped, since no route is built for them
-and the entry would point at a 404; `listed: false` decks are skipped too, being
-decks their author kept out of every index.
+and the entry would point at a 404; `unlisted: true` decks are skipped too,
+being decks their author kept out of every index.
 
 ## Overflow check
 

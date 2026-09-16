@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { parseDeckFrontmatter } from "../src/meta.ts";
 
 describe("parseDeckFrontmatter", () => {
+  it("rejects the retired `listed` flag with the fix in the message", () => {
+    const raw = `---\ntitle: Old\nlisted: false\n---\n# Slide`;
+    expect(() => parseDeckFrontmatter(raw, "old-deck")).toThrow(
+      /old-deck: `listed` is not read; use `unlisted: true`/,
+    );
+  });
+
+  it("keeps unlisted: true on the parsed data", () => {
+    const raw = `---\ntitle: Hidden\nunlisted: true\n---\n# Slide`;
+    expect(parseDeckFrontmatter(raw).data.unlisted).toBe(true);
+  });
+
   it("parses title and description from frontmatter", () => {
     const raw = `---\ntitle: My Deck\ndescription: A test\n---\n# Slide`;
     const result = parseDeckFrontmatter(raw);
