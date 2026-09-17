@@ -164,3 +164,21 @@
     }
   }
 }
+
+/* Reveal's inline speaker notes (`?showNotes=true`) on a portrait screen, for
+   reading a deck's notes on a phone. Reveal's own small-screen rules give the
+   slide 60vh and the notes the 40vh below it, but a 16:9 canvas on a portrait
+   screen only needs 100vw * 9/16 of height, so most of that 60vh is letterbox.
+   Cap the slide area at the canvas's own aspect and hand the rest of the
+   screen to the notes. The 9/16 is the fixed 1280x720 canvas in
+   `pages/[...slug].astro`. */
+@media screen and (orientation: portrait) {
+  .reveal.show-notes {
+    max-height: calc(100vw * 9 / 16);
+  }
+
+  .reveal.show-notes .speaker-notes {
+    height: calc(100dvh - 100vw * 9 / 16);
+    font-size: 17px;
+  }
+}

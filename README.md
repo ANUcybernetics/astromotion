@@ -218,6 +218,9 @@ Why this slide is the way it is, for whoever edits the deck next.
 - ` ```notes ` --- presenter notes: rendered into
   `<aside class="notes" aria-hidden="true">` and visible in the Reveal.js
   speaker view (press **S**). Two fences on one slide read as one set of notes.
+  To read them on a phone, add `?showNotes=true` to the deck URL: Reveal shows
+  each slide's notes beneath it, and on a portrait screen the slide fits the
+  width and the notes scroll in the rest. Swipe to change slides.
 - ` ```comment ` --- authoring comments: stripped from the deck entirely, and
   surfaced again by `astromotion-text --comments`.
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-17 (v0.31.1)
+
+### Speaker notes on a phone
+
+Reveal's inline notes view (`?showNotes=true` on the deck URL) now fills a
+portrait screen: the slide takes the width's 16:9 height and the notes scroll in
+everything below it. Reveal's own small-screen rules split the screen 60/40
+regardless of aspect, which left a phone with a thin slide in a tall letterbox
+and the notes squeezed into the bottom third. A CSS rule in `theme/base.css`, so
+no new option or view: it's Reveal's `showNotes`, laid out for the shape of the
+screen.
+
 ## 2026-09-16 (v0.31.0)
 
 ### `listed: false` is `unlisted: true` again (breaking)
