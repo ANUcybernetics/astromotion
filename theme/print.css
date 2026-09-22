@@ -190,3 +190,16 @@ html.astromotion-handout .reveal .speaker-notes-pdf :is(p, ul, ol) {
 html.astromotion-handout .reveal .speaker-notes-pdf :is(p, ul, ol):last-child {
   margin-block-end: 0;
 }
+
+/* No ligatures in an exported PDF. Chrome embeds the deck's webfonts as Type 3
+   fonts, and a ligature glyph (fi, fl) maps one character code to two
+   codepoints in the font's ToUnicode map. Ghostscript 10.02 --- what Ubuntu
+   24.04 ships, and so `ubuntu-latest` CI --- drops the whole map from any
+   Type 3 font that uses one, so the compressed PDF renders fine but its text
+   can no longer be searched, copied or read aloud. Ghostscript 10.05 keeps it,
+   but printing without ligatures costs nothing visible at slide scale and
+   works whichever version compresses the file. */
+[data-astromotion-export],
+[data-astromotion-export] * {
+  font-variant-ligatures: none;
+}

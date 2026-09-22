@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-23 (v0.31.2)
+
+### Exported PDFs keep their text layer
+
+Presenter guides printed with `astromotion-pdf --notes` rendered fine but lost
+their text after compression, so the notes couldn't be searched, copied or read
+by a screen reader. Chrome embeds a deck's webfonts as Type 3 fonts, and
+Ghostscript 10.02 (what Ubuntu 24.04 ships) drops the whole Unicode map from any
+Type 3 font that uses a ligature glyph such as fi or fl. Decks served with
+`?astromotion-export` now turn ligatures off (`theme/print.css`), which fixes
+all three export modes whichever Ghostscript compresses the file.
+
 ## 2026-09-17 (v0.31.1)
 
 ### Speaker notes on a phone
