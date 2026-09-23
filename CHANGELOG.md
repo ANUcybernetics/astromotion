@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-23 (v0.31.3)
+
+### Decks work under `security.csp`
+
+On a site that enables Astro's CSP, the export-mode guard `DeckHead` inlines
+into every deck's `<head>` was blocked: Astro hashes the scripts it bundles but
+not an `is:inline` one, so consumers had to hard-code its hash in
+`security.csp.scriptDirective.hashes` and chase it on every change. The guard
+now registers its own hash through `Astro.csp`, and a consumer's hand-written
+entry can go. Sites without a CSP are unaffected.
+
+### Only media is copied out of `src/decks`
+
+The build copied every file under `src/decks/` into the output except a short
+list of source types, so a deck's helper components, shell scripts and data
+files were published, along with any `.astro/` or Vite cache left by running a
+dev server in that directory. It now copies an allowlist of media (images,
+video, audio, captions, PDFs, fonts) and skips dot-directories and
+`node_modules`.
+
 ## 2026-09-23 (v0.31.2)
 
 ### Exported PDFs keep their text layer

@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, symlink } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
@@ -79,6 +80,7 @@ describe("deck head under a base path", () => {
   let configured: Document;
   let omitted: Document;
   let remounted: Document;
+  let withCsp: Document;
 
   beforeAll(async () => {
     await linkPackage();
@@ -88,12 +90,14 @@ describe("deck head under a base path", () => {
     });
     omitted = await build("dist-omitted");
     remounted = await build("dist-remounted", { FIXTURE_ROUTE_PREFIX: "/lectures/" });
-  }, 180_000);
+    withCsp = await build("dist-csp", { FIXTURE_CSP: "1" });
+  }, 240_000);
 
   afterAll(async () => {
     await rm(resolve(fixture, "dist-configured"), { recursive: true, force: true });
     await rm(resolve(fixture, "dist-omitted"), { recursive: true, force: true });
     await rm(resolve(fixture, "dist-remounted"), { recursive: true, force: true });
+    await rm(resolve(fixture, "dist-csp"), { recursive: true, force: true });
   });
 
   it("prefixes every internal URL with the base path", () => {
@@ -142,6 +146,29 @@ describe("deck head under a base path", () => {
     expect(guards).toHaveLength(1);
     expect(guards[0].hasAttribute("type")).toBe(false);
     expect(guards[0].textContent).toContain("setInterval");
+  });
+
+  // Astro hashes the scripts it bundles into a site's CSP, but not an
+  // `is:inline` one, so the export guard registers its own hash. Without it the
+  // browser blocks the guard on any site that turns security.csp on.
+  it("covers every inline script with the page's CSP when the site enables one", () => {
+    const csp = withCsp
+      .querySelector('meta[http-equiv="content-security-policy"]')
+      ?.getAttribute("content");
+    const scriptSrc = csp?.match(/script-src([^;]*)/)?.[1] ?? "";
+    const inline = Array.from(
+      withCsp.querySelectorAll("script:not([src])"),
+      (s) => s.textContent ?? "",
+    ).filter((body) => body.trim());
+    expect(inline.length).toBeGreaterThan(0);
+    for (const body of inline) {
+      const hash = createHash("sha256").update(body).digest("base64");
+      expect(scriptSrc).toContain(`'sha256-${hash}'`);
+    }
+  });
+
+  it("emits no CSP when the site doesn't enable one", () => {
+    expect(configured.querySelector('meta[http-equiv="content-security-policy"]')).toBeNull();
   });
 
   // The fixture ships three decks: `sample` (published), `draft`

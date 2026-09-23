@@ -1,17 +1,32 @@
 import { readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { extname, resolve } from "node:path";
+
+/**
+ * Files a deck can reference by a literal URL (an `![bg]` image, a `<video>`
+ * or `<audio>` src, a linked PDF), which the build copies verbatim into dist/.
+ * An allowlist rather than a list of source types to skip: anything else under
+ * src/decks --- partials, components, scripts, a stray `.astro/` or Vite cache
+ * from running a dev server in the wrong directory --- is build input, and
+ * copying it would publish it.
+ */
+const ASSET_EXTENSIONS = new Set(
+  [
+    "avif webp png jpg jpeg gif svg ico",
+    "mp4 webm mov m4v vtt",
+    "mp3 m4a opus ogg oga wav flac",
+    "pdf woff woff2 ttf otf",
+  ].flatMap((group) => group.split(" ")),
+);
 
 export function collectDeckAssets(decksDir: string): string[] {
   const assets: string[] = [];
   function walk(dir: string) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
       const full = resolve(dir, entry.name);
       if (entry.isDirectory()) {
         walk(full);
-      } else if (!/\.(mdx|md|svx|svelte|css)$/.test(entry.name)) {
-        // Skip source files, not just decks: an `@include` partial or a
-        // component beside the decks is input to the build, and copying it
-        // verbatim into dist/ would publish source.
+      } else if (ASSET_EXTENSIONS.has(extname(entry.name).slice(1).toLowerCase())) {
         assets.push(full);
       }
     }

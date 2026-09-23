@@ -2,6 +2,7 @@
 import { Font } from "astro:assets";
 import { fontVariables } from "virtual:astromotion/fonts";
 import { favicon, ogImage } from "virtual:astromotion/head";
+import { EXPORT_SHIM, scriptHash } from "../src/export-shim.ts";
 import { absoluteUrl, withBase } from "../src/head-urls.ts";
 
 interface Props {
@@ -24,6 +25,8 @@ const faviconHref = favicon ? withBase(favicon, baseUrl) : undefined;
 // Only claim a MIME type we can actually infer; a hardcoded image/svg+xml is
 // wrong for a .png or .ico favicon.
 const faviconType = favicon?.endsWith(".svg") ? "image/svg+xml" : undefined;
+// Astro.csp is only defined when the site enables security.csp.
+if (Astro.csp) Astro.csp.insertScriptHash(await scriptHash(EXPORT_SHIM));
 ---
 
 {fontVariables.map((cssVariable) => <Font cssVariable={cssVariable} preload />)}
@@ -71,11 +74,7 @@ const faviconType = favicon?.endsWith(".svg") ? "image/svg+xml" : undefined;
   branch on the `data-astromotion-export` attribute this sets.
 
   Inline and in the head so it runs at parse time, ahead of the deferred module
-  scripts that hydrate components.
+  scripts that hydrate components. The body lives in src/export-shim.ts so the
+  frontmatter can register its CSP hash.
 */}
-<script is:inline>
-  if (new URLSearchParams(location.search).has("astromotion-export")) {
-    document.documentElement.dataset.astromotionExport = "";
-    window.setInterval = () => 0;
-  }
-</script>
+<script is:inline set:html={EXPORT_SHIM} />

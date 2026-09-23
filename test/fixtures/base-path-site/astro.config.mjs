@@ -14,6 +14,8 @@ export default defineConfig({
   // The fixture deliberately ships no sharp; deck bg images bypass Astro's
   // image pipeline anyway (they live in inline styles, copied verbatim).
   image: { service: passthroughImageService() },
+  // Opt-in, so the other builds prove the deck head works without a CSP.
+  security: { csp: Boolean(process.env.FIXTURE_CSP) },
   // Registered on the shared markdown chain (which plain mdx() inherits), the
   // way the real consumers do it.
   markdown: { remarkPlugins: deckRemarkPlugins },

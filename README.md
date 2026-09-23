@@ -243,6 +243,15 @@ Image paths must be relative to the deck file (e.g. `./assets/photo.jpg`).
 Absolute paths like `/images/...` are not resolved and will 404 on subpath
 deployments.
 
+The build copies media under `src/decks/` (images, video, audio, captions, PDFs
+and fonts) into the output verbatim, so a deck can link to it by URL. Nothing
+else there is published: partials, components, scripts and data files stay build
+input.
+
+Deck pages work under a site's `security.csp`. Astro hashes the scripts it
+bundles, and the one inline script astromotion adds to the deck `<head>`
+registers its own hash, so a consumer needs no hand-written `hashes` entry.
+
 ### QR codes
 
 ```mdx
