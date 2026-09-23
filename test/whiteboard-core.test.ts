@@ -33,6 +33,9 @@ function openAnnotation(): WhiteboardState {
   return applyAction(createWhiteboard(), { type: "toggle", surface: "slide" }, PALETTE_SIZE);
 }
 
+const go = (state: WhiteboardState, h: number, v = 0) =>
+  applyAction(state, { type: "slide", key: slideKey(h, v) }, PALETTE_SIZE);
+
 function draw(state: WhiteboardState, x: number): WhiteboardState {
   return endStroke(beginStroke(state, { x, y: x, pressure: 0.5 }, false));
 }
@@ -354,9 +357,6 @@ describe("applyAction", () => {
 });
 
 describe("slide annotations", () => {
-  const go = (state: WhiteboardState, h: number, v = 0) =>
-    applyAction(state, { type: "slide", key: slideKey(h, v) }, PALETTE_SIZE);
-
   it("keeps ink per slide, so stepping away and back brings it with you", () => {
     let state = draw(openAnnotation(), 1);
     state = go(state, 1);
