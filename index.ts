@@ -72,6 +72,9 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
     ? resolve(options.theme)
     : resolve(__dirname, "theme/default.css");
   let fontVariables = options.fontVariables ?? [];
+  // Read at config:done; DeckHead only touches Astro.csp when the site enables
+  // it, since Astro warns on every page that reads it otherwise.
+  let cspEnabled = false;
 
   let projectRoot = "";
 
@@ -130,7 +133,8 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
                   if (id === resolvedHeadModuleId) {
                     return (
                       `export const favicon = ${JSON.stringify(options.favicon ?? null)};\n` +
-                      `export const ogImage = ${JSON.stringify(options.ogImage ?? null)};\n`
+                      `export const ogImage = ${JSON.stringify(options.ogImage ?? null)};\n` +
+                      `export const cspEnabled = ${cspEnabled};\n`
                     );
                   }
                   return null;
@@ -151,6 +155,7 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
       // before astromotion registers its fonts through updateConfig, and one
       // listed after it wouldn't be visible in config:setup at all.
       "astro:config:done"({ config }) {
+        cspEnabled = Boolean(config.security?.csp);
         if (options.fontVariables === undefined) {
           fontVariables = (config.fonts ?? []).map((font) => font.cssVariable);
         }

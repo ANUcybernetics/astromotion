@@ -5,4 +5,5 @@ declare module "virtual:astromotion/fonts" {
 declare module "virtual:astromotion/head" {
   export const favicon: string | null;
   export const ogImage: string | null;
+  export const cspEnabled: boolean;
 }

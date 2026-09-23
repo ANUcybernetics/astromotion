@@ -1,7 +1,7 @@
 ---
 import { Font } from "astro:assets";
 import { fontVariables } from "virtual:astromotion/fonts";
-import { favicon, ogImage } from "virtual:astromotion/head";
+import { cspEnabled, favicon, ogImage } from "virtual:astromotion/head";
 import { EXPORT_SHIM, scriptHash } from "../src/export-shim.ts";
 import { absoluteUrl, withBase } from "../src/head-urls.ts";
 
@@ -25,8 +25,9 @@ const faviconHref = favicon ? withBase(favicon, baseUrl) : undefined;
 // Only claim a MIME type we can actually infer; a hardcoded image/svg+xml is
 // wrong for a .png or .ico favicon.
 const faviconType = favicon?.endsWith(".svg") ? "image/svg+xml" : undefined;
-// Astro.csp is only defined when the site enables security.csp.
-if (Astro.csp) Astro.csp.insertScriptHash(await scriptHash(EXPORT_SHIM));
+// Gated on the config rather than on Astro.csp itself: reading Astro.csp on a
+// site without security.csp logs a warning for every deck page.
+if (cspEnabled) Astro.csp?.insertScriptHash(await scriptHash(EXPORT_SHIM));
 ---
 
 {fontVariables.map((cssVariable) => <Font cssVariable={cssVariable} preload />)}

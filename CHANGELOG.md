@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23 (v0.31.4)
+
+### No CSP warning on sites without a CSP
+
+v0.31.3 read `Astro.csp` on every deck page to register the export guard's hash,
+and Astro logs a warning each time a page reads it on a site that hasn't enabled
+`security.csp`: one line per deck, every build. The integration now reads the
+site's config and the deck head only touches `Astro.csp` when a CSP is on.
+
 ## 2026-09-23 (v0.31.3)
 
 ### Decks work under `security.csp`

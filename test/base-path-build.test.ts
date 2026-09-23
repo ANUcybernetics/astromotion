@@ -37,6 +37,9 @@ async function linkPackage() {
   });
 }
 
+/** Build output (stdout + stderr) by outDir, for assertions on what Astro logged. */
+const buildLogs: Record<string, string> = {};
+
 async function build(outDir: string, env: Record<string, string> = {}) {
   // Vitest injects BASE_URL/MODE/DEV/PROD/SSR into process.env. Inherited by the
   // child, they override the fixture's own `base`, and the build silently emits
@@ -48,10 +51,12 @@ async function build(outDir: string, env: Record<string, string> = {}) {
   const parentEnv = { ...process.env };
   for (const key of ["BASE_URL", "MODE", "DEV", "PROD", "SSR", "NODE_ENV"]) delete parentEnv[key];
 
-  await execFileAsync(process.execPath, [astroBin, "build", "--outDir", outDir], {
-    cwd: fixture,
-    env: { ...parentEnv, ...env },
-  });
+  const { stdout, stderr } = await execFileAsync(
+    process.execPath,
+    [astroBin, "build", "--outDir", outDir],
+    { cwd: fixture, env: { ...parentEnv, ...env } },
+  );
+  buildLogs[outDir] = stdout + stderr;
   const prefix = (env.FIXTURE_ROUTE_PREFIX ?? "/decks").replace(/^\//, "");
   const html = await readFile(resolve(fixture, outDir, prefix, "sample/index.html"), "utf8");
   return parseHTML(html).document;
@@ -167,8 +172,11 @@ describe("deck head under a base path", () => {
     }
   });
 
-  it("emits no CSP when the site doesn't enable one", () => {
+  // Astro warns once per page that reads Astro.csp on a site without a CSP,
+  // so the deck head must not touch it unless the site enabled one.
+  it("emits no CSP, and no CSP warning, when the site doesn't enable one", () => {
     expect(configured.querySelector('meta[http-equiv="content-security-policy"]')).toBeNull();
+    expect(buildLogs["dist-configured"]).not.toMatch(/csp/i);
   });
 
   // The fixture ships three decks: `sample` (published), `draft`
