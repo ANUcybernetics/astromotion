@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-24 (v0.32.1)
+
+### Speaker notes load on sites with a CSP
+
+On a site that turns on Astro's `security.csp`, the speaker view (`S`) stuck at
+"Loading speaker view..." and never showed notes. reveal.js writes the view into
+a blank popup that inherits the deck page's CSP, and its inline script wasn't in
+`script-src`. Deck pages now register that script's hash alongside the export
+guard's, read from the installed reveal.js so a reveal.js bump can't reopen the
+gap. Sites without a CSP are unaffected.
+
 ## 2026-09-24 (v0.32.0)
 
 ### PDF exports no longer balloon under Ghostscript 10.08
