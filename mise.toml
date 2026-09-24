@@ -1,3 +1,6 @@
 [tools]
 node = "24"
 pnpm = "latest"
+# astromotion-pdf's compressor, pinned so every machine and CI run the same
+# pdfwrite (see src/pdf-compress.mjs for why the version matters).
+"conda:ghostscript" = "10.08.0"

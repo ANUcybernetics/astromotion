@@ -623,8 +623,7 @@ The bundled `astromotion-pdf` command exports the projection deck by default,
 and a presenter guide (`--notes`) or a lectern handout (`--handout`) on request.
 For the deck it builds the site, starts a preview server, captures it with
 [decktape](https://github.com/astefanutti/decktape), compresses the result with
-Ghostscript, repairs the colour spaces Ghostscript breaks on the way through
-(see below), and cleans up:
+Ghostscript, and cleans up:
 
 ```sh
 npx astromotion-pdf my-talk output.pdf
@@ -648,11 +647,12 @@ Options:
 - `--prefix=/decks` --- route prefix the site serves decks under (pass this if
   you've remounted the deck route, e.g. `--prefix=/lectures`)
 - `--port=4321` --- preview server port
-- `--no-compress` --- keep the raw decktape PDF. The raw capture rasterises
-  every slide, so decks with full-bleed backgrounds land at 100 MB+;
-  Ghostscript's `/ebook` preset cuts that to a few MB with no visible loss at
-  presentation scale. Compression needs `gs`; with it missing the script keeps
-  the raw PDF and says so.
+- `--no-compress` --- keep the raw decktape PDF. The raw capture embeds every
+  slide background at its source resolution, so decks with full-bleed images
+  land at 100 MB+; compression cuts that to a few MB with no visible loss at
+  presentation scale. It needs Ghostscript 10.07 or later (see
+  [Compression](#compression)); with `gs` missing the script keeps the raw PDF
+  and says so, and with an older one it stops before building.
 - `--slides` --- the projection deck. This is what you get when no mode is
   named, so it only needs saying to ask for the deck alongside another mode.
 - `--notes` --- export a presenter guide: each slide followed by a page of its
@@ -707,49 +707,44 @@ either way (measured identical at 1280x720 and 1920x1080) and text is vector ---
 only the PDF's nominal page size in points changes. Keep any override at 16:9;
 another ratio letterboxes the canvas into the page.
 
+### Compression
+
+Compression runs Ghostscript's `pdfwrite` with the `/ebook` preset (images
+downsampled to 150 ppi and re-encoded as JPEG) and the colour strategy set
+explicitly to `RGB`, so Chrome's sRGB-tagged images come out as plain DeviceRGB,
+which every renderer draws the same. The details, and the settings not to reach
+for, are in `src/pdf-compress.mjs`.
+
+Pin Ghostscript in your project's `mise.toml` so every machine compresses with
+the same one:
+
+```toml
+[tools]
+"conda:ghostscript" = "10.08.0"
+```
+
+Anything from 10.07 works (Homebrew's is current); older versions (Ubuntu 24.04
+ships 10.02) drop translucent overlays, so the export refuses them. If
+compression ever makes a file larger, Ghostscript has rasterised the pages
+rather than compressing them, and the export stops with the raw capture kept
+beside the output for inspection.
+
 ### Translucent overlays
 
-An overlay a deck paints with partial transparency --- the `hero` scrim that
-darkens a full-bleed background so the title stays legible is the usual one ---
-survives export only as an **image with an alpha channel**: a PNG or AVIF with a
-soft edge, stretched over the slide. That is the one transparency primitive
-every PDF writer and renderer agrees on, and astro-theme-university's scrim is
-one (a 1x256 alpha ramp).
+Draw an overlay that ends up in a PDF --- the `hero` scrim that darkens a
+full-bleed background so the title stays legible is the usual one --- as
+constant alpha (`rgb(0 0 0 / 50%)`, `opacity`) or as an **image with an alpha
+channel**, stretched over the slide. Those are the transparency primitives every
+PDF renderer agrees on.
 
-The two CSS alternatives both fail somewhere. A gradient whose alpha varies
-reaches the PDF as a colour layer behind a luminosity soft mask, and
-Ghostscript's `pdfwrite` writes that colour layer out empty --- the overlay
-vanishes and the slide prints as white text on undimmed artwork, under every
-preset, compatibility level and colour-conversion strategy (tested on
-Ghostscript 10.02). An opaque gradient under `mix-blend-mode: multiply` survives
-`pdfwrite`, but macOS Quartz (Preview, Safari, Quick Look) draws it too bright
-in the raw capture and as a near-uniform darkening once Ghostscript has
-rewritten it as a form sharing the page's transparency group.
-
-Earlier releases re-emitted the file through poppler's `pdftocairo` before and
-after Ghostscript to paper over those two failures. That pass has gone: it made
-`poppler-utils` a requirement for compression, and it baked poppler's own quirk
---- it ignores the constant alpha on shading-pattern fills, so a translucent SVG
-background renders brighter there than anywhere else --- into the file every
-viewer then showed. Keep overlays to alpha images and the export needs neither.
-
-### Broken colour profiles
-
-Ghostscript 10.07 writes every image's ICC profile out as a zero-byte stream
-while leaving the image's colour space pointing at it, so each image in a
-compressed deck carries a colour profile that isn't one. (Ghostscript 10.02
-doesn't, which is a good way to be handed the bug by whichever machine you
-exported on.) Poppler, pdf.js, PDFium and MuPDF fall back on the profile's
-component count and render normally --- poppler noisily, two warnings per image
---- but Apple's CoreGraphics doesn't, so in Safari and Preview the images simply
-don't draw and the deck arrives as text on blank backgrounds.
-
-The export repairs this before it writes the file: an empty ICC colour space is
-rewritten to the device space its component count implies (`/DeviceRGB` for
-three), which is exactly the fallback the tolerant renderers already apply, so
-nothing that renders today changes appearance. The rewrite is padded to the same
-byte length, so it can't disturb the file Ghostscript wrote --- and it's a no-op
-on a Ghostscript that writes profiles properly.
+A gradient whose alpha varies is the one to keep off the page. Chrome writes it
+as a shading behind a luminosity soft mask, which PDFium (Chrome's own PDF
+viewer), pdf.js and iOS Safari mishandle. It is fine on screen, so switch it for
+the export: `?astromotion-export` sets `data-astromotion-export` on `<html>`
+(see below), and the print views also match `@media print`.
+astro-theme-university's scrim does exactly this, a CSS gradient on screen and a
+1x256 alpha ramp under either selector. Avoid `mix-blend-mode` for overlays too:
+macOS Quartz (Preview, Safari, Quick Look) misdraws it.
 
 ### Export mode
 

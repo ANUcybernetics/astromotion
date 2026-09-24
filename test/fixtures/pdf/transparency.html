@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- Source of transparency.pdf, the raw capture test/pdf-compress.test.ts
+     compresses. Regenerate by printing this page with headless Chrome at a
+     1280x720 viewport (preferCSSPageSize, printBackground), served over HTTP
+     so the images load. -->
+<html>
+  <head>
+    <style>
+      @page {
+        size: 1280px 720px;
+        margin: 0;
+      }
+      body {
+        margin: 0;
+      }
+      .p {
+        width: 1280px;
+        height: 720px;
+        position: relative;
+        break-after: page;
+        background: url(bg.webp) center / cover;
+        color: #fff;
+        font: 48px sans-serif;
+      }
+      .p::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+      }
+      .png::after {
+        background: url(scrim.png) 0 0 / 100% 100%;
+      }
+      .grad::after {
+        background: linear-gradient(to top, rgb(0 0 0 / 80%), rgb(0 0 0 / 20%));
+      }
+      .plain {
+        background: #fdfdf8;
+        color: #111;
+      }
+      .t {
+        position: relative;
+        z-index: 1;
+        padding: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="p png"><div class="t">PNG alpha scrim</div></div>
+    <div class="p grad"><div class="t">translucent gradient</div></div>
+    <div class="p plain"><div class="t">plain text slide</div></div>
+  </body>
+</html>

@@ -2,22 +2,10 @@
 // Export an astromotion deck to PDF.
 //
 // Pipeline: astro build -> astro preview -> decktape (generic plugin,
-// key-driven navigation) -> Ghostscript compression (optional but on by
-// default: the raw decktape PDF rasterises every slide, so a deck with
-// full-bleed backgrounds lands at 100 MB+; Ghostscript's /ebook preset cuts
-// that to a few MB with no visible loss at presentation scale) -> ICC repair
-// (Ghostscript leaves every image tagged with an empty colour profile, which
-// Safari and Preview then refuse to draw --- see src/pdf-icc.mjs).
-//
-// Translucent overlays survive that pipeline only as images with an alpha
-// channel (astro-theme-university's hero scrim is one). A CSS gradient whose
-// alpha varies reaches the PDF as a shading behind a luminosity soft mask,
-// which pdfwrite writes out empty, and an opaque gradient under a blend mode
-// survives pdfwrite but macOS Quartz then misdraws it. Re-emitting the file
-// through pdftocairo before and after Ghostscript papered over both, at the
-// cost of baking poppler's brighter reading of translucent SVG fills into
-// every viewer; the export now runs Ghostscript alone and leaves the overlay
-// primitive to the theme.
+// key-driven navigation) -> Ghostscript compression (on by default: the raw
+// capture embeds every background at source resolution, so a deck with
+// full-bleed images lands at 100 MB+; the settings and the Ghostscript version
+// floor are explained in src/pdf-compress.mjs).
 //
 // With --notes or --handout the deck is instead printed via headless Chrome
 // against Reveal's print view (?print-pdf&showNotes=separate-page): --notes
@@ -70,11 +58,11 @@
 // `[data-astromotion-export]` any part of one) rather than raising the cap.
 
 import { spawn, spawnSync } from "node:child_process";
-import { readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { renameSync, statSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { findChrome, chromeArgs as resolveChromeArgs } from "../src/chrome.mjs";
-import { repairEmptyIccColorSpaces } from "../src/pdf-icc.mjs";
+import { ghostscriptArgs, ghostscriptSupported, MIN_GHOSTSCRIPT } from "../src/pdf-compress.mjs";
 import { resolveModes } from "../src/pdf-modes.mjs";
 
 const args = process.argv.slice(2);
@@ -163,6 +151,25 @@ async function waitForServer(target) {
   }
   console.error(`✗ Preview server never became ready at ${target}`);
   process.exit(1);
+}
+
+// Checked before the build so an unusable Ghostscript fails in seconds, not
+// after the capture. Missing, the export keeps the raw capture (large but
+// correct); too old, it would write a file with overlays silently missing.
+let ghostscriptVersion;
+if (compress) {
+  const gs = spawnSync("gs", ["--version"], { encoding: "utf8" });
+  if (gs.status !== 0) {
+    console.warn("⚠ Ghostscript not found; keeping the uncompressed PDF.");
+  } else if (!ghostscriptSupported(gs.stdout)) {
+    console.error(
+      `✗ Ghostscript ${gs.stdout.trim()} is too old to compress decks (${MIN_GHOSTSCRIPT} or later is\n` +
+        "  needed; older versions drop translucent overlays). Upgrade it, or pass --no-compress.",
+    );
+    process.exit(1);
+  } else {
+    ghostscriptVersion = gs.stdout.trim();
+  }
 }
 
 const chromePath = findChrome();
@@ -393,18 +400,7 @@ function captureSlides(rawOutput) {
   );
 }
 
-// Ghostscript hands back a file whose every image is tagged with an empty ICC
-// profile, which Safari and Preview refuse to draw (see src/pdf-icc.mjs). The
-// repair is a same-length byte patch, so it can't disturb the file gs wrote.
-function repairIcc(file) {
-  const { bytes, patched } = repairEmptyIccColorSpaces(readFileSync(file));
-  if (patched.length === 0) return;
-  writeFileSync(file, bytes);
-  console.log(
-    `Repaired ${patched.length} empty ICC colour space(s) → ` +
-      `${[...new Set(patched.map((p) => p.space))].join(", ")}`,
-  );
-}
+const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
 
 const captures = { slides: captureSlides, notes: captureNotes, handout: captureHandout };
 
@@ -424,34 +420,31 @@ for (const mode of modes) {
 
 killServer();
 
-if (compress) {
-  const hasGhostscript = spawnSync("gs", ["--version"], { stdio: "ignore" }).status === 0;
+if (ghostscriptVersion) {
   for (const mode of modes) {
     const output = outputs[mode];
     const rawOutput = rawOutputs[mode];
-    if (hasGhostscript) {
-      console.log(`Compressing ${mode} with Ghostscript...`);
-      run("gs", [
-        "-sDEVICE=pdfwrite",
-        "-dCompatibilityLevel=1.4",
-        "-dPDFSETTINGS=/ebook",
-        // /ebook re-encodes ICC-based images, which shifts the artwork's
-        // colour for no gain at presentation scale. Leaving colours alone costs
-        // ~15% file size; the slides still downsample normally.
-        "-dColorConversionStrategy=/LeaveColorUnchanged",
-        "-dNOPAUSE",
-        "-dQUIET",
-        "-dBATCH",
-        `-sOutputFile=${output}`,
-        rawOutput,
-      ]);
-      unlinkSync(rawOutput);
-      repairIcc(output);
-    } else {
-      console.warn("⚠ Ghostscript not found; keeping the uncompressed PDF.");
-      renameSync(rawOutput, output);
+    console.log(`Compressing ${mode} with Ghostscript...`);
+    run("gs", ghostscriptArgs(rawOutput, output));
+    // Compression only ever shrinks a Chrome capture. A bigger file means
+    // Ghostscript rasterised the page content instead of carrying it over,
+    // which has come with lost overlays each time it has happened, so discard
+    // it and keep the raw capture to inspect.
+    const before = statSync(rawOutput).size;
+    const after = statSync(output).size;
+    if (after > before) {
+      unlinkSync(output);
+      console.error(
+        `\n✗ Ghostscript ${ghostscriptVersion} grew the ${mode} PDF from ${mb(before)} to ${mb(after)}.\n` +
+          `  It has rasterised the pages rather than compressing them. The raw capture is at\n` +
+          `  ${rawOutput} (or pass --no-compress to keep it as the output).`,
+      );
+      process.exit(1);
     }
+    unlinkSync(rawOutput);
   }
+} else if (compress) {
+  for (const mode of modes) renameSync(rawOutputs[mode], outputs[mode]);
 }
 
 console.log(`\n${modes.map((m) => `✓ Wrote ${outputs[m]}`).join("\n")}`);
