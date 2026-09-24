@@ -1,7 +1,7 @@
 ---
 import { Font } from "astro:assets";
 import { fontVariables } from "virtual:astromotion/fonts";
-import { cspEnabled, favicon, ogImage } from "virtual:astromotion/head";
+import { cspEnabled, favicon, ogImage, speakerViewScript } from "virtual:astromotion/head";
 import { EXPORT_SHIM, scriptHash } from "../src/export-shim.ts";
 import { absoluteUrl, withBase } from "../src/head-urls.ts";
 
@@ -26,8 +26,13 @@ const faviconHref = favicon ? withBase(favicon, baseUrl) : undefined;
 // wrong for a .png or .ico favicon.
 const faviconType = favicon?.endsWith(".svg") ? "image/svg+xml" : undefined;
 // Gated on the config rather than on Astro.csp itself: reading Astro.csp on a
-// site without security.csp logs a warning for every deck page.
-if (cspEnabled) Astro.csp?.insertScriptHash(await scriptHash(EXPORT_SHIM));
+// site without security.csp logs a warning for every deck page. The speaker
+// view's script runs in a popup that inherits this page's CSP (see
+// src/speaker-view.ts).
+if (cspEnabled) {
+  Astro.csp?.insertScriptHash(await scriptHash(EXPORT_SHIM));
+  Astro.csp?.insertScriptHash(await scriptHash(speakerViewScript));
+}
 ---
 
 {fontVariables.map((cssVariable) => <Font cssVariable={cssVariable} preload />)}

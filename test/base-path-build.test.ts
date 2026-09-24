@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { parseHTML } from "linkedom";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { speakerViewScript } from "../src/speaker-view.ts";
 
 const execFileAsync = promisify(execFile);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -170,6 +171,16 @@ describe("deck head under a base path", () => {
       const hash = createHash("sha256").update(body).digest("base64");
       expect(scriptSrc).toContain(`'sha256-${hash}'`);
     }
+  });
+
+  // The speaker view runs in a popup that inherits the deck page's CSP, so its
+  // inline script needs a hash here too or the notes never load.
+  it("covers the reveal.js speaker view script with the page's CSP", () => {
+    const csp = withCsp
+      .querySelector('meta[http-equiv="content-security-policy"]')
+      ?.getAttribute("content");
+    const hash = createHash("sha256").update(speakerViewScript()).digest("base64");
+    expect(csp).toContain(`'sha256-${hash}'`);
   });
 
   // Astro warns once per page that reads Astro.csp on a site without a CSP,

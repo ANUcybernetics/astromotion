@@ -7,6 +7,7 @@ import { collectDeckAssets } from "./src/asset-collector.ts";
 import { buildState } from "./src/build-config.ts";
 import { deckAssetPath } from "./src/deck-assets.ts";
 import { checkDecks, countSourceDecks } from "./src/deck-structure.ts";
+import { speakerViewScript } from "./src/speaker-view.ts";
 import { viteDeckWatchIncludes } from "./src/vite-plugin-watch-includes.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -134,7 +135,8 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
                     return (
                       `export const favicon = ${JSON.stringify(options.favicon ?? null)};\n` +
                       `export const ogImage = ${JSON.stringify(options.ogImage ?? null)};\n` +
-                      `export const cspEnabled = ${cspEnabled};\n`
+                      `export const cspEnabled = ${cspEnabled};\n` +
+                      `export const speakerViewScript = ${JSON.stringify(cspEnabled ? speakerViewScript() : "")};\n`
                     );
                   }
                   return null;
