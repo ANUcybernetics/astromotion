@@ -165,6 +165,12 @@
   }
 }
 
+/* Reveal labels the inline speaker notes (`?showNotes=true`) with a "Speaker
+   notes" heading; the notes are the only text in that panel, so drop it. */
+.reveal.show-notes .speaker-notes::before {
+  content: none;
+}
+
 /* Reveal's inline speaker notes (`?showNotes=true`) on a portrait screen, for
    reading a deck's notes on a phone. Reveal's own small-screen rules give the
    slide 60vh and the notes the 40vh below it, but a 16:9 canvas on a portrait
