@@ -3,9 +3,10 @@ id: TASK-6
 title: >-
   astromotion-pdf output has ballooned ~12-20x: pages export as thousands of 720
   ppi image strips
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-24 03:14'
+updated_date: '2026-09-24 04:05'
 labels: []
 dependencies: []
 ---
@@ -35,7 +36,19 @@ Blocks publishing the comp4020 week-7 PDF.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An export of the comp4020 week-6 deck is back within ~2x of its 7 MB published size, with one image (or vector content) per page rather than strip rasters
-- [ ] #2 The text layer v0.31.2 restored survives the fix
-- [ ] #3 A test or check fails an export whose size or per-page image count regresses like this
+- [x] #1 An export of the comp4020 week-6 deck is back within ~2x of its 7 MB published size, with one image (or vector content) per page rather than strip rasters
+- [x] #2 The text layer v0.31.2 restored survives the fix
+- [x] #3 A test or check fails an export whose size or per-page image count regresses like this
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Root cause: Ghostscript 10.08.0 (2026-09-08, picked up by Homebrew) rasterises every page carrying a soft-masked image into ~870 full-width 720 ppi strips when run with `-dColorConversionStrategy=/LeaveColorUnchanged`. Chrome, astromotion, the theme CSS and macOS are all ruled out. Bisected on one raw capture: 10.07.1 is fine with or without the flag; 10.08.0 bloats only with it. Linux and macOS builds agree.
+
+The flag had been papering over the real fault: `/ebook` sets the legacy `/sRGB` strategy, which from 10.07 takes the device-independent path and paints soft-masked content (a translucent gradient) opaque. Fix: `/ebook` with an explicit `-sColorConversionStrategy=RGB` (src/pdf-compress.mjs). That drops the empty-ICC byte patch, sets a floor of gs >= 10.07 (older versions lose translucent gradients under any setting), and pins `conda:ghostscript` in mise.toml. The export fails if compression grows the file.
+
+Verified end to end on comp4020 week-6: 7.2 MB, <=3 images/page, no ICC, text layer intact. Scrim brightness matches across browser screen, export mode, poppler and Quartz. The published week-6 PDF (gs 10.02) had its hero scrims missing.
+
+The ligature-off rule in theme/print.css stays: gs 10.08 still drops Type 3 ToUnicode entries for ligature glyphs (Chrome writes them correctly), and pdfwrite has no control for it.
+<!-- SECTION:NOTES:END -->
