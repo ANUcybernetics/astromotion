@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-24 (v0.32.2)
+
+### No "Speaker notes" heading in the inline notes view
+
+The `?showNotes=true` view (the one for reading notes on a phone) no longer
+prints reveal.js's "Speaker notes" label above the notes.
+
 ## 2026-09-24 (v0.32.1)
 
 ### Speaker notes load on sites with a CSP
