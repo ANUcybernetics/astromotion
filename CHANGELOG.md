@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-24 (v0.32.0)
+
+### PDF exports no longer balloon under Ghostscript 10.08
+
+Ghostscript 10.08.0 rasterised every page with a soft-masked image (any hero
+slide, and most others) into hundreds of 720 ppi strips: a 39-slide deck came
+out at 87 MB instead of about 7, with the hero scrim missing. The cause was the
+`LeaveColorUnchanged` colour strategy the compression step passed. It was
+papering over the real fault, `/ebook`'s legacy `/sRGB` strategy, which from
+10.07 paints soft-masked content opaque. The export now names the `RGB` strategy
+explicitly: files are back to their old size on every Ghostscript from 10.07,
+overlays survive, and the byte patch for Ghostscript's empty ICC profiles has
+gone with the flag that caused them.
+
+**Breaking:** compression needs Ghostscript 10.07 or later, because older
+versions drop translucent overlays whatever the settings. The export stops
+before building if it finds an older one (pass `--no-compress` to skip
+compression). Pin it in your project's `mise.toml`:
+
+```toml
+[tools]
+"conda:ghostscript" = "10.08.0"
+```
+
+The export also stops if compression ever makes a file larger, which is what
+rasterised pages look like, and keeps the raw capture for inspection.
+
 ## 2026-09-23 (v0.31.4)
 
 ### No CSP warning on sites without a CSP
