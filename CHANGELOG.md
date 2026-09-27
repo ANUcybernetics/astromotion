@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-28 (v0.34.0)
+
+### A Canvas 2D layer for video compositions
+
+`astromotion/video/canvas.js` adds a canvas to the video engine for what flat
+vector elements can't carry: thousands of marks, continuous fields, generated
+data. A composition gives `canvas(tl, parent, draw, { x, y, w, h })` a pure
+`draw(ctx, t)`, which the timeline calls on every seek (through the new
+`tl.draw(fn)` hook), so canvas frames render in parallel, out of order and at
+any resolution like the rest. The backing store follows the device pixel ratio,
+so a 4K render draws marks at 4K. `rng(seed)` is a seeded PRNG for generated
+data, `phase()` eased progress through a span, and `motion.js` now exports
+`ease(name)`. Plain Canvas 2D, no new dependencies, and nothing outside `video/`
+imports it.
+
 ## 2026-09-27 (v0.33.0)
 
 ### A motion engine for video compositions

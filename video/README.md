@@ -67,6 +67,7 @@ tl.fromTo(targets, from, to, at, { ...opts, immediate = true });
 tl.set(targets, props, at);
 tl.sample(targets, at, dur, (p) => props, { ease, step = 0.01 }); // computed motion
 tl.boil(targets, { amp = 1.2, fps = 12, variants = 3, from, to }); // hand-drawn wobble
+tl.draw((t) => { ... }); // called on every seek: a canvas (below)
 const controller = tl.finish(duration); // seek(t), duration(), pause(), play()
 ```
 
@@ -115,11 +116,55 @@ independent schedules. The engine registers them and the rule for
 
 ## Helpers
 
-`layer`, `el`, `svg`, `place`; `prepDraw(paths, pad)` and `drawOn` for stroke
-draw-on; `appear`, `vanish`, `show`, `hide`, `flyTo`; `camera(layer, S)` with
-`to`, `reset` and a logarithmic `logZoom`; `stage`, `timing`, `captions` and
-`ready` for the composition contract; `hash` for deterministic per-index noise
-(never `Math.random()`).
+`ease(name)` (a named ease as a function of p, for computed motion); `layer`,
+`el`, `svg`, `place`; `prepDraw(paths, pad)` and `drawOn` for stroke draw-on;
+`appear`, `vanish`, `show`, `hide`, `flyTo`; `camera(layer, S)` with `to`,
+`reset` and a logarithmic `logZoom`; `stage`, `timing`, `captions` and `ready`
+for the composition contract; `hash` for deterministic per-index noise (never
+`Math.random()`).
+
+## Canvas
+
+`canvas.js` adds a Canvas 2D layer for what flat vector elements can't carry:
+thousands of marks, continuous fields, generated data. It is plain canvas, with
+no dependencies, and nothing else in astromotion imports it.
+
+```js
+import * as C from "./motion/canvas.js";
+
+const r = C.rng(7); // seeded: the same marks on every render
+const marks = Array.from({ length: 5000 }, () => ({
+  x: r() * 1800,
+  y: r() * 800,
+}));
+const field = C.canvas(
+  tl,
+  scene,
+  (ctx, t, { w, h }) => {
+    const p = C.phase(t, 2, 3, "out-cubic"); // eased progress through 2..5 s
+    ctx.fillStyle = "#be830e";
+    for (const m of marks) ctx.fillRect(m.x, m.y * p, 2, 2);
+  },
+  { x: 60, y: 60, w: 1800, h: 800 },
+);
+tl.to(field.el, { opacity: 0 }, 9); // the element tweens like any other
+```
+
+- **`draw(ctx, t, { w, h })` is a pure function of t.** The timeline calls it on
+  every seek, after the animations are set, with the context reset and scaled to
+  CSS px: draw the whole picture, every time. No `requestAnimationFrame`, no
+  state kept between calls, no `Math.random()`.
+- **Seeded data.** `rng(seed)` is a small PRNG (mulberry32) giving numbers in
+  [0, 1). Generate data with it at build time and read it in `draw`; a `draw`
+  that needs randomness makes a fresh `rng(seed)` per call.
+- **Pixel density.** The backing store is the element's CSS size times the
+  page's `devicePixelRatio` (2 in a 4K render of a 1920x1080 composition), so
+  marks land on device pixels. Pass `density` (say, the camera's largest scale)
+  for a canvas that is pushed in on; a canvas scaled up by a tween otherwise
+  softens like any raster.
+- `phase(t, t0, dur, ease)` is eased progress through a span: 0 before, 1 after.
+- Canvas marks don't boil or tween: every change is computed in `draw`. Words
+  and labels that must read steadily sit on top as elements.
 
 ## timing.json
 

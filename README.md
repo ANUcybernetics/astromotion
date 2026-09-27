@@ -937,7 +937,8 @@ The package exports:
 - **`deckSlugFromPath(path)`** and **`DECKS_DIR`** --- the deck-path-to-route
   mapping the injected route uses, for anything that needs to agree with it
 - **`astromotion/video/motion.js`** --- a Web Animations motion engine for HTML
-  video compositions rendered frame by frame; see `video/README.md`
+  video compositions rendered frame by frame, with a Canvas 2D layer
+  (`video/canvas.js`); see `video/README.md`
 
 ## Migration from `.deck.md` / `.deck.svelte`
 

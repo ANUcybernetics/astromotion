@@ -62,6 +62,8 @@ function resolveEase(e = "out-quad") {
   easeCache.set(key, r);
   return r;
 }
+// a named ease (or a function) as a function of p in [0, 1], for computed motion
+export const ease = (e) => resolveEase(e).fn;
 
 // --------------------------------------------------------------- properties
 // channel → [custom property, unit, resting value]
@@ -210,6 +212,7 @@ export function timeline() {
   install();
   const segs = [];
   const boils = [];
+  const draws = [];
   let seq = 0;
   let compiled = null;
 
@@ -290,10 +293,17 @@ export function timeline() {
       });
       return api;
     },
+    // fn(t), called on every seek once the animations are set, for what WAAPI
+    // can't draw (a canvas: see canvas.js). It must be a pure function of t.
+    draw(fn) {
+      if (compiled) throw new Error("timeline already finished: add draws before finish()");
+      draws.push(fn);
+      return api;
+    },
     // compile into WAAPI animations; returns the controller a renderer seeks
     finish(duration = 0) {
       if (compiled) return compiled;
-      compiled = compile(segs, boils, duration);
+      compiled = compile(segs, boils, draws, duration);
       return compiled;
     },
   };
@@ -439,7 +449,7 @@ function compileBoil(b, D) {
   });
 }
 
-function compile(segs, boils, duration) {
+function compile(segs, boils, draws, duration) {
   let D = duration;
   for (const s of segs) D = Math.max(D, s.t1);
   for (const b of boils) D = Math.max(D, b.to ?? 0);
@@ -477,6 +487,7 @@ function compile(segs, boils, duration) {
     seek(t) {
       now = clamp(Number(t) || 0, 0, D);
       for (const a of anims) a.currentTime = now * 1000;
+      for (const fn of draws) fn(now);
       return controller;
     },
     totalTime(t) {
