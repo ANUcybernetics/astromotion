@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-27 (v0.33.0)
+
+### A motion engine for video compositions
+
+`astromotion/video/motion.js` is a seekable motion engine for HTML video
+compositions rendered frame by frame (HyperFrames, or anything that seeks a
+registered timeline). A composition records tweens on a timeline and `finish()`
+compiles them into paused Web Animations, one per element and property, which a
+renderer seeks by setting `currentTime`: no GSAP, no runtime clock, every frame
+a pure function of time. It resolves tweens in time order the way a GSAP
+timeline does (relative values, a later tween cutting an earlier one off),
+handles computed motion such as logarithmic zooms with `tl.sample()`, and gives
+hand-drawn marks a stepped "boil". Transforms go through registered custom
+properties feeding `translate`, `scale` and `rotate`, so x and y animate on
+independent schedules. `video/README.md` has the API and the composition
+contract. The deck pipeline is untouched.
+
 ## 2026-09-24 (v0.32.2)
 
 ### No "Speaker notes" heading in the inline notes view

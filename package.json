@@ -15,7 +15,8 @@
     "./components/*": "./components/*",
     "./pages/*": "./pages/*",
     "./theme/*": "./theme/*",
-    "./src/*": "./src/*"
+    "./src/*": "./src/*",
+    "./video/*": "./video/*"
   },
   "scripts": {
     "test": "vitest run",
