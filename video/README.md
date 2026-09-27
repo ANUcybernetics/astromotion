@@ -9,8 +9,8 @@ time, so frames render in parallel, out of order and at any resolution.
 
 It lives in astromotion because the projects that make videos are the ones that
 make decks: the same palette, type and fixed 16:9 canvas. It doesn't depend on
-the deck pipeline. The `styled-video` skill (in Ben's `ben` plugin) carries
-the production method; this is the engine.
+the deck pipeline. The `styled-video` skill (in Ben's `ben` plugin) carries the
+production method; this is the engine.
 
 ## Using it
 
