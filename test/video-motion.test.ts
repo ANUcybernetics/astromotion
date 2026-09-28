@@ -189,6 +189,23 @@ describe("video motion engine", () => {
     expect(out).toEqual([2, 1, 1, 2, 1]);
   });
 
+  it("returns a yoyo to the value it started from, not the property's default", async () => {
+    const out = await run<(number | string)[]>(`
+      const a = M.el("div", {}, stage);
+      M.set(a, { opacity: 0.2, color: "rgb(0, 0, 0)" });
+      const tl = M.timeline();
+      tl.to(a, { opacity: 0.8, color: "rgb(200, 100, 0)" }, 0, { dur: 1, yoyo: true, ease: "linear" });
+      const c = tl.finish(3);
+      const at = (t) => (c.seek(t), [+getComputedStyle(a).opacity, getComputedStyle(a).color]);
+      return [...at(1), ...at(1.5), ...at(2.5)];
+    `);
+    expect(out[0]).toBeCloseTo(0.8, 2);
+    expect(out[1]).toBe("rgb(200, 100, 0)");
+    expect(out[2]).toBeCloseTo(0.5, 2);
+    expect(out[4]).toBeCloseTo(0.2, 2);
+    expect(out[5]).toBe("rgb(0, 0, 0)");
+  });
+
   it("transforms SVG elements about their own box", async () => {
     const out = await run<number[]>(`
       const s = M.svg("svg", { width: 400, height: 400 }, stage);

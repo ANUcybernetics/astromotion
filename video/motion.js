@@ -218,7 +218,9 @@ export function timeline() {
 
   const add = (el, prop, s) => {
     if (compiled) throw new Error("timeline already finished: add tweens before finish()");
-    segs.push({ el, prop, seq: seq++, ...s });
+    const seg = { el, prop, seq: seq++, ...s };
+    segs.push(seg);
+    return seg;
   };
 
   function tween(
@@ -249,8 +251,10 @@ export function timeline() {
           ease: e,
           immediate: immediate && k in F,
         };
-        add(el, k, s);
-        if (yoyo) add(el, k, { t0: t0 + dur, t1: t0 + 2 * dur, to: YOYO, pair: s, ease: e });
+        // the way back pairs with the stored segment, which is where resolving
+        // records the value it started from
+        const seg = add(el, k, s);
+        if (yoyo) add(el, k, { t0: t0 + dur, t1: t0 + 2 * dur, to: YOYO, pair: seg, ease: e });
       }
     });
     return api;

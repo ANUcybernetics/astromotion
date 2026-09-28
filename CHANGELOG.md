@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-28 (v0.34.1)
+
+### Yoyo tweens return to where they started
+
+A `yoyo` tween's way back now returns to the value its outward tween started
+from. It used to lose that value and hand Web Animations an undefined keyframe,
+which fell back to the property's default: a transform settled back at its
+default by luck, but opacity or a colour came back wrong, with an "Invalid
+keyframe value" warning.
+
 ## 2026-09-28 (v0.34.0)
 
 ### A Canvas 2D layer for video compositions
