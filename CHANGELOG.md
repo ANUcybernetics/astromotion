@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-28 (v0.34.3)
+
+### `appear` stays on the scale track
+
+`appear` tweens scale again, from and to the element's resting scale, as it did
+before v0.34.2 for anything at scale 1: without it, a later `fromTo` on scale (a
+die landing from 1.5, say) became the first scale tween and held its from value
+from the start of the video.
+
 ## 2026-09-28 (v0.34.2)
 
 ### `appear` keeps a layer's scale; hidden draw-on strokes stay hidden

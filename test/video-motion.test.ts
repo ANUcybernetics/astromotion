@@ -206,6 +206,22 @@ describe("video motion engine", () => {
     expect(out[3]).toBeCloseTo(0.5, 3);
   });
 
+  it("keeps an appeared element at its resting scale until a later fromTo starts", async () => {
+    const out = await run<number[]>(`
+      const a = M.el("div", {}, stage);
+      M.set(a, { opacity: 0 });
+      const tl = M.timeline();
+      M.appear(tl, a, 0, { dur: 0.5 });
+      tl.fromTo(a, { scale: 1.5 }, { scale: 1 }, 2, { dur: 0.5, ease: "linear" });
+      const c = tl.finish(3);
+      const s = (t) => (c.seek(t), parseFloat(getComputedStyle(a).scale));
+      return [s(1), s(2.25), s(2.9)];
+    `);
+    expect(out[0]).toBeCloseTo(1, 3);
+    expect(out[1]).toBeCloseTo(1.25, 3);
+    expect(out[2]).toBeCloseTo(1, 3);
+  });
+
   it("hides a round-capped path completely until it draws on", async () => {
     // rasterise the prepped path and count inked pixels: a round cap on a
     // zero-length dash would leave a dot at the path's start or end

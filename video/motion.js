@@ -571,11 +571,12 @@ export const appear = (
 ) => {
   const from = { opacity: 0, y: `+=${y}` },
     to = { opacity: 1, y: `-=${y}` };
-  if (scale !== 1)
-    for (const k of ["scaleX", "scaleY"]) {
-      from[k] = (_i, el) => get(el, k) * scale;
-      to[k] = (_i, el) => get(el, k);
-    }
+  // always on the scale track, even at scale 1, so a later fromTo's from
+  // value isn't held from the start in its place
+  for (const k of ["scaleX", "scaleY"]) {
+    from[k] = (_i, el) => get(el, k) * scale;
+    to[k] = (_i, el) => get(el, k);
+  }
   return tl.fromTo(els, from, to, t, { dur, stagger, ease });
 };
 export const vanish = (tl, els, t, { dur = 0.35, y = 0, stagger = 0 } = {}) =>
