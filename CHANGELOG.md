@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-28 (v0.34.2)
+
+### `appear` keeps a layer's scale; hidden draw-on strokes stay hidden
+
+`appear` no longer tweens `scale` back to 1, which undid the resting scale of a
+layer placed at another scale; its `scale` option now pops in from that fraction
+of the resting scale. `prepDraw` hides a stroke with the dash pushed a stroke
+width past the path and a gap longer than the path, so no dash end, and no round
+cap on one, can land on the path before it draws on.
+
 ## 2026-09-28 (v0.34.1)
 
 ### Yoyo tweens return to where they started

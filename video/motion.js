@@ -544,12 +544,15 @@ export const place = (node, x, y) => set(node, { x, y });
 
 // stroke-dashoffset draw-on needs the length; set up once, hidden. `pad`
 // lengthens the dash for a path that boils, so a jittered (longer) copy never
-// shows a gap at its end.
+// shows a gap at its end. Hidden, the dash sits a stroke width past the
+// path's start and the gap is longer than the path, so no dash end (and no
+// round cap on one) ever lands on it; draw-on tweens the offset to 0.
 export function prepDraw(paths, pad = 0) {
   for (const p of paths) {
     const L = p.getTotalLength() + pad;
-    p.style.strokeDasharray = `${L}`;
-    p.style.strokeDashoffset = `${L}`;
+    const w = parseFloat(getComputedStyle(p).strokeWidth) || 1;
+    p.style.strokeDasharray = `${L} ${L + 2 * w}`;
+    p.style.strokeDashoffset = `${L + w}`;
   }
   return paths;
 }
@@ -557,19 +560,24 @@ export const drawOn = (tl, paths, t, dur = 0.35, stagger = 0.08, ease = "out-cub
   paths.length ? tl.to(paths, { strokeDashoffset: 0 }, t, { dur, stagger, ease }) : tl;
 
 // appear/vanish move relative to where the thing already sits, so they never
-// undo a layer's placement. An appear that is the element's first opacity
+// undo a layer's placement or its resting scale; `scale` pops in from that
+// fraction of the resting scale. An appear that is the element's first opacity
 // tween holds it hidden from the start, so nothing shows before its cue.
 export const appear = (
   tl,
   els,
   t,
   { dur = 0.5, y = 24, scale = 1, stagger = 0.06, ease = "out-quart" } = {},
-) =>
-  tl.fromTo(els, { opacity: 0, y: `+=${y}`, scale }, { opacity: 1, y: `-=${y}`, scale: 1 }, t, {
-    dur,
-    stagger,
-    ease,
-  });
+) => {
+  const from = { opacity: 0, y: `+=${y}` },
+    to = { opacity: 1, y: `-=${y}` };
+  if (scale !== 1)
+    for (const k of ["scaleX", "scaleY"]) {
+      from[k] = (_i, el) => get(el, k) * scale;
+      to[k] = (_i, el) => get(el, k);
+    }
+  return tl.fromTo(els, from, to, t, { dur, stagger, ease });
+};
 export const vanish = (tl, els, t, { dur = 0.35, y = 0, stagger = 0 } = {}) =>
   tl.to(els, { opacity: 0, ...(y ? { y: `+=${y}` } : {}) }, t, { dur, stagger, ease: "in-cubic" });
 export const show = (tl, els, t) => tl.set(els, { opacity: 1 }, t);

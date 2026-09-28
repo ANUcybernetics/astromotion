@@ -189,6 +189,51 @@ describe("video motion engine", () => {
     expect(out).toEqual([2, 1, 1, 2, 1]);
   });
 
+  it("keeps a layer's resting scale through appear, and pops relative to it", async () => {
+    const out = await run<number[]>(`
+      const a = M.el("div", {}, stage), b = M.el("div", {}, stage);
+      M.set([a, b], { scale: 0.5 });
+      const tl = M.timeline();
+      M.appear(tl, a, 1, { dur: 0.5 });
+      M.appear(tl, b, 1, { dur: 0.5, scale: 0.8 });
+      const c = tl.finish(3);
+      const s = (el, t) => (c.seek(t), parseFloat(getComputedStyle(el).scale));
+      return [s(a, 0.5), s(a, 2), s(b, 1), s(b, 2)];
+    `);
+    expect(out[0]).toBeCloseTo(0.5, 3);
+    expect(out[1]).toBeCloseTo(0.5, 3);
+    expect(out[2]).toBeCloseTo(0.4, 3);
+    expect(out[3]).toBeCloseTo(0.5, 3);
+  });
+
+  it("hides a round-capped path completely until it draws on", async () => {
+    // rasterise the prepped path and count inked pixels: a round cap on a
+    // zero-length dash would leave a dot at the path's start or end
+    const inked = await run<Promise<number>>(`
+      const s = M.svg("svg", { width: 400, height: 200, xmlns: "http://www.w3.org/2000/svg" }, stage);
+      const p = M.svg("path", { d: "M100 100 C160 20 240 180 300 100", stroke: "black", "stroke-width": 24,
+        "stroke-linecap": "round", fill: "none" }, s);
+      M.prepDraw([p]);
+      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(s)],
+        { type: "image/svg+xml" }));
+      return new Promise((ok) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement("canvas");
+          c.width = 400; c.height = 200;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          const d = ctx.getImageData(0, 0, 400, 200).data;
+          let n = 0;
+          for (let i = 3; i < d.length; i += 4) if (d[i] > 40) n++;
+          ok(n);
+        };
+        img.src = url;
+      });
+    `);
+    expect(inked).toBe(0);
+  });
+
   it("returns a yoyo to the value it started from, not the property's default", async () => {
     const out = await run<(number | string)[]>(`
       const a = M.el("div", {}, stage);
