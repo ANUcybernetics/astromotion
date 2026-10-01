@@ -122,10 +122,26 @@ export function initFirstRunHelp(deck: RevealHelp): void {
   const el = buildHint();
   document.body.appendChild(el);
 
+  // A deck reached by typing or pasting its URL loads with focus still in the
+  // address bar, where no page can take it from (`focus()` is a no-op there by
+  // design). Keys reach neither the card nor Reveal until the first click, so
+  // say so rather than promise a keypress that does nothing.
+  const dismissLine = el.querySelector<HTMLElement>(".astromotion-help-hint-dismiss");
+  const syncDismissLine = () => {
+    if (dismissLine) {
+      dismissLine.textContent = document.hasFocus()
+        ? "press any key or click to continue"
+        : "click to continue";
+    }
+  };
+  syncDismissLine();
+  window.addEventListener("focus", syncDismissLine);
+
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
   const dismiss = () => {
     clearTimeout(timeout);
+    window.removeEventListener("focus", syncDismissLine);
     document.removeEventListener("keydown", dismiss, true);
     document.removeEventListener("pointerdown", dismiss, true);
     el.dataset.leaving = "";

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-01 (v0.34.4)
+
+### The first-view hint says "click" when keys can't reach it
+
+A deck reached by typing or pasting its URL loads with focus still in the
+address bar, where no keypress reaches the page. The first-view hint now reads
+"click to continue" until the page has focus, rather than promising that any
+key will dismiss it.
+
 ## 2026-09-28 (v0.34.3)
 
 ### `appear` stays on the scale track
