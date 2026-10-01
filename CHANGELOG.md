@@ -6,8 +6,8 @@
 
 A deck reached by typing or pasting its URL loads with focus still in the
 address bar, where no keypress reaches the page. The first-view hint now reads
-"click to continue" until the page has focus, rather than promising that any
-key will dismiss it.
+"click to continue" until the page has focus, rather than promising that any key
+will dismiss it.
 
 ## 2026-09-28 (v0.34.3)
 
