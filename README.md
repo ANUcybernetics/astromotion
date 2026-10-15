@@ -110,10 +110,10 @@ are omitted.
 
 `published` and `unlisted` are two different ways to keep a deck back, and they
 compose. Absent, a deck is published and listed. `published: false` drops the
-deck from a production build entirely --- no route, no HTML, nothing to index
---- while the dev server still serves it, so it is the flag for a deck still
-being written. `unlisted: true` keeps the deck in the build at its own URL, and
-takes it out of the indexes instead: the page emits
+deck from a production build entirely --- no route, no HTML, nothing to
+index --- while the dev server still serves it, so it is the flag for a deck
+still being written. `unlisted: true` keeps the deck in the build at its own
+URL, and takes it out of the indexes instead: the page emits
 `<meta name="robots" content="noindex">` and carries
 `data-pagefind-ignore="all"`, and `deckTextEntries()` skips it, so a link works
 for whoever holds it while search engines, the site's own search and its text
@@ -518,8 +518,9 @@ Consuming themes can restyle the board via four CSS custom properties:
 
 All but the last describe the board. The annotation surface is transparent by
 definition, so it ignores the surface colour and image, takes the same ink
-palette, and switches its toolbar to the dark chrome whatever the board's mode
---- it has to read against slide artwork rather than a surface the theme chose.
+palette, and switches its toolbar to the dark chrome whatever the board's
+mode --- it has to read against slide artwork rather than a surface the theme
+chose.
 
 Note that the mode only chooses the _defaults_: if your theme sets its own inks,
 switching to `dark` won't recolour them, so set a pale first ink to match. For
@@ -558,9 +559,9 @@ Press **T** while presenting to show a small 24-hour clock (`HH:MM`) in the
 bottom-right corner, and **T** again to hide it (it's listed on Reveal's help
 overlay, press **?**). It's for the presenter's own glance at the time when
 Reveal's speaker view isn't on a second screen, so it's deliberately quiet ---
-white on a translucent scrim, at a fixed size outside the scaled slide canvas
---- and it starts hidden, so a deck read on the web or exported to PDF never
-shows one.
+white on a translucent scrim, at a fixed size outside the scaled slide
+canvas --- and it starts hidden, so a deck read on the web or exported to PDF
+never shows one.
 
 Consuming themes can restyle it via CSS custom properties:
 `--astromotion-clock-bg`, `--astromotion-clock-color`,
@@ -798,9 +799,9 @@ with a one-line marker so an image-only slide doesn't print blank:
 | `{/* a note to self */}`     | `> **comment:** …`               |
 
 Dropped entirely: `import` statements and the presentation-only directives
-(`_class`, `_id`, `_if`, `_animate`). A directive astromotion doesn't recognise
---- one your own remark plugin handles --- survives as a comment rather than
-being silently swallowed.
+(`_class`, `_id`, `_if`, `_animate`). A directive astromotion doesn't
+recognise --- one your own remark plugin handles --- survives as a comment
+rather than being silently swallowed.
 
 Options:
 

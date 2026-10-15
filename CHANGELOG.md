@@ -442,8 +442,8 @@ belongs to no series the site lists.
 `unlisted: true` is the other half of the pair. The deck builds at its own URL,
 and comes out of the indexes instead: the page emits
 `<meta name="robots" content="noindex">` and carries
-`data-pagefind-ignore="all"`, so a site search skips it. The two flags compose
---- an unlisted deck can also be unpublished while it is being written.
+`data-pagefind-ignore="all"`, so a site search skips it. The two flags
+compose --- an unlisted deck can also be unpublished while it is being written.
 astromotion owns the page only; a consumer that lists decks from a content
 collection has to honour the flag in that listing too.
 
@@ -476,8 +476,8 @@ corrupts: it escapes the `*` in any multi-line `{/* */}` comment, turning a
 valid deck into invalid MDX. The corrupted output is a fixed point, so no
 format-check can detect it: `oxfmt . && oxfmt --check .` reports "all files use
 the correct format" on a deck it has just broken. The only thing standing
-between a deck and that was an ignore entry in each consumer's formatter config
---- per-repo discipline a new site with decks would silently miss.
+between a deck and that was an ignore entry in each consumer's formatter
+config --- per-repo discipline a new site with decks would silently miss.
 
 Notes are now a fenced ` ```notes ` block, and authoring comments a fenced
 ` ```comment ` block. No formatter reflows fence contents at any `proseWrap`
@@ -1162,9 +1162,9 @@ more than five.
 
 ### Feature: ephemeral whiteboard mode (press W)
 
-Pressing `W` in a deck flips to a fullscreen whiteboard for ephemeral doodles
---- listed on Reveal's help overlay, closed with `W`/`Escape`. Strokes render
-via perfect-freehand (the tldraw ink engine) so they get variable-width
+Pressing `W` in a deck flips to a fullscreen whiteboard for ephemeral
+doodles --- listed on Reveal's help overlay, closed with `W`/`Escape`. Strokes
+render via perfect-freehand (the tldraw ink engine) so they get variable-width
 pen-physics ink: real stylus pressure when a pen is detected, simulated from
 drawing velocity for mouse and trackpad, with coalesced pointer events for
 smooth fast strokes. While open, the board claims every unmodified key ---
@@ -1381,9 +1381,9 @@ depends on how Astro invalidates its module/page caches in your version.
 
 `astromotion()` now accepts a `fontVariables: string[]` option whose entries are
 `cssVariable` names from Astro's top-level `fonts` config. For each variable,
-astromotion injects `<Font cssVariable={v} preload />` into the deck `<head>`
---- giving decks self-hosted fonts with automatic preloading, subsetting, and
-`font-fallback` metrics.
+astromotion injects `<Font cssVariable={v} preload />` into the deck
+`<head>` --- giving decks self-hosted fonts with automatic preloading,
+subsetting, and `font-fallback` metrics.
 
 ```ts
 import { fontProviders } from "astro/config";
