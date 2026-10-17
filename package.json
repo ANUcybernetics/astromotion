@@ -22,8 +22,8 @@
     "test": "vitest run",
     "lint": "oxlint && pnpm lint:css",
     "lint:fix": "oxlint --fix && pnpm lint:css:fix",
-    "lint:css": "stylelint 'theme/**/*.css' --allow-empty-input",
-    "lint:css:fix": "stylelint 'theme/**/*.css' --allow-empty-input --fix",
+    "lint:css": "stylelint 'theme/**/*.css' 'video/**/*.css' --allow-empty-input",
+    "lint:css:fix": "stylelint 'theme/**/*.css' 'video/**/*.css' --allow-empty-input --fix",
     "typecheck": "tsc --noEmit",
     "format": "oxfmt .",
     "format:check": "oxfmt --check ."

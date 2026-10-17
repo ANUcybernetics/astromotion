@@ -58,6 +58,67 @@ ln -s ../../website/node_modules/astromotion/video motion   # path to taste
 builds, adds the caption band and compiles. The registration line must appear
 literally in the HTML: the HyperFrames lint looks for it.
 
+## Stage, brand and kit
+
+A composition stands on three layers, as a site stands on astro-theme-university
+plus a brand package:
+
+1. **The stage** (`stage.css`, here): the reset, the 16:9 and 9:16 stages, the
+   layers the engine moves, the caption band and the brand moments' type. It
+   serves Public Sans (`fonts/`, OFL), the default face, and reads every look
+   from a `--video-*` token: `--video-ground`, `--video-text`, `--video-text-2`,
+   `--video-accent`, `--video-accent-2`, `--video-font`,
+   `--video-display-weight`, `--video-scrim`, and the caption size, weight and
+   inset for each aspect. Its rules sit in the `astromotion.video` cascade
+   layer, so any unlayered rule wins.
+2. **The brand**: a brand package's `video/` (astro-theme-anu's, say) sets the
+   tokens in a CSS file linked after `stage.css`, and exports its logo URLs and
+   closing-lockup geometry from a `brand.js`. Nothing in it is code that moves.
+3. **The project's kit**: its own objects and any token it overrides, linked
+   last.
+
+```html
+<link rel="stylesheet" href="kit/motion/stage.css" />
+<link rel="stylesheet" href="kit/brand/video/anu.css" />
+<link rel="stylesheet" href="kit/kit.css" />
+```
+
+`brand.js` (here) builds the brand moments from that data, after the decks' hero
+and closing slides, in either aspect:
+
+```js
+import * as B from "./kit/motion/brand.js";
+import { logos, lockups } from "./kit/brand/video/brand.js";
+
+const photos = await Promise.all(
+  ["a.jpg", "b.jpg"].map((s) => B.image(`kit/photos/${s}`)),
+);
+const mark = await B.svgText(lockups.socy.src);
+const build = (tl, S, T) => {
+  B.backdrop(tl, S, { photos, at: [0.1, T.word(0, "next")], out: T.start(1) });
+  const hero = B.titleBlock(scene, S, {
+    logo: heroLogo,
+    title,
+    tagline,
+    byline,
+  });
+  M.appear(tl, hero.el, 0.15, { dur: 0.6 });
+  B.lockup(tl, S.root, S, { mark, ...lockups.socy, at: T.duration + 1 });
+};
+M.ready(build, { fonts: B.fonts });
+```
+
+- `backdrop(tl, S, { photos, at, out })`: full-frame photographs in turn under
+  the `--video-scrim`, behind the scene and the caption band
+- `titleBlock(parent, S, { logo, title, tagline, byline, x, logoTop, logoH, textTop })`:
+  the logo, then the title over an accent rule, the tagline and the byline;
+  created hidden, placed per aspect unless overridden
+- `lockup(tl, parent, S, { mark, axis, gap, height, at })`: two accent rules
+  grow from the frame's edges along the mark's axis, then the mark fades in;
+  `axis`, `gap` and `height` are the brand's geometry
+- `image(src)` and `svgText(src)` load a logo or photograph before the first
+  frame; `fonts` lists every weight `stage.css` serves, for `ready`
+
 ## The timeline
 
 ```js

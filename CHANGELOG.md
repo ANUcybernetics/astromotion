@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-17 (v0.35.0)
+
+### A video stage and brand moments, for any brand
+
+`video/stage.css` is the neutral stage a composition stands on: the reset, the
+16:9 and 9:16 stages, the layers, the caption band, and Public Sans (served from
+`video/fonts/`, OFL), with every look a `--video-*` token in a cascade layer. A
+brand package's `video/` CSS sets the tokens. `video/brand.js` builds the decks'
+brand moments from that brand's data, in either aspect: `backdrop` (full-frame
+photographs under the scrim), `titleBlock` (logo, title over an accent rule,
+tagline, byline) and `lockup` (the closing slide's rules growing towards the
+mark, then the mark fading in). `stage()` sets the caption band's height as
+`--video-caption-h`, so `stage.css` follows a non-default `captionH`. The README
+has the stage, brand and kit contract.
+
 ## 2026-10-01 (v0.34.4)
 
 ### The first-view hint says "click" when keys can't reach it

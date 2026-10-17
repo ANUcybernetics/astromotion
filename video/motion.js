@@ -623,14 +623,16 @@ export function camera(layerEl, S) {
 
 // ------------------------------------------------------------- composition
 // The stage is the root composition element (`data-aspect` landscape or
-// portrait); a caption band is reserved at the bottom and `area` is what the
-// scene may use. The `.scene` layer is clipped to the space above the band.
+// portrait); a caption band is reserved at the bottom (its height set as
+// --video-caption-h, which stage.css reads) and `area` is what the scene may
+// use. The `.scene` layer is clipped to the space above the band.
 export function stage(root, { captionH = { landscape: 190, portrait: 300 }, margin = 60 } = {}) {
   const aspect = root.dataset.aspect || "landscape";
   const portrait = aspect === "portrait";
   const W = portrait ? 1080 : 1920,
     H = portrait ? 1920 : 1080;
   const cap = typeof captionH === "number" ? captionH : captionH[aspect];
+  root.style.setProperty("--video-caption-h", `${cap}px`);
   const scene = root.querySelector(".scene");
   if (scene)
     Object.assign(scene.style, { width: `${W}px`, height: `${H - cap}px`, overflow: "hidden" });
