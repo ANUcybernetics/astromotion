@@ -207,7 +207,11 @@
 
   .stage[data-aspect="portrait"] .video-hero-title {
     font-size: 88px;
+  }
+
+  .stage[data-aspect="portrait"] :is(.video-hero-title, .video-hero-tagline, .video-hero-byline) {
     white-space: normal;
+    text-wrap: balance;
   }
 
   .video-lockup-rule {

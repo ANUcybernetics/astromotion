@@ -55,8 +55,9 @@ export function titleBlock(parent, S, { logo, title, tagline, byline, ...place }
     Object.assign(logo.style, { top: `${p.logoTop}px`, height: `${p.logoH}px` });
     el.appendChild(logo);
   }
+  // as wide as the frame less the margin either side, so portrait type wraps
   const text = M.el("div", { class: "video-hero-text" }, el);
-  text.style.top = `${p.textTop}px`;
+  Object.assign(text.style, { top: `${p.textTop}px`, width: `${S.W - 2 * p.x}px` });
   const line = (cls, s) => (s ? M.el("div", { class: cls, text: s }, text) : null);
   return {
     el,

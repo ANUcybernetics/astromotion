@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-17 (v0.35.1)
+
+### Portrait title blocks wrap within the frame
+
+`titleBlock` sets its text as wide as the frame less its margin either side, and
+in portrait the tagline and byline wrap (balanced) as the title already did; a
+long subtitle no longer runs off a 9:16 stage. Landscape is unchanged.
+
 ## 2026-10-17 (v0.35.0)
 
 ### A video stage and brand moments, for any brand
