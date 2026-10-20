@@ -31,6 +31,9 @@ export interface DeckTextEntry {
   description?: string;
   /** The deck's readable content as markdown. */
   body: string;
+  /** Set when the deck's frontmatter says `unlisted: true`. Only present when
+   *  the caller asked for unlisted decks with `includeUnlisted`. */
+  unlisted?: boolean;
 }
 
 export interface DeckTextEntriesOptions {
@@ -47,6 +50,13 @@ export interface DeckTextEntriesOptions {
    * without repeating the value anywhere else.
    */
   routePrefix?: string;
+  /**
+   * Also return `unlisted: true` decks, flagged with `unlisted` on the entry.
+   * An unlisted deck is built at its URL but kept out of every index, so a
+   * caller that writes a per-page markdown twin wants it while the caller
+   * writing the index itself skips the flagged entries. Off by default.
+   */
+  includeUnlisted?: boolean;
   /**
    * Overrides for the text rendering. Defaults differ from `deckToMarkdown`'s
    * own: `comments: false`, because authoring comments are stripped from the
@@ -81,8 +91,8 @@ async function collectDeckFiles(dir: string): Promise<string[]> {
  * Read every published, listed deck under `src/decks` as a text entry.
  *
  * Skips `published: false` (no route is built for it, so an entry would point
- * at a 404) and `unlisted: true` (built, but kept out of every index --- which
- * is what a text index is).
+ * at a 404) and, unless `includeUnlisted` is set, `unlisted: true` (built, but
+ * kept out of every index --- which is what a text index is).
  */
 export async function deckTextEntries(
   options: DeckTextEntriesOptions = {},
@@ -105,7 +115,9 @@ export async function deckTextEntries(
 
     const source = await readFile(file, "utf-8");
     const { data } = parseDeckFrontmatter(source, slug);
-    if (data.published === false || data.unlisted === true) continue;
+    if (data.published === false) continue;
+    const unlisted = data.unlisted === true;
+    if (unlisted && !options.includeUnlisted) continue;
 
     const description = typeof data.description === "string" ? data.description.trim() : "";
 
@@ -114,6 +126,7 @@ export async function deckTextEntries(
       title: data.title ?? slug,
       ...(description && { description }),
       body: deckToMarkdown(file, textOptions),
+      ...(unlisted && { unlisted: true }),
     });
   }
 

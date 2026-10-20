@@ -98,6 +98,21 @@ describe("deckTextEntries", () => {
     expect(entries.map((entry) => entry.title)).toEqual(["Shown"]);
   });
 
+  test("returns unlisted decks, flagged, when asked", async () => {
+    const root = await project({
+      "shown.deck.mdx": deck("title: Shown"),
+      "draft.deck.mdx": deck("title: Draft\npublished: false"),
+      "hidden.deck.mdx": deck("title: Hidden\nunlisted: true"),
+    });
+
+    const entries = await deckTextEntries({ root, routePrefix: "/decks", includeUnlisted: true });
+
+    expect(entries.map((entry) => [entry.title, entry.unlisted])).toEqual([
+      ["Hidden", true],
+      ["Shown", undefined],
+    ]);
+  });
+
   test("falls back to the slug when a deck has no title", async () => {
     const root = await project({ "untitled.deck.mdx": deck("author: Someone") });
 

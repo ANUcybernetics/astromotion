@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-20 (v0.37.0)
+
+### Unlisted decks on request
+
+`deckTextEntries({ includeUnlisted: true })` also returns `unlisted: true`
+decks, each flagged `unlisted` on its entry, so a site generator can give an
+unlisted deck its own markdown twin while still leaving it out of its text
+indexes. The default is unchanged: unlisted decks are skipped.
+
 ## 2026-10-20 (v0.36.0)
 
 ### Text-index decks drop presentation-only markers
