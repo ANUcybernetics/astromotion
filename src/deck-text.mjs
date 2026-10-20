@@ -183,7 +183,7 @@ function placeholder(label, detail) {
 // content image, where the alt is the only text worth keeping --- falling
 // back to the filename when there isn't one, so the marker still says which
 // image it was.
-function imagePlaceholder(node) {
+function imagePlaceholder(node, options) {
   const alt = (node.alt ?? "").trim();
   const file = basename(node.url ?? "");
   // A QR code's whole content is its URL, so that one keeps the address ---
@@ -192,7 +192,9 @@ function imagePlaceholder(node) {
   if (alt === "qr") {
     return [text("(qr: "), { type: "link", url: node.url, children: [text(node.url)] }, text(")")];
   }
-  if (alt === "bg" || alt.startsWith("bg ")) return [text(placeholder("background image", file))];
+  if (alt === "bg" || alt.startsWith("bg ")) {
+    return options.placeholders === "content" ? [] : [text(placeholder("background image", file))];
+  }
   return [text(placeholder("image", alt || file))];
 }
 
@@ -303,7 +305,7 @@ function convert(node, options) {
   if (node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement") {
     const children = convertChildren(node.children ?? [], options);
     if (children.length > 0) return children;
-    if (!options.placeholders) return null;
+    if (!options.placeholders || options.placeholders === "content") return null;
     const label = placeholder("component", node.name ?? "");
     return node.type === "mdxJsxFlowElement" ? paragraph(label) : text(label);
   }
@@ -317,7 +319,7 @@ function convert(node, options) {
   }
 
   if (node.type === "image" || node.type === "imageReference") {
-    return options.placeholders ? imagePlaceholder(node) : null;
+    return options.placeholders ? imagePlaceholder(node, options) : null;
   }
 
   // Raw HTML in the source is markup, but it can carry text between the tags.
@@ -343,6 +345,23 @@ function convertChildren(children, options) {
     if (converted === null) return [];
     return Array.isArray(converted) ? converted : [converted];
   });
+}
+
+// A slide whose only content was dropped (a background, a widget) leaves its
+// separators behind; an index reader gets nothing from a run of `---`.
+function dropEmptySlides(children) {
+  const kept = [];
+  for (const node of children) {
+    if (
+      node.type === "thematicBreak" &&
+      (kept.length === 0 || kept.at(-1).type === "thematicBreak")
+    ) {
+      continue;
+    }
+    kept.push(node);
+  }
+  if (kept.at(-1)?.type === "thematicBreak") kept.pop();
+  return kept;
 }
 
 /* ---------- removed syntax ---------- */
@@ -374,7 +393,9 @@ function multilineCommentError(node) {
  * @param {object} [options]
  * @param {boolean} [options.notes=true] - keep fenced `notes` blocks
  * @param {boolean} [options.comments=true] - keep authoring comments
- * @param {boolean} [options.placeholders=true] - mark where visuals were
+ * @param {boolean | "content"} [options.placeholders=true] - mark where
+ *   visuals were; `"content"` keeps only the markers that carry content (an
+ *   image's alt text, a QR code's URL) and drops backgrounds and widgets
  * @param {boolean} [options.title=true] - lead with the frontmatter title
  * @returns {string} markdown, slides separated by `---`
  */
@@ -393,7 +414,7 @@ export function deckToMarkdown(deckPath, options = {}) {
   const frontmatterNode = tree.children.find((n) => n.type === "yaml");
   const frontmatter = frontmatterNode ? (parseYaml(frontmatterNode.value) ?? {}) : {};
 
-  const children = convertChildren(tree.children, opts);
+  const children = dropEmptySlides(convertChildren(tree.children, opts));
   if (opts.title && frontmatter.title) {
     children.unshift(
       { type: "heading", depth: 1, children: [text(String(frontmatter.title))] },

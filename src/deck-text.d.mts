@@ -13,8 +13,10 @@ export interface DeckToMarkdownOptions {
   notes?: boolean;
   /** Keep authoring comments (default: true). */
   comments?: boolean;
-  /** Mark where visuals were, e.g. `(image: …)` (default: true). */
-  placeholders?: boolean;
+  /** Mark where visuals were, e.g. `(image: …)` (default: true). `"content"`
+   *  keeps only the markers that carry content (an image's alt text, a QR
+   *  code's URL) and drops backgrounds and widgets. */
+  placeholders?: boolean | "content";
   /** Lead with the frontmatter title as an `h1` (default: true). */
   title?: boolean;
 }

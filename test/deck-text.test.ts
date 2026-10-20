@@ -97,6 +97,16 @@ describe("deckToMarkdown", () => {
     expect(markdown).not.toContain("A topic with frontmatter");
   });
 
+  it("keeps only content-bearing markers in content mode", () => {
+    const content = exporter.deckToMarkdown(fixture, { placeholders: "content" });
+    expect(content).toContain("(image: inline picture)");
+    expect(content).toContain("(qr: <https://example.com/handout>)");
+    expect(content).not.toContain("background image");
+    expect(content).not.toContain("(component:");
+    // No slide is left as a bare run of separators.
+    expect(content).not.toMatch(/---\n+---/);
+  });
+
   it("drops imports and presentation-only directives", () => {
     expect(markdown).not.toContain("import Widget");
     expect(markdown).not.toContain("_class");

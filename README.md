@@ -840,12 +840,14 @@ theme, with the prefix declared in one place only. `{ root, routePrefix }`
 override both for use outside a build, and `{ text }` forwards options to
 `deckToMarkdown`.
 
-Two differences from the CLI's defaults, both because the output is destined for
-publication rather than a printout: authoring comments are dropped (they're
+Three differences from the CLI's defaults, all because the output is destined
+for publication rather than a printout: authoring comments are dropped (they're
 stripped from the built HTML, so an index carrying them would publish something
-the site itself doesn't), and the title is left off the body, since it travels
-as a field on the entry. Pass `text: { comments: true }` or
-`text: { title: true }` to get them back.
+the site itself doesn't), placeholders are `"content"` (an image keeps its alt
+text and a QR code its URL, but backgrounds and widgets leave no marker, and a
+slide that held nothing else leaves no separator), and the title is left off the
+body, since it travels as a field on the entry. Pass `text: { comments: true }`,
+`text: { placeholders: true }` or `text: { title: true }` to get them back.
 
 Decks marked `published: false` are skipped, since no route is built for them
 and the entry would point at a 404; `unlisted: true` decks are skipped too,

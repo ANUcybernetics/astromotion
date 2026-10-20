@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-20 (v0.36.0)
+
+### Text-index decks drop presentation-only markers
+
+`deckToMarkdown` takes `placeholders: "content"`, which keeps the markers that
+carry content (an image's alt text, a QR code's URL) and drops backgrounds and
+widgets. `deckTextEntries()` now defaults to it, and to numeric URL order
+(`week-10` after `week-9`), so a deck in an `llms.txt` reads as its prose rather
+than a run of `(background image: …)` lines. A slide left with nothing in it no
+longer leaves a bare `---` behind. Pass `text: { placeholders: true }` for the
+old output.
+
 ## 2026-10-17 (v0.35.1)
 
 ### Portrait title blocks wrap within the frame

@@ -20,7 +20,7 @@ import { parseDeckFrontmatter } from "./meta.ts";
 export interface DeckTextOptions {
   notes?: boolean;
   comments?: boolean;
-  placeholders?: boolean;
+  placeholders?: boolean | "content";
   title?: boolean;
 }
 
@@ -51,8 +51,10 @@ export interface DeckTextEntriesOptions {
    * Overrides for the text rendering. Defaults differ from `deckToMarkdown`'s
    * own: `comments: false`, because authoring comments are stripped from the
    * built HTML and publishing them in a text index would expose something the
-   * site itself doesn't; and `title: false`, because the title travels as a
-   * field on the entry and an index typically renders its own heading.
+   * site itself doesn't; `placeholders: "content"`, because a background or
+   * a widget marker tells an index reader nothing; and `title: false`, because
+   * the title travels as a field on the entry and an index typically renders
+   * its own heading.
    */
   text?: DeckTextOptions;
 }
@@ -87,7 +89,12 @@ export async function deckTextEntries(
 ): Promise<DeckTextEntry[]> {
   const root = options.root ?? buildState.root;
   const routePrefix = options.routePrefix ?? buildState.routePrefix;
-  const textOptions: DeckTextOptions = { comments: false, title: false, ...options.text };
+  const textOptions: DeckTextOptions = {
+    comments: false,
+    placeholders: "content",
+    title: false,
+    ...options.text,
+  };
 
   const files = await collectDeckFiles(join(root, DECKS_DIR));
   const entries: DeckTextEntry[] = [];
@@ -110,5 +117,6 @@ export async function deckTextEntries(
     });
   }
 
-  return entries.toSorted((a, b) => a.url.localeCompare(b.url));
+  // Numeric collation, so week-10 follows week-9 rather than week-1.
+  return entries.toSorted((a, b) => a.url.localeCompare(b.url, "en", { numeric: true }));
 }
