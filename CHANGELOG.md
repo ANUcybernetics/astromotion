@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-21 (v0.37.1)
+
+### `astromotion-check` finds decks kept in directories
+
+The check now searches `src/decks` at any depth and mounts
+`week-3/slides.deck.mdx` at `week-3`, as the deck route does. Before, it read
+only top-level `*.deck.mdx` files, so a site keeping its decks beside their
+assets got "No *.deck.mdx files" and nothing was checked.
+
+
 ## 2026-10-20 (v0.37.0)
 
 ### Unlisted decks on request

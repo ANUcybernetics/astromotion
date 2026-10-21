@@ -13,7 +13,7 @@
 //
 // Usage: astromotion-check [slug...] [options]
 //   --prefix=/decks   route prefix the site serves decks under
-//   --dir=src/decks   where the *.deck.mdx files live
+//   --dir=src/decks   where the *.deck.mdx files live (searched at any depth)
 //   --port=4321       dev server port
 //   --tolerance=4     canvas px of slack before a slide is reported
 //   --json            machine-readable output
@@ -34,10 +34,10 @@
 // part of `astro build`.
 
 import { spawn, spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { chromeArgs, findChrome } from "../src/chrome.mjs";
+import { deckSlugsIn } from "../src/deck-files.mjs";
 import { measureSlide, TEXT_SELECTOR } from "../src/deck-check.mjs";
 
 const args = process.argv.slice(2);
@@ -76,17 +76,12 @@ if (!Number.isFinite(tolerance) || tolerance < 0) {
 
 let slugs = slugArgs;
 if (slugs.length === 0) {
-  let entries;
   try {
-    entries = readdirSync(deckDir);
+    slugs = deckSlugsIn(deckDir);
   } catch {
     console.error(`✗ No deck directory at ${deckDir} (pass --dir=…)`);
     process.exit(1);
   }
-  slugs = entries
-    .filter((f) => f.endsWith(".deck.mdx"))
-    .map((f) => f.slice(0, -".deck.mdx".length))
-    .toSorted();
 }
 if (slugs.length === 0) {
   console.error(`✗ No *.deck.mdx files in ${deckDir}`);
