@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-24 (v0.37.2)
+
+### Dependency refresh
+
+Raises the `linkedom` floor to 0.18.14 and refreshes the lockfile, clearing
+`pnpm audit`. No API or syntax changes.
+
 ## 2026-10-21 (v0.37.1)
 
 ### `astromotion-check` finds decks kept in directories
