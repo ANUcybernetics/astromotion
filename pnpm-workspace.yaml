@@ -5,7 +5,4 @@ allowBuilds:
 # package-name glob, so versioned entries are silently ignored.
 minimumReleaseAgeExclude:
   - astro
-  - "@astrojs/internal-helpers"
-  - "@astrojs/markdown-remark"
-  - "@astrojs/mdx"
-  - "@astrojs/markdown-satteri"
+  - "@astrojs/*"
