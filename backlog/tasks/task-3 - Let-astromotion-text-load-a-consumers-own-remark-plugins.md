@@ -1,9 +1,10 @@
 ---
 id: TASK-3
 title: Let astromotion-text load a consumer's own remark plugins
-status: To Do
+status: Done
 assignee: []
-created_date: '2026-07-28 05:45'
+created_date: 2026-07-28 05:45
+updated_date: '2026-10-29T22:03:00Z'
 labels:
   - deck-text
   - cli
@@ -26,3 +27,9 @@ astromotion-text resolves @include partials, but a consumer whose decks carry di
 - [ ] #5 deckToMarkdown() exposes the same capability programmatically
 - [ ] #6 README documents the flag alongside the other text-export options
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Obsolete: comp4020 dropped its embed directive (learning outcomes now inline in week 1), so no consumer carries a directive its own remark plugin resolves.
+<!-- SECTION:NOTES:END -->
