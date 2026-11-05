@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@qrgrid/core": "^0.2.4",
-    "linkedom": "^0.18.14",
+    "linkedom": "^0.18.15",
     "perfect-freehand": "^1.2.3",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
@@ -43,12 +43,12 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@astrojs/markdown-remark": "^7.3.4",
-    "@astrojs/mdx": "^8.1.1",
+    "@astrojs/markdown-remark": "^7.3.5",
+    "@astrojs/mdx": "^8.1.2",
     "@e18e/eslint-plugin": "^0.8.1",
     "@types/mdast": "^4.0.4",
     "@types/node": "^26.6.6",
-    "astro": "^7.4.2",
+    "astro": "^7.4.5",
     "eslint-plugin-no-only-tests": "^3.4.0",
     "eslint-plugin-perfectionist": "^5.13.0",
     "eslint-plugin-unused-imports": "^4.4.1",
@@ -59,7 +59,7 @@
     "stylelint": "^17.16.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "peerDependencies": {
     "@astrojs/mdx": "^7.0.0 || ^8.0.0",
