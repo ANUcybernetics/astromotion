@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "proseWrap": "always",
+  "astro": { "compressHTML": "html" },
   "ignorePatterns": ["backlog/**", "test/fixtures/**", "video/fonts/**"],
   "overrides": [{ "files": ["**/*.md", "**/*.mdx"], "options": { "printWidth": 80 } }]
 }

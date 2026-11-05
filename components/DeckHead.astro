@@ -35,7 +35,9 @@ if (cspEnabled) {
 }
 ---
 
-{fontVariables.map((cssVariable) => <Font cssVariable={cssVariable} preload />)}
+{fontVariables.map((cssVariable) => (
+  <Font cssVariable={cssVariable} preload />
+))}
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -48,15 +50,13 @@ if (cspEnabled) {
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonicalUrl.href} />
 <meta property="og:type" content="website" />
-{
-  socialUrl && (
-    <>
-      <meta property="og:image" content={socialUrl} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-    </>
-  )
-}
+{socialUrl && (
+  <>
+    <meta property="og:image" content={socialUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+  </>
+)}
 
 <meta name="twitter:card" content={socialUrl ? "summary_large_image" : "summary"} />
 <meta name="twitter:title" content={title} />

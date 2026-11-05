@@ -588,17 +588,29 @@ for (const entry of fs.readdirSync(decksDir, { withFileTypes: true })) {
     for (const file of fs.readdirSync(path.join(decksDir, entry.name))) {
       const match = file.match(/^(.+)\.deck\.mdx$/);
       if (!match) continue;
-      const raw = fs.readFileSync(path.join(decksDir, entry.name, file), "utf-8");
+      const raw = fs.readFileSync(
+        path.join(decksDir, entry.name, file),
+        "utf-8",
+      );
       const { data } = parseDeckFrontmatter(raw, entry.name);
-      const slug = match[1] === "slides" ? entry.name : `${entry.name}/${match[1]}`;
-      decks.push({ slug, title: data.title ?? slug, description: data.description });
+      const slug =
+        match[1] === "slides" ? entry.name : `${entry.name}/${match[1]}`;
+      decks.push({
+        slug,
+        title: data.title ?? slug,
+        description: data.description,
+      });
     }
   } else if (entry.isFile()) {
     const match = entry.name.match(/^(.+)\.deck\.mdx$/);
     if (!match) continue;
     const raw = fs.readFileSync(path.join(decksDir, entry.name), "utf-8");
     const { data } = parseDeckFrontmatter(raw, match[1]);
-    decks.push({ slug: match[1], title: data.title ?? match[1], description: data.description });
+    decks.push({
+      slug: match[1],
+      title: data.title ?? match[1],
+      description: data.description,
+    });
   }
 }
 
@@ -608,12 +620,10 @@ decks.sort((a, b) => a.slug.localeCompare(b.slug));
 <YourLayout title="Decks">
   <h1>Decks</h1>
   <ul>
-    {decks.map((deck) => (
-      <li>
-        <a href={`/decks/${deck.slug}/`}>{deck.title}</a>
-        {deck.description && <span> --- {deck.description}</span>}
-      </li>
-    ))}
+    {decks.map((deck) => <li>
+      <a href={`/decks/${deck.slug}/`}>{deck.title}</a>
+      {deck.description && <span> --- {deck.description}</span>}
+    </li>)}
   </ul>
 </YourLayout>
 ```
