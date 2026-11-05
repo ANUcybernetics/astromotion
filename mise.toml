@@ -1,5 +1,5 @@
 [tools]
-node = "24"
+node = "26"
 pnpm = "latest"
 # astromotion-pdf's compressor, pinned so every machine and CI run the same
 # pdfwrite (see src/pdf-compress.mjs for why the version matters).
