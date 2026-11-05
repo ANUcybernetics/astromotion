@@ -6,3 +6,7 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - astro
   - "@astrojs/*"
+# minimatch ReDoS (GHSA-g3hv-75wg-m249): eslint, @eslint/config-array and
+# @typescript-eslint/typescript-estree pin ^10.2.x. Drop once they allow >=11.0.1.
+overrides:
+  minimatch: ^11.0.1
