@@ -1,6 +1,6 @@
 /**
  * Types for `deck-text.mjs`, which is plain JavaScript by necessity (see
- * CLAUDE.md) and so carries none of its own.
+ * AGENTS.md) and so carries none of its own.
  *
  * A declaration file rather than `allowJs` in this package's tsconfig,
  * because `src/deck-entries.ts` imports it and ships as TypeScript: every
