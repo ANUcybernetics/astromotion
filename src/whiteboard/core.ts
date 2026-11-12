@@ -15,7 +15,7 @@ export interface WhiteboardPoint {
 
 export interface WhiteboardStroke {
   color: number; // palette index, fixed at pointerdown
-  size: number; // brush size index, fixed at pointerdown
+  size: number; // brush index (BRUSH_SIZES, then LASER), fixed at pointerdown
   pen: boolean; // real stylus pressure (vs simulated from velocity)
   points: WhiteboardPoint[];
 }
@@ -35,6 +35,8 @@ export interface WhiteboardState {
   board: WhiteboardStroke[]; // the opaque board's one shared drawing
   slides: Record<string, WhiteboardStroke[]>; // annotations, keyed by slideKey
   slide: string; // which slide annotations currently apply to
+  laser: WhiteboardStroke[]; // laser marks still on screen, on either surface
+  laserAt: number; // when the last laser stroke ended (ms, the caller's clock)
   current: WhiteboardStroke | null;
 }
 
@@ -69,12 +71,27 @@ export const INK_PALETTES: Record<WhiteboardMode, string[]> = {
 // about the same fraction of the screen whatever its resolution, so a width
 // fixed in CSS px reads spidery on a 4K display and blobby on a 720p
 // projector --- a 2x swing between the two. Fine for writing, broad for
-// highlighting; the two digit keys after the palette select them.
+// highlighting.
 export const BRUSH_SIZES = [6, 18];
 
-// Colour keys are the leading digits and the brush sizes claim the next
-// ones, so a palette can hold at most 9 - BRUSH_SIZES.length inks.
-export const MAX_INKS = 9 - BRUSH_SIZES.length;
+// The laser is the brush after the sizes: the fine width in the current ink,
+// but its strokes never land on a surface. They sit in their own list, out of
+// reach of undo, and all of them fade together once the pen has been idle for
+// LASER_HOLD_MS --- a circle and then an arrow are usually one point, so they
+// should go as one.
+export const LASER = BRUSH_SIZES.length;
+export const BRUSH_COUNT = BRUSH_SIZES.length + 1;
+export const LASER_HOLD_MS = 1500;
+export const LASER_FADE_MS = 1000;
+
+// Colour keys are the leading digits and the brushes claim the next ones, so
+// a palette can hold at most 9 - BRUSH_COUNT inks.
+export const MAX_INKS = 9 - BRUSH_COUNT;
+
+// A brush's width in deck units; the laser draws at the fine width.
+export function brushWidth(size: number): number {
+  return BRUSH_SIZES[size] ?? BRUSH_SIZES[0];
+}
 
 // Split a CSS colour list on top-level commas only, so commas inside
 // functional notation (legacy rgb(190, 131, 14)) don't break a colour apart.
@@ -153,6 +170,8 @@ export function createWhiteboard(): WhiteboardState {
     board: [],
     slides: {},
     slide: slideKey(0, 0),
+    laser: [],
+    laserAt: 0,
     current: null,
   };
 }
@@ -169,10 +188,34 @@ function withStrokes(state: WhiteboardState, strokes: WhiteboardStroke[]): White
 }
 
 // Land any stroke still in progress on the surface it was drawn on, so
-// switching surfaces or slides mid-stroke doesn't drop the ink.
+// switching surfaces or slides mid-stroke doesn't drop the ink. A laser
+// stroke joins the laser marks instead.
 function commitCurrent(state: WhiteboardState): WhiteboardState {
   if (!state.current) return state;
+  if (state.current.size === LASER) {
+    return { ...state, laser: [...state.laser, state.current], current: null };
+  }
   return { ...withStrokes(state, [...liveStrokes(state), state.current]), current: null };
+}
+
+// Laser marks point at what is on screen, so anything that changes what is
+// on screen --- a slide change, a crossover, closing --- takes them away.
+function dropLaser(state: WhiteboardState): WhiteboardState {
+  return state.laser.length === 0 ? state : { ...state, laser: [] };
+}
+
+// How opaque the laser marks are at `now`: solid while a laser stroke is
+// being drawn and for LASER_HOLD_MS after the last one ends, then a linear
+// fade to nothing over LASER_FADE_MS.
+export function laserOpacity(state: WhiteboardState, now: number): number {
+  if (state.current?.size === LASER) return 1;
+  const t = (now - state.laserAt - LASER_HOLD_MS) / LASER_FADE_MS;
+  return Math.min(1, Math.max(0, 1 - t));
+}
+
+// Drop the laser marks once they have faded out completely.
+export function expireLaser(state: WhiteboardState, now: number): WhiteboardState {
+  return laserOpacity(state, now) > 0 ? state : dropLaser(state);
 }
 
 // Modifier state for a keydown. `shift` picks the surface on W and is
@@ -223,12 +266,12 @@ export function keyAction(
     case "D":
       return { type: "download" };
     default:
-      // Digits map to the palette first, then the next BRUSH_SIZES.length
-      // digits pick the brush size (e.g. four inks: 1-4 colour, 5-6 size).
+      // Digits map to the palette first, then the next BRUSH_COUNT digits
+      // pick the brush (e.g. four inks: 1-4 colour, 5-6 size, 7 laser).
       if (/^[1-9]$/.test(key)) {
         const index = Number(key) - 1;
         if (index < paletteSize) return { type: "color", index };
-        if (index < paletteSize + BRUSH_SIZES.length) {
+        if (index < paletteSize + BRUSH_COUNT) {
           return { type: "size", index: index - paletteSize };
         }
       }
@@ -248,38 +291,42 @@ export function applyAction(
       if (!state.active) return { ...state, active: true, surface: action.surface };
       if (state.surface === action.surface)
         return applyAction(state, { type: "close" }, paletteSize);
-      return { ...commitCurrent(state), surface: action.surface };
+      return { ...dropLaser(commitCurrent(state)), surface: action.surface };
     case "close": {
       // The board's drawing and the colour/size selection survive the toggle
       // --- only the clear action empties it. Slide annotations do not: they
       // belong to a moment in the talk, so closing the layer discards them
       // rather than leaving stale ink to reappear later.
       const committed = commitCurrent(state);
-      return { ...committed, active: false, slides: {}, current: null };
+      return { ...committed, active: false, slides: {}, laser: [], current: null };
     }
     case "slide":
       if (action.key === state.slide) return state;
-      return { ...commitCurrent(state), slide: action.key };
+      return { ...dropLaser(commitCurrent(state)), slide: action.key };
     case "color":
       if (action.index < 0 || action.index >= paletteSize || action.index === state.color) {
         return state;
       }
       return { ...state, color: action.index };
     case "size":
-      if (action.index < 0 || action.index >= BRUSH_SIZES.length || action.index === state.size) {
+      if (action.index < 0 || action.index >= BRUSH_COUNT || action.index === state.size) {
         return state;
       }
       return { ...state, size: action.index };
     // Undo and clear act on the live surface only, so clearing an annotation
-    // never wipes the board sitting behind it, or another slide's ink.
+    // never wipes the board sitting behind it, or another slide's ink. Undo
+    // leaves the laser alone (it is on its way out regardless); clear takes
+    // it with everything else on screen.
     case "undo": {
       const strokes = liveStrokes(state);
       if (strokes.length === 0) return state;
       return withStrokes(state, strokes.slice(0, -1));
     }
     case "clear":
-      if (liveStrokes(state).length === 0 && !state.current) return state;
-      return { ...withStrokes(state, []), current: null };
+      if (liveStrokes(state).length === 0 && !state.current && state.laser.length === 0) {
+        return state;
+      }
+      return { ...withStrokes(state, []), laser: [], current: null };
     case "download": // side effect owned by the DOM layer, no state change
       return state;
   }
@@ -320,6 +367,10 @@ export function extendStroke(state: WhiteboardState, point: WhiteboardPoint): Wh
   };
 }
 
-export function endStroke(state: WhiteboardState): WhiteboardState {
-  return commitCurrent(state);
+// `now` stamps a finished laser stroke, which restarts the laser's hold. It
+// is the same clock laserOpacity is later asked about (performance.now() in
+// the DOM layer).
+export function endStroke(state: WhiteboardState, now = 0): WhiteboardState {
+  const committed = commitCurrent(state);
+  return state.current?.size === LASER ? { ...committed, laserAt: now } : committed;
 }

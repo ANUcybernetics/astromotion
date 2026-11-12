@@ -467,11 +467,17 @@ variable-width ink: real pressure when drawing with a stylus, and pressure
 simulated from drawing speed with a mouse or trackpad.
 
 The pen claims only the keys it needs --- the leading **digit keys** switch pen
-colour and the next two pick the brush size, fine or broad (with the default
-four-colour palette that's **1–4** for colour and **5–6** for size, or click the
-toolbar buttons), plus **Z** to undo, **C** to clear and **D** to save.
-Everything else belongs to the deck, so you can keep navigating with the board
-up, and **F**, **S** and **B** still work.
+colour and the next three pick the brush: fine, broad or laser (with the default
+four-colour palette that's **1–4** for colour, **5–6** for size and **7** for
+the laser, or click the toolbar buttons), plus **Z** to undo, **C** to clear and
+**D** to save. Everything else belongs to the deck, so you can keep navigating
+with the board up, and **F**, **S** and **B** still work.
+
+The laser draws fine strokes in the current colour that fade on their own: they
+hold for a moment after you lift the pen, then all of them fade together, so a
+circle followed by an arrow goes as one gesture. Laser marks never join the
+drawing --- undo skips them, a save leaves them out, and changing slide or
+surface takes them away.
 
 The two surfaces remember their ink differently, because they're used
 differently. The board keeps one shared drawing until **C** clears it, so you
@@ -511,9 +517,9 @@ Consuming themes can restyle the board via four CSS custom properties:
   URI; for an asset sitting beside your theme file, set `background-image`
   directly (see below).
 - `--astromotion-wb-inks` --- a comma-separated colour list defining the pen
-  palette, any length from one to seven inks (the digit keys, minus the two the
-  brush sizes claim), replacing the mode's built-in four-colour palette
-  entirely. Any CSS colour syntax works, including `var()` references and legacy
+  palette, any length from one to six inks (the digit keys, minus the three the
+  brushes claim), replacing the mode's built-in four-colour palette entirely.
+  Any CSS colour syntax works, including `var()` references and legacy
   comma-form `rgb()`.
 
 All but the last describe the board. The annotation surface is transparent by

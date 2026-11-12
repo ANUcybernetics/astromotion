@@ -5,13 +5,20 @@ import {
   backgroundImageUrl,
   beginStroke,
   boardFilename,
+  BRUSH_COUNT,
   BRUSH_SIZES,
+  brushWidth,
   coverRect,
   createWhiteboard,
   endStroke,
+  expireLaser,
   extendStroke,
   INK_PALETTES,
   keyAction,
+  LASER,
+  LASER_FADE_MS,
+  LASER_HOLD_MS,
+  laserOpacity,
   liveStrokes,
   MAX_INKS,
   resolveInkPalette,
@@ -50,6 +57,8 @@ describe("createWhiteboard", () => {
       board: [],
       slides: {},
       slide: slideKey(0, 0),
+      laser: [],
+      laserAt: 0,
       current: null,
     });
   });
@@ -221,20 +230,22 @@ describe("keyAction", () => {
     expect(keyAction(state, "0", NONE, PALETTE_SIZE)).toBeNull();
   });
 
-  it("maps the digits after the palette to brush sizes, then gives up the key", () => {
+  it("maps the digits after the palette to the brushes, then gives up the key", () => {
     const state = openBoard();
-    // PALETTE_SIZE is 4, so 5 and 6 are the two brush sizes
+    // PALETTE_SIZE is 4, so 5 and 6 are the two brush sizes and 7 the laser
     expect(keyAction(state, "5", NONE, PALETTE_SIZE)).toEqual({ type: "size", index: 0 });
     expect(keyAction(state, "6", NONE, PALETTE_SIZE)).toEqual({ type: "size", index: 1 });
-    expect(keyAction(state, "7", NONE, PALETTE_SIZE)).toBeNull();
+    expect(keyAction(state, "7", NONE, PALETTE_SIZE)).toEqual({ type: "size", index: LASER });
+    expect(keyAction(state, "8", NONE, PALETTE_SIZE)).toBeNull();
     expect(keyAction(state, "9", NONE, PALETTE_SIZE)).toBeNull();
   });
 
-  it("shifts the size keys with the palette length", () => {
+  it("shifts the brush keys with the palette length", () => {
     const state = openBoard();
     expect(keyAction(state, "2", NONE, 1)).toEqual({ type: "size", index: 0 });
-    expect(keyAction(state, "8", NONE, MAX_INKS)).toEqual({ type: "size", index: 0 });
-    expect(keyAction(state, "9", NONE, MAX_INKS)).toEqual({ type: "size", index: 1 });
+    expect(MAX_INKS + BRUSH_COUNT).toBe(9);
+    expect(keyAction(state, "7", NONE, MAX_INKS)).toEqual({ type: "size", index: 0 });
+    expect(keyAction(state, "9", NONE, MAX_INKS)).toEqual({ type: "size", index: LASER });
   });
 
   it("leaves every key it does not claim to the deck, on either surface", () => {
@@ -315,9 +326,7 @@ describe("applyAction", () => {
     const broad = applyAction(state, { type: "size", index: 1 }, PALETTE_SIZE);
     expect(broad.size).toBe(1);
     expect(applyAction(state, { type: "size", index: 0 }, PALETTE_SIZE)).toBe(state);
-    expect(applyAction(state, { type: "size", index: BRUSH_SIZES.length }, PALETTE_SIZE)).toBe(
-      state,
-    );
+    expect(applyAction(state, { type: "size", index: BRUSH_COUNT }, PALETTE_SIZE)).toBe(state);
     expect(applyAction(state, { type: "size", index: -1 }, PALETTE_SIZE)).toBe(state);
   });
 
@@ -482,5 +491,62 @@ describe("stroke lifecycle", () => {
     const state = openBoard();
     expect(extendStroke(state, { x: 0, y: 0, pressure: 0.5 })).toBe(state);
     expect(endStroke(state)).toBe(state);
+  });
+});
+
+const laserOn = (state: WhiteboardState) =>
+  applyAction(state, { type: "size", index: LASER }, PALETTE_SIZE);
+
+function point(state: WhiteboardState, x: number, now: number): WhiteboardState {
+  return endStroke(beginStroke(state, { x, y: x, pressure: 0.5 }, false), now);
+}
+
+describe("laser", () => {
+  it("draws in the current ink at the fine width", () => {
+    let state = applyAction(laserOn(openBoard()), { type: "color", index: 2 }, PALETTE_SIZE);
+    state = point(state, 1, 100);
+    expect(state.laser).toHaveLength(1);
+    expect(state.laser[0].color).toBe(2);
+    expect(brushWidth(state.laser[0].size)).toBe(BRUSH_SIZES[0]);
+  });
+
+  it("never lands on a surface, and undo leaves it alone", () => {
+    let state = point(laserOn(draw(openBoard(), 0)), 1, 100);
+    expect(state.board).toHaveLength(1);
+    expect(state.laser).toHaveLength(1);
+    state = applyAction(state, { type: "undo" }, PALETTE_SIZE);
+    expect(state.board).toHaveLength(0);
+    expect(state.laser).toHaveLength(1);
+    expect(applyAction(state, { type: "undo" }, PALETTE_SIZE)).toBe(state);
+  });
+
+  it("holds solid, then fades all its marks together", () => {
+    let state = point(laserOn(openAnnotation()), 1, 1000);
+    state = point(state, 2, 2000);
+    expect(laserOpacity(state, 2000 + LASER_HOLD_MS)).toBe(1);
+    expect(laserOpacity(state, 2000 + LASER_HOLD_MS + LASER_FADE_MS / 2)).toBeCloseTo(0.5);
+    expect(laserOpacity(state, 2000 + LASER_HOLD_MS + LASER_FADE_MS)).toBe(0);
+  });
+
+  it("stays solid while a laser stroke is in progress", () => {
+    let state = point(laserOn(openAnnotation()), 1, 0);
+    state = beginStroke(state, { x: 2, y: 2, pressure: 0.5 }, false);
+    expect(laserOpacity(state, 10 * (LASER_HOLD_MS + LASER_FADE_MS))).toBe(1);
+  });
+
+  it("expires once faded, and not before", () => {
+    const state = point(laserOn(openAnnotation()), 1, 0);
+    expect(expireLaser(state, LASER_HOLD_MS)).toBe(state);
+    expect(expireLaser(state, LASER_HOLD_MS + LASER_FADE_MS).laser).toEqual([]);
+  });
+
+  it("goes with a slide change, a crossover, a clear and a close", () => {
+    const state = point(laserOn(openAnnotation()), 1, 0);
+    expect(go(state, 3).laser).toEqual([]);
+    expect(applyAction(state, { type: "toggle", surface: "board" }, PALETTE_SIZE).laser).toEqual(
+      [],
+    );
+    expect(applyAction(state, { type: "clear" }, PALETTE_SIZE).laser).toEqual([]);
+    expect(applyAction(state, { type: "close" }, PALETTE_SIZE).laser).toEqual([]);
   });
 });

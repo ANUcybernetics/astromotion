@@ -150,6 +150,12 @@
   background: var(--wb-chip-dot);
 }
 
+/* The laser chip: the fine brush's dot with a halo, for marks that glow
+   briefly and go. */
+.astromotion-whiteboard-laser::after {
+  box-shadow: 0 0 0.35rem 0.15rem var(--wb-chip-dot);
+}
+
 .astromotion-whiteboard-size[aria-pressed="true"] {
   scale: 1.25;
   box-shadow: 0 0 0 3px var(--wb-chip-ring-active);

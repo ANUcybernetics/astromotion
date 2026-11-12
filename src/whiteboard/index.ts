@@ -15,6 +15,10 @@
 // Escape while open) and lets everything else through to Reveal, so the deck
 // keeps navigating and F, S and B keep working with the board up.
 //
+// The laser brush draws marks that fade on their own (see LASER in ./core).
+// Rendering is otherwise on demand; while laser marks are on screen it runs
+// every frame until they have gone.
+//
 // Strokes render via perfect-freehand: real stylus pressure when a pen is
 // detected, simulated from velocity for mouse and trackpad. Everything lives
 // in memory only --- a reload discards it.
@@ -26,17 +30,22 @@ import {
   beginStroke,
   boardFilename,
   BRUSH_SIZES,
+  brushWidth,
   coverRect,
   createWhiteboard,
   endStroke,
+  expireLaser,
   extendStroke,
   keyAction,
+  LASER,
+  laserOpacity,
   liveStrokes,
   resolveInkPalette,
   resolveMode,
   slideKey,
   type WhiteboardAction,
   type WhiteboardState,
+  type WhiteboardStroke,
   type WhiteboardSurface,
 } from "./core";
 import { strokeOutlinePath } from "./outline";
@@ -140,10 +149,20 @@ export function initWhiteboard(deck: RevealDeck): void {
     toolbar.appendChild(button);
     return button;
   });
+  const laserButton = document.createElement("button");
+  laserButton.type = "button";
+  laserButton.className = "astromotion-whiteboard-size astromotion-whiteboard-laser";
+  laserButton.style.setProperty("--dot-size", `${brushWidth(LASER)}px`);
+  laserButton.setAttribute("aria-label", "Laser (fades)");
+  laserButton.addEventListener("click", () => dispatch({ type: "size", index: LASER }));
+  toolbar.appendChild(laserButton);
+  sizeButtons.push(laserButton);
   const hint = document.createElement("span");
   hint.className = "astromotion-whiteboard-hint";
   const colourHint = palette.length > 1 ? `1–${palette.length} colour · ` : "";
-  const sizeHint = `${palette.length + 1}–${palette.length + BRUSH_SIZES.length} size · `;
+  const sizeHint =
+    `${palette.length + 1}–${palette.length + BRUSH_SIZES.length} size · ` +
+    `${palette.length + LASER + 1} laser · `;
   const hintFor = (surface: WhiteboardSurface) =>
     `${colourHint}${sizeHint}Z undo · C clear · D save · ` +
     // W is the way out of the board and the way into it, so which key closes
@@ -162,31 +181,45 @@ export function initWhiteboard(deck: RevealDeck): void {
   // the canvas transform --- only to the stroke width, and to the toolbar's
   // size preview via --wb-ui-scale.
   let deckScale = 1;
+  // Saves record the drawing, not the pointing, so they render without the
+  // laser marks.
+  let hideLaser = false;
 
   const scheduleRender = () => {
     if (!raf) raf = requestAnimationFrame(render);
   };
 
+  const drawStroke = (stroke: WhiteboardStroke) => {
+    const path = strokeOutlinePath(stroke.points, {
+      size: brushWidth(stroke.size) * deckScale,
+      pen: stroke.pen,
+    });
+    if (!path) return;
+    ctx.fillStyle = palette[stroke.color] ?? palette[0];
+    // ctx is a CanvasRenderingContext2D --- this is not Array#fill. The rule
+    // matches any `.fill()` with no receiver check, and upstream declined to
+    // add one (oxc-project/oxc#23703).
+    // oxlint-disable-next-line unicorn/no-array-fill-with-reference-type
+    ctx.fill(new Path2D(path));
+  };
+
   const render = () => {
     raf = 0;
+    const now = performance.now();
+    state = expireLaser(state, now);
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-    const settled = liveStrokes(state);
-    const strokes = state.current ? [...settled, state.current] : settled;
-    for (const stroke of strokes) {
-      const path = strokeOutlinePath(stroke.points, {
-        size: (BRUSH_SIZES[stroke.size] ?? BRUSH_SIZES[0]) * deckScale,
-        pen: stroke.pen,
-      });
-      if (!path) continue;
-      ctx.fillStyle = palette[stroke.color] ?? palette[0];
-      // ctx is a CanvasRenderingContext2D --- this is not Array#fill. The rule
-      // matches any `.fill()` with no receiver check, and upstream declined to
-      // add one (oxc-project/oxc#23703).
-      // oxlint-disable-next-line unicorn/no-array-fill-with-reference-type
-      ctx.fill(new Path2D(path));
-    }
+    for (const stroke of liveStrokes(state)) drawStroke(stroke);
+    const drawingLaser = state.current?.size === LASER;
+    if (state.current && !drawingLaser) drawStroke(state.current);
+    if (hideLaser) return;
+    ctx.globalAlpha = laserOpacity(state, now);
+    for (const stroke of state.laser) drawStroke(stroke);
+    ctx.globalAlpha = 1;
+    if (state.current && drawingLaser) drawStroke(state.current);
+    // Keep animating the fade until the marks have gone.
+    if (state.laser.length > 0) scheduleRender();
   };
 
   const resize = () => {
@@ -293,7 +326,9 @@ export function initWhiteboard(deck: RevealDeck): void {
   // the board surface --- colour, then the background image drawn the way CSS
   // covers the viewport with it --- then hand it to the browser as a download.
   const downloadBoard = async () => {
+    hideLaser = true;
     render(); // flush any pending frame so the file matches the screen
+    hideLaser = false;
     const out = document.createElement("canvas");
     out.width = canvas.width;
     out.height = canvas.height;
@@ -310,6 +345,7 @@ export function initWhiteboard(deck: RevealDeck): void {
       outCtx.drawImage(image, rect.x, rect.y, rect.width, rect.height);
     }
     outCtx.drawImage(canvas, 0, 0);
+    scheduleRender();
     saveCanvas(out, boardFilename(new Date()));
   };
 
@@ -317,6 +353,7 @@ export function initWhiteboard(deck: RevealDeck): void {
   // it, or --- if there is no capture to be had --- the ink alone on
   // transparency, which at least records what was drawn.
   const downloadAnnotation = async () => {
+    hideLaser = true;
     render();
     const name = annotationFilename(deck.getIndices(), new Date());
     toolbar.hidden = true;
@@ -339,6 +376,8 @@ export function initWhiteboard(deck: RevealDeck): void {
       saveCanvas(out, name);
     } finally {
       toolbar.hidden = false;
+      hideLaser = false;
+      scheduleRender();
     }
   };
 
@@ -410,7 +449,7 @@ export function initWhiteboard(deck: RevealDeck): void {
   const finishStroke = (event: PointerEvent) => {
     if (event.pointerId !== activePointer) return;
     activePointer = null;
-    state = endStroke(state);
+    state = endStroke(state, performance.now());
     scheduleRender();
   };
   canvas.addEventListener("pointerup", finishStroke);
