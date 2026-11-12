@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-12 (v0.38.0)
+
+### Whiteboard laser
+
+A third brush after fine and broad (**7** with a four-colour palette, or the
+glowing chip in the toolbar) draws fine strokes in the current ink that fade on
+their own: they hold for a moment after the pen lifts, then all fade together.
+Laser marks stay out of the drawing --- undo skips them, **D** leaves them out
+of the save, and a slide or surface change takes them away. The digit keys are
+shared with the brushes, so `--astromotion-wb-inks` now holds at most six inks
+(was seven).
+
+Dev dependencies refreshed (astro 7.4.11, puppeteer-core 25.17).
+
 ## 2026-10-24 (v0.37.2)
 
 ### Dependency refresh
