@@ -8,9 +8,7 @@ it in step when you change a plugin or an option.
 
 ## Commands
 
-- `pnpm test` --- vitest
-- `pnpm typecheck`, `pnpm lint`, `pnpm format:check` --- the rest of what CI
-  runs (`.github/workflows/ci.yml`)
+- CI runs the `package.json` checks (`.github/workflows/ci.yml`)
 - `scripts/release.sh <patch|minor|major|x.y.z> [reason]` --- bump version,
   commit, annotated-tag `vX.Y.Z`, push. Refuses if dirty / off main / out of
   sync. See the anu-theme-sync skill for when to release.
@@ -18,7 +16,7 @@ it in step when you change a plugin or an option.
 ## Architecture
 
 The integration (`index.ts`) registers `@astrojs/mdx`, aliases theme CSS via a
-virtual module, and injects a catch-all deck route. The twelve remark plugins in
+virtual module, and injects a catch-all deck route. The remark plugins in
 `plugins/` are also exported as `deckRemarkPlugins`, for consumers who manage
 `@astrojs/mdx` themselves.
 
