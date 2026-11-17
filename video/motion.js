@@ -49,7 +49,7 @@ export const EASES = Object.keys(EASE_FNS);
 const EASE_STOPS = 64;
 const easeCache = new Map();
 function resolveEase(e = "out-quad") {
-  const key = typeof e === "function" ? e : String(e);
+  const key = e;
   if (easeCache.has(key)) return easeCache.get(key);
   const back = typeof e === "string" && OUT_BACK.exec(e);
   const fn = typeof e === "function" ? e : back ? outBack(parseFloat(back[1])) : EASE_FNS[e];

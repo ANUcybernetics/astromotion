@@ -19,7 +19,10 @@ export function speakerViewScript(): string {
   const source = readFileSync(notes, "utf8");
   const literal = source.match(/"((?:[^"\\]|\\.)*<script>(?:[^"\\]|\\.)*)"/)?.[1];
   if (!literal) throw new Error("astromotion: reveal.js speaker view HTML not found");
-  const html = new Function(`return "${literal}"`)() as string;
+  // oxlint-disable-next-line typescript/no-implied-eval -- evaluates a string literal taken from reveal.js's own source, to decode its escapes; JSON.parse can't (the literal holds non-JSON escapes)
+  const html: unknown = new Function(`return "${literal}"`)();
+  if (typeof html !== "string")
+    throw new Error("astromotion: reveal.js speaker view HTML is not a string");
   const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   if (!script) throw new Error("astromotion: reveal.js speaker view has no inline <script>");
   return script;

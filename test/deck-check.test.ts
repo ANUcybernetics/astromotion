@@ -54,10 +54,12 @@ function withSlide(
     querySelector: () => (heading ? { textContent: heading } : null),
     querySelectorAll: (selector: string) => (selector === "*" ? all : text),
   };
-  const globals = globalThis as unknown as Record<string, unknown>;
-  const prior = { doc: globals.document, gcs: globals.getComputedStyle };
-  globals.document = { querySelector: () => section };
-  globals.getComputedStyle = (node: { overflow: string; padding: number }) => ({
+  const prior = {
+    doc: Reflect.get(globalThis, "document"),
+    gcs: Reflect.get(globalThis, "getComputedStyle"),
+  };
+  Reflect.set(globalThis, "document", { querySelector: () => section });
+  Reflect.set(globalThis, "getComputedStyle", (node: { overflow: string; padding: number }) => ({
     borderBottomWidth: "0px",
     borderRightWidth: "0px",
     overflow: node.overflow,
@@ -65,12 +67,12 @@ function withSlide(
     overflowY: node.overflow,
     paddingBottom: `${node.padding}px`,
     paddingRight: `${node.padding}px`,
-  });
+  }));
   try {
     return run();
   } finally {
-    globals.document = prior.doc;
-    globals.getComputedStyle = prior.gcs;
+    Reflect.set(globalThis, "document", prior.doc);
+    Reflect.set(globalThis, "getComputedStyle", prior.gcs);
   }
 }
 

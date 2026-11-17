@@ -30,6 +30,33 @@ export function assertNoRetiredFlags(data: Record<string, unknown>, where: strin
   }
 }
 
+const STRING_KEYS = ["title", "description", "author", "image"] as const;
+const BOOLEAN_KEYS = ["published", "unlisted"] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Check parsed YAML has the shape of `DeckFrontmatter`; unknown keys pass through. */
+function assertDeckFrontmatter(
+  value: unknown,
+  where: string,
+): asserts value is DeckFrontmatter & Record<string, unknown> {
+  if (!isRecord(value)) {
+    throw new Error(`${where}: frontmatter must be a YAML mapping of keys to values`);
+  }
+  for (const key of STRING_KEYS) {
+    if (value[key] !== undefined && typeof value[key] !== "string") {
+      throw new Error(`${where}: frontmatter \`${key}\` must be a string`);
+    }
+  }
+  for (const key of BOOLEAN_KEYS) {
+    if (value[key] !== undefined && typeof value[key] !== "boolean") {
+      throw new Error(`${where}: frontmatter \`${key}\` must be true or false`);
+    }
+  }
+}
+
 interface DeckMeta {
   data: DeckFrontmatter;
   content: string;
@@ -44,8 +71,10 @@ export function parseDeckFrontmatter(raw: string, slug?: string): DeckMeta {
     };
   }
 
-  const data = parse(fm.data) as DeckFrontmatter;
-  assertNoRetiredFlags(data as Record<string, unknown>, slug ?? "deck");
+  const where = slug ?? "deck";
+  const data: unknown = parse(fm.data);
+  assertDeckFrontmatter(data, where);
+  assertNoRetiredFlags(data, where);
   if (!data.title && slug) {
     data.title = slug;
   }

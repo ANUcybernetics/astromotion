@@ -330,6 +330,7 @@ export function applyAction(
     case "download": // side effect owned by the DOM layer, no state change
       return state;
   }
+  return action satisfies never;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");

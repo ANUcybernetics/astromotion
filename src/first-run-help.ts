@@ -83,7 +83,7 @@ export function isSuppressedView(search: string): boolean {
 // a consumer's screenshot job --- is not a viewer who needs teaching the key
 // bindings, and a card over the first slide would be read as slide content.
 function isAutomatedView(): boolean {
-  return typeof navigator !== "undefined" && navigator.webdriver === true;
+  return typeof navigator !== "undefined" && navigator.webdriver;
 }
 
 // Long enough to read twice at a glance, short enough that a deck left up on a

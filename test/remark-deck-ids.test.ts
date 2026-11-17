@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { RootContent } from "mdast";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkMdx from "remark-mdx";
 import { remarkDeckSections } from "../plugins/remark-deck-sections.ts";
 import { remarkDeckClasses } from "../plugins/remark-deck-classes.ts";
 import { remarkDeckIds } from "../plugins/remark-deck-ids.ts";
+import { attrValue, sectionAt } from "./mdast-helpers.ts";
 
 async function run(input: string, path = "test.deck.mdx") {
   const tree = unified().use(remarkParse).use(remarkMdx).parse(input);
@@ -12,9 +14,7 @@ async function run(input: string, path = "test.deck.mdx") {
   return tree;
 }
 
-function idOf(node: any): string | undefined {
-  return node?.attributes?.find((a: any) => a.name === "id")?.value;
-}
+const idOf = (node: RootContent | undefined) => attrValue(node, "id");
 
 describe("remarkDeckIds", () => {
   it("applies id from {/* _id: */} directive to parent section", async () => {
@@ -25,8 +25,8 @@ describe("remarkDeckIds", () => {
 
   it("removes the directive node from the section's children", async () => {
     const tree = await run("{/* _id: opening */}\n\n# One\n");
-    const section = tree.children[0] as any;
-    expect(section.children.filter((c: any) => c.type === "mdxFlowExpression").length).toBe(0);
+    const section = sectionAt(tree, 0);
+    expect(section.children.filter((c) => c.type === "mdxFlowExpression").length).toBe(0);
   });
 
   it("keeps only the first token, since ids cannot contain spaces", async () => {
@@ -44,10 +44,10 @@ describe("remarkDeckIds", () => {
       .use(remarkDeckClasses)
       .use(remarkDeckIds)
       .run(tree, { path: "test.deck.mdx" });
-    const section = tree.children[0] as any;
-    expect(section.attributes.find((a: any) => a.name === "class")?.value).toBe("hero");
+    const section = sectionAt(tree, 0);
+    expect(attrValue(section, "class")).toBe("hero");
     expect(idOf(section)).toBe("opening");
-    expect(section.children.filter((c: any) => c.type === "mdxFlowExpression").length).toBe(0);
+    expect(section.children.filter((c) => c.type === "mdxFlowExpression").length).toBe(0);
   });
 
   it("does nothing for non-.deck.mdx files", async () => {

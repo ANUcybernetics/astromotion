@@ -9,6 +9,7 @@ import { unified } from "unified";
 import { describe, expect, it } from "vitest";
 import { remarkDeckNotes } from "../plugins/remark-deck-notes.ts";
 import { remarkDeckSections } from "../plugins/remark-deck-sections.ts";
+import { sectionAt } from "./mdast-helpers.ts";
 
 // The reason speaker notes and authoring comments are fences: a multi-line
 // `{/* … */}` comment doesn't survive prettier's markdown printer (which oxfmt
@@ -62,8 +63,8 @@ describe("formatting a deck", () => {
         .use(remarkDeckSections)
         .use(remarkDeckNotes)
         .run(tree, { path: "stability.deck.mdx" });
-      const aside = (tree.children[0] as any).children.find(
-        (c: any) => c.type === "mdxJsxFlowElement" && c.name === "aside",
+      const aside = sectionAt(tree, 0).children.find(
+        (c) => c.type === "mdxJsxFlowElement" && c.name === "aside",
       );
       expect(aside).toBeDefined();
       expect(JSON.stringify(aside)).toContain("second point");

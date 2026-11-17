@@ -1,18 +1,12 @@
 import type { Root, RootContent } from "mdast";
-
-interface MdxJsxFlowElement {
-  type: "mdxJsxFlowElement";
-  name: string;
-  attributes: Array<{ type: "mdxJsxAttribute"; name: string; value: string | null }>;
-  children: RootContent[];
-}
+import { flowChildren, type MdxJsxFlowElement } from "./section-directive.ts";
 
 function makeSection(children: RootContent[]): MdxJsxFlowElement {
   return {
     type: "mdxJsxFlowElement",
     name: "section",
     attributes: [],
-    children,
+    children: flowChildren(children),
   };
 }
 
@@ -30,6 +24,6 @@ export function remarkDeckSections() {
       }
     }
     if (current.length > 0) sections.push(makeSection(current));
-    tree.children = sections as unknown as RootContent[];
+    tree.children = sections;
   };
 }

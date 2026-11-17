@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
+import type { Root, RootContent } from "mdast";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkMdx from "remark-mdx";
 import { remarkDeckSections } from "../plugins/remark-deck-sections.ts";
 import { remarkDeckNotes } from "../plugins/remark-deck-notes.ts";
+import {
+  asElement,
+  attrValue,
+  descendantTypes,
+  ofType,
+  sectionAt,
+  textOf,
+} from "./mdast-helpers.ts";
 
 async function run(input: string) {
   const tree = unified().use(remarkParse).use(remarkMdx).parse(input);
@@ -11,10 +20,15 @@ async function run(input: string) {
   return tree;
 }
 
-function notesAside(tree: any) {
-  return tree.children[0].children.find(
-    (c: any) => c.type === "mdxJsxFlowElement" && c.name === "aside",
+function notesAside(tree: Root) {
+  return sectionAt(tree, 0).children.find(
+    (c) => c.type === "mdxJsxFlowElement" && c.name === "aside",
   );
+}
+
+// The aside's children, which must exist whenever a test reads them.
+function asideChildren(tree: Root): RootContent[] {
+  return asElement(notesAside(tree)).children;
 }
 
 describe("remarkDeckNotes", () => {
@@ -23,13 +37,11 @@ describe("remarkDeckNotes", () => {
     const aside = notesAside(tree);
     expect(aside).toBeDefined();
     // Reveal's notes plugin reads `aside.notes`, so the class must be exactly that
-    expect(aside.attributes.some((a: any) => a.name === "class" && a.value === "notes")).toBe(true);
+    expect(attrValue(aside, "class")).toBe("notes");
     // aria-hidden keeps the presenter-only aside from registering as a
     // complementary landmark in static a11y scans
-    expect(aside.attributes.some((a: any) => a.name === "aria-hidden" && a.value === "true")).toBe(
-      true,
-    );
-    const codeNodes = (tree.children[0] as any).children.filter((c: any) => c.type === "code");
+    expect(attrValue(aside, "aria-hidden")).toBe("true");
+    const codeNodes = sectionAt(tree, 0).children.filter((c) => c.type === "code");
     expect(codeNodes.length).toBe(0);
   });
 
@@ -37,11 +49,12 @@ describe("remarkDeckNotes", () => {
     const tree = await run(
       "# Title\n\n```notes\n- first, with *emphasis*\n- second, with a [link](https://example.com)\n```\n",
     );
-    const aside = notesAside(tree);
-    expect(aside.children.map((c: any) => c.type)).toEqual(["list"]);
-    const [first, second] = aside.children[0].children;
-    expect(first.children[0].children.some((c: any) => c.type === "emphasis")).toBe(true);
-    expect(second.children[0].children.some((c: any) => c.type === "link")).toBe(true);
+    const aside = asElement(notesAside(tree));
+    expect(aside.children.map((c) => c.type)).toEqual(["list"]);
+    const [list] = ofType(aside.children, "list");
+    const [first, second] = list?.children ?? [];
+    expect(first && descendantTypes(first)).toContain("emphasis");
+    expect(second && descendantTypes(second)).toContain("link");
     // nothing arrives as a raw `html` node any more
     expect(JSON.stringify(aside)).not.toContain('"html"');
   });
@@ -49,16 +62,15 @@ describe("remarkDeckNotes", () => {
   it("keeps a code fence that isn't notes on the slide", async () => {
     const tree = await run("# Title\n\n```js\nconst answer = 42;\n```\n");
     expect(notesAside(tree)).toBeUndefined();
-    const code = (tree.children[0] as any).children.find((c: any) => c.type === "code");
-    expect(code.lang).toBe("js");
+    const [code] = ofType(sectionAt(tree, 0).children, "code");
+    expect(code?.lang).toBe("js");
   });
 
   it("reads two fences in one slide as one set of notes, in source order", async () => {
     const tree = await run("# Title\n\n```notes\nfirst\n```\n\nbody\n\n```notes\nsecond\n```\n");
-    const aside = notesAside(tree);
-    expect(aside.children.length).toBe(2);
-    expect(aside.children[0].children[0].value).toBe("first");
-    expect(aside.children[1].children[0].value).toBe("second");
+    const children = asideChildren(tree);
+    expect(children.length).toBe(2);
+    expect(children.map(textOf)).toEqual(["first", "second"]);
   });
 
   it("does nothing when no notes fence is present", async () => {

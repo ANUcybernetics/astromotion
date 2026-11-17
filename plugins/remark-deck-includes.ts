@@ -1,4 +1,4 @@
-import type { Root } from "mdast";
+import type { Root, RootContent } from "mdast";
 import { readFileSync } from "node:fs";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
@@ -21,13 +21,10 @@ const mdxParseProcessor = unified()
 // into the deck's vfile. Drop them so downstream plugins can treat "has a
 // position" as "came from the deck's own source" --- e.g. remarkDeckBg re-reads
 // an image's raw alt from file.value for genuine inline images only.
-function stripPositions(node: { position?: unknown; children?: unknown[] }): void {
+function stripPositions(node: RootContent): void {
   delete node.position;
-  const children = node.children;
-  if (Array.isArray(children)) {
-    for (const child of children) {
-      stripPositions(child as { position?: unknown; children?: unknown[] });
-    }
+  if ("children" in node) {
+    for (const child of node.children) stripPositions(child);
   }
 }
 
@@ -37,8 +34,8 @@ function resolveIncludesIn(root: Root, ancestors: string[]): void {
   const fromFile = ancestors.at(-1)!;
   for (let i = root.children.length - 1; i >= 0; i--) {
     const node = root.children[i];
-    if ((node as any).type !== "mdxFlowExpression") continue;
-    const includePath = parseIncludeDirectiveMdx((node as any).value);
+    if (node.type !== "mdxFlowExpression") continue;
+    const includePath = parseIncludeDirectiveMdx(node.value);
     if (!includePath) continue;
     if (!includePath.endsWith(".mdx")) {
       throw new Error(

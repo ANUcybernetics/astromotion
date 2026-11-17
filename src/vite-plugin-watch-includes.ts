@@ -7,7 +7,7 @@ const FLOW_EXPR_RE = /\{\s*(\/\*[\s\S]*?\*\/)\s*\}/g;
 function walk(source: string, fromFile: string, visited: Set<string>, depth: number): void {
   if (depth > MAX_DEPTH) return;
   for (const match of source.matchAll(FLOW_EXPR_RE)) {
-    const includePath = parseIncludeDirectiveMdx(match[1]!);
+    const includePath = parseIncludeDirectiveMdx(match[1]);
     if (!includePath) continue;
     if (!includePath.endsWith(".mdx")) continue;
     let absPath: string;
@@ -70,7 +70,7 @@ export function viteDeckWatchIncludes() {
       server = s;
     },
     transform(_code: string, id: string) {
-      const cleanId = id.split("?")[0]!;
+      const cleanId = id.split("?")[0];
       if (!cleanId.endsWith(".deck.mdx")) return null;
       let source: string;
       try {
@@ -85,7 +85,7 @@ export function viteDeckWatchIncludes() {
     },
     handleHotUpdate(ctx: { file: string }) {
       const decks = decksByInclude.get(ctx.file);
-      if (!decks || decks.size === 0 || !server) return;
+      if (!decks || decks.size === 0 || !server) return undefined;
       // Invalidate each parent deck's compiled module before reloading;
       // without this the dev server re-serves the stale compiled MDX and the
       // full-reload shows no change.

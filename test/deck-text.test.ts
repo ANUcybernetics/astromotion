@@ -33,34 +33,43 @@ describe("deck-text directive parsing matches src/parse-helpers.ts", () => {
   ];
 
   const parsers = [
-    "parseMdxFlowExpression",
-    "parseClassDirectiveMdx",
-    "parseIdDirectiveMdx",
-    "parseIfDirectiveMdx",
-    "isLegacyNotesDirective",
-    "isMultilineMdxComment",
-    "parseIncludeDirectiveMdx",
-    "parseAnimateDirectiveMdx",
+    ["parseMdxFlowExpression", exporter.parseMdxFlowExpression, helpers.parseMdxFlowExpression],
+    ["parseClassDirectiveMdx", exporter.parseClassDirectiveMdx, helpers.parseClassDirectiveMdx],
+    ["parseIdDirectiveMdx", exporter.parseIdDirectiveMdx, helpers.parseIdDirectiveMdx],
+    ["parseIfDirectiveMdx", exporter.parseIfDirectiveMdx, helpers.parseIfDirectiveMdx],
+    ["isLegacyNotesDirective", exporter.isLegacyNotesDirective, helpers.isLegacyNotesDirective],
+    ["isMultilineMdxComment", exporter.isMultilineMdxComment, helpers.isMultilineMdxComment],
+    [
+      "parseIncludeDirectiveMdx",
+      exporter.parseIncludeDirectiveMdx,
+      helpers.parseIncludeDirectiveMdx,
+    ],
+    [
+      "parseAnimateDirectiveMdx",
+      exporter.parseAnimateDirectiveMdx,
+      helpers.parseAnimateDirectiveMdx,
+    ],
   ] as const;
 
-  for (const parser of parsers) {
+  for (const [parser, copy, original] of parsers) {
     it(parser, () => {
       for (const directive of directives) {
-        expect(
-          (exporter as Record<string, (v: string) => unknown>)[parser](directive),
-          `${parser}(${JSON.stringify(directive)})`,
-        ).toEqual((helpers as Record<string, (v: string) => unknown>)[parser](directive));
+        expect(copy(directive), `${parser}(${JSON.stringify(directive)})`).toEqual(
+          original(directive),
+        );
       }
     });
   }
 
-  for (const parser of ["isNotesFence", "isCommentFence"] as const) {
+  const fenceChecks = [
+    ["isNotesFence", exporter.isNotesFence, helpers.isNotesFence],
+    ["isCommentFence", exporter.isCommentFence, helpers.isCommentFence],
+  ] as const;
+
+  for (const [parser, copy, original] of fenceChecks) {
     it(parser, () => {
       for (const lang of ["notes", "comment", "js", "", null, undefined]) {
-        expect(
-          (exporter as Record<string, (v: unknown) => unknown>)[parser](lang),
-          `${parser}(${JSON.stringify(lang)})`,
-        ).toEqual((helpers as Record<string, (v: unknown) => unknown>)[parser](lang));
+        expect(copy(lang), `${parser}(${JSON.stringify(lang)})`).toEqual(original(lang));
       }
     });
   }

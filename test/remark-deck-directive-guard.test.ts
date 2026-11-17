@@ -9,6 +9,7 @@ import { remarkDeckIncludes } from "../plugins/remark-deck-includes.ts";
 import { remarkDeckSections } from "../plugins/remark-deck-sections.ts";
 import { remarkDeckClasses } from "../plugins/remark-deck-classes.ts";
 import { remarkDeckIds } from "../plugins/remark-deck-ids.ts";
+import { attrValue, sectionAt } from "./mdast-helpers.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -51,8 +52,8 @@ describe("remarkDeckDirectiveGuard", () => {
       .use(remarkDeckClasses)
       .use(remarkDeckIds)
       .run(tree, { path: "deck.deck.mdx" });
-    const section = tree.children[0] as any;
-    const value = (name: string) => section.attributes.find((a: any) => a.name === name)?.value;
+    const section = sectionAt(tree, 0);
+    const value = (name: string) => attrValue(section, name);
     expect(value("class")).toBe("impact");
     expect(value("id")).toBe("intro");
   });

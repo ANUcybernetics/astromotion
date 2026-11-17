@@ -1,17 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
+import type { RootContent } from "mdast";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import { remarkDeckSections } from "../plugins/remark-deck-sections.ts";
 import { remarkDeckBg } from "../plugins/remark-deck-bg.ts";
 import { buildState } from "../src/build-config.ts";
+import { asElement, attrValue, sectionAt } from "./mdast-helpers.ts";
 
-function classOf(node: any): string | undefined {
-  return node?.attributes?.find((a: any) => a.name === "class")?.value;
-}
-
-function styleOf(node: any): string | undefined {
-  return node?.attributes?.find((a: any) => a.name === "style")?.value;
-}
+const classOf = (node: RootContent | undefined) => attrValue(node, "class");
+const styleOf = (node: RootContent | undefined) => attrValue(node, "style");
 
 describe("remarkDeckBg", () => {
   afterEach(() => {
@@ -22,14 +19,13 @@ describe("remarkDeckBg", () => {
     const input = "# Title\n\n![bg](./photo.jpg)\n\nbody\n";
     const tree = unified().use(remarkParse).parse(input);
     await unified().use(remarkDeckSections).use(remarkDeckBg).run(tree, { path: "test.deck.mdx" });
-    const section = tree.children[0] as any;
-    const first = section.children[0];
-    expect(first.type).toBe("mdxJsxFlowElement");
+    const section = sectionAt(tree, 0);
+    const first = asElement(section.children[0]);
     expect(first.name).toBe("div");
     expect(classOf(first)).toBe("slide-bg");
     expect(styleOf(first)).toContain("./photo.jpg");
     const imageParas = section.children.filter(
-      (c: any) => c.type === "paragraph" && c.children?.[0]?.type === "image",
+      (c) => c.type === "paragraph" && c.children[0]?.type === "image",
     );
     expect(imageParas.length).toBe(0);
   });
@@ -38,9 +34,8 @@ describe("remarkDeckBg", () => {
     const input = "# Title\n\n![bg right:40%](./side.jpg)\n\nbody\n";
     const tree = unified().use(remarkParse).parse(input);
     await unified().use(remarkDeckSections).use(remarkDeckBg).run(tree, { path: "test.deck.mdx" });
-    const section = tree.children[0] as any;
-    const layout = section.children[0];
-    expect(layout.type).toBe("mdxJsxFlowElement");
+    const section = sectionAt(tree, 0);
+    const layout = asElement(section.children[0]);
     expect(classOf(layout)).toBe("split-layout");
     // For right: content first, image second
     const [content, image] = layout.children;
@@ -56,7 +51,7 @@ describe("remarkDeckBg", () => {
       .use(remarkDeckSections)
       .use(remarkDeckBg)
       .run(tree, { path: "/proj/src/decks/test.deck.mdx" });
-    const section = tree.children[0] as any;
+    const section = sectionAt(tree, 0);
     expect(styleOf(section.children[0])).toContain("url('/src/decks/assets/photo.jpg')");
   });
 
@@ -68,7 +63,7 @@ describe("remarkDeckBg", () => {
       .use(remarkDeckSections)
       .use(remarkDeckBg)
       .run(tree, { path: "/proj/src/decks/test.deck.mdx" });
-    const section = tree.children[0] as any;
+    const section = sectionAt(tree, 0);
     expect(styleOf(section.children[0])).toContain("url('/test-base/src/decks/assets/photo.jpg')");
   });
 
@@ -82,7 +77,7 @@ describe("remarkDeckBg", () => {
       .use(remarkDeckSections)
       .use(remarkDeckBg)
       .run(tree, { path: "/home/ben/src/sites/proj/src/decks/test.deck.mdx" });
-    const section = tree.children[0] as any;
+    const section = sectionAt(tree, 0);
     expect(styleOf(section.children[0])).toContain("url('/src/decks/assets/photo.jpg')");
   });
 
@@ -93,7 +88,7 @@ describe("remarkDeckBg", () => {
       .use(remarkDeckSections)
       .use(remarkDeckBg)
       .run(tree, { path: "/proj/src/decks/test.deck.mdx" });
-    const section = tree.children[0] as any;
+    const section = sectionAt(tree, 0);
     expect(styleOf(section.children[0])).toContain("url('../../../outside.jpg')");
   });
 
@@ -101,7 +96,7 @@ describe("remarkDeckBg", () => {
     const input = "# Title\n\n![bg brightness:0.5 blur:2px](./photo.jpg)\n";
     const tree = unified().use(remarkParse).parse(input);
     await unified().use(remarkDeckSections).use(remarkDeckBg).run(tree, { path: "test.deck.mdx" });
-    const section = tree.children[0] as any;
+    const section = sectionAt(tree, 0);
     const first = section.children[0];
     expect(styleOf(first)).toContain("filter: brightness(0.5) blur(2px)");
   });

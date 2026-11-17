@@ -131,8 +131,9 @@ export function measureSlide(textSelector, tolerance) {
       hiddenY = Math.max(hiddenY, r.bottom - edgeBottom);
       hiddenX = Math.max(hiddenX, r.right - edgeRight);
     }
-    const name =
-      el.tagName.toLowerCase() + (el.className ? "." + String(el.className).split(" ")[0] : "");
+    // oxlint-disable-next-line typescript/no-unnecessary-type-conversion -- el may be an SVG element, whose className is an SVGAnimatedString, not the string the inferred type claims
+    const cls = String(el.className);
+    const name = el.tagName.toLowerCase() + (el.className ? "." + cls.split(" ")[0] : "");
 
     if (hiddenY > tolerance || hiddenX > tolerance) {
       const vertical = hiddenY > tolerance;

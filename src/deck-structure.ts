@@ -102,7 +102,7 @@ export function checkDeckHtml(html: string, page: string): DeckViolation[] {
   }
 
   for (let i = 0; i < sections.length; i++) {
-    const section = sections[i] as Element;
+    const section = sections[i];
     const slideLabel = `slide ${i + 1}`;
 
     const bg = section.querySelector(".slide-bg");

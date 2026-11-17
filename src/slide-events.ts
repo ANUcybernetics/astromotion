@@ -28,11 +28,15 @@ interface SlideDeck {
 
 // Leaves out aria-hidden content, such as the `#` of a heading's anchor link,
 // so the title is what a screen reader would announce.
+// A nodeType check rather than `instanceof Element`, which fails across realms
+// (a deck in an iframe, or a DOM shim in tests).
+function isElement(node: Node): node is Element {
+  return node.nodeType === 1;
+}
+
 export function slideTitle(slide: Element): string | null {
-  const heading = slide.querySelector("h1, h2, h3, h4, h5, h6")?.cloneNode(true) as
-    | Element
-    | undefined;
-  if (!heading) return null;
+  const heading = slide.querySelector("h1, h2, h3, h4, h5, h6")?.cloneNode(true);
+  if (!heading || !isElement(heading)) return null;
   for (const hidden of heading.querySelectorAll('[aria-hidden="true"]')) hidden.remove();
   return heading.textContent?.replace(/\s+/g, " ").trim() || null;
 }

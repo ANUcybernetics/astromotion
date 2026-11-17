@@ -8,6 +8,7 @@ import { type Browser, launch, type Page } from "puppeteer-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { chromeArgs, findChrome } from "../src/chrome.mjs";
+import { pageNumberRows, pageNumbers, pageString, pageStrings } from "./page-eval.ts";
 
 const root = join(import.meta.dirname, "..", "video");
 const PAGE = `<!doctype html><html><body style="margin:0">
@@ -90,39 +91,44 @@ async function fresh(deviceScaleFactor = 1) {
   await page.waitForFunction("window.moduleReady === true");
 }
 
-const run = <T>(fn: string) =>
+const run = (fn: string): Promise<unknown> =>
   page.evaluate(
     `(() => { const M = window.M, C = window.C; const stage = document.getElementById("stage"); ${fn} })()`,
-  ) as Promise<T>;
+  );
 
 describe("video canvas layer", () => {
   it("draws the same pixels for the same t, however it was reached", async () => {
     await fresh(2);
-    const seeked = await run<string[]>(`
+    const seeked = pageStrings(
+      await run(`
       const tl = M.timeline();
       const c = window.field(tl, stage);
       const ctl = tl.finish(6);
       const at = (t) => (ctl.seek(t), window.pixels(c.el));
       return [at(1.5), at(4), at(0), at(1.5), at(0.2), at(4), at(1.5)];
-    `);
+    `),
+    );
     expect(seeked[0]).toBe(seeked[3]);
     expect(seeked[0]).toBe(seeked[6]);
     expect(seeked[1]).toBe(seeked[5]);
     expect(new Set([seeked[0], seeked[1], seeked[2], seeked[4]]).size).toBe(4);
     // a cold page seeking straight to the frame, as a parallel renderer does
     await fresh(2);
-    const cold = await run<string>(`
+    const cold = pageString(
+      await run(`
       const tl = M.timeline();
       const c = window.field(tl, stage);
       tl.finish(6).seek(1.5);
       return window.pixels(c.el);
-    `);
+    `),
+    );
     expect(cold).toBe(seeked[0]);
   });
 
   it("resets the context between frames, so no state leaks from one seek to the next", async () => {
     await fresh();
-    const out = await run<string[]>(`
+    const out = pageStrings(
+      await run(`
       const tl = M.timeline();
       const c = C.canvas(tl, stage, (ctx, t) => {
         if (t > 1) {
@@ -135,14 +141,16 @@ describe("video canvas layer", () => {
       const ctl = tl.finish(2);
       const at = (t) => (ctl.seek(t), window.pixels(c.el));
       return [at(0), at(2), at(0)];
-    `);
+    `),
+    );
     expect(out[0]).not.toBe(out[1]);
     expect(out[2]).toBe(out[0]);
   });
 
   it("sizes the backing store for the device pixel ratio, times density", async () => {
     await fresh(2);
-    const out = await run<number[]>(`
+    const out = pageNumbers(
+      await run(`
       const tl = M.timeline();
       const a = C.canvas(tl, stage, (ctx) => {
         ctx.fillStyle = "#000";
@@ -154,14 +162,16 @@ describe("video canvas layer", () => {
       const box = a.el.getBoundingClientRect();
       return [a.el.width, a.el.height, b.el.width, b.el.height, box.width, box.height,
         alpha(19, 19), alpha(20, 20), alpha(59, 59), alpha(60, 60)];
-    `);
+    `),
+    );
     expect(out.slice(0, 6)).toEqual([200, 100, 300, 150, 100, 50]);
     expect(out.slice(6)).toEqual([0, 255, 255, 0]);
   });
 
   it("places and tweens the canvas element like any other", async () => {
     await fresh();
-    const out = await run<string[]>(`
+    const out = pageStrings(
+      await run(`
       const tl = M.timeline();
       const c = C.canvas(tl, stage, () => {}, { x: 30, y: 40, w: 10, h: 10 });
       M.set(c.el, { opacity: 0 });
@@ -170,16 +180,19 @@ describe("video canvas layer", () => {
       ctl.seek(1);
       const s = getComputedStyle(c.el);
       return [s.translate, s.opacity];
-    `);
+    `),
+    );
     expect(out).toEqual(["130px 40px", "1"]);
   });
 
   it("gives the same numbers for the same seed", async () => {
     await fresh();
-    const out = await run<number[][]>(`
+    const out = pageNumberRows(
+      await run(`
       const take = (seed) => { const r = C.rng(seed); return Array.from({ length: 1000 }, r); };
       return [take(7), take(7), take(8)];
-    `);
+    `),
+    );
     expect(out[0]).toEqual(out[1]);
     expect(out[0]).not.toEqual(out[2]);
     expect(out[0].every((v) => v >= 0 && v < 1)).toBe(true);
@@ -189,10 +202,12 @@ describe("video canvas layer", () => {
 
   it("eases progress through a phase", async () => {
     await fresh();
-    const out = await run<number[]>(`
+    const out = pageNumbers(
+      await run(`
       return [C.phase(0, 1, 2), C.phase(2, 1, 2), C.phase(4, 1, 2), C.phase(2, 1, 2, "out-quad"),
         C.phase(0.9, 1, 0), C.phase(1, 1, 0)];
-    `);
+    `),
+    );
     expect(out).toEqual([0, 0.5, 1, 0.75, 0, 1]);
   });
 });

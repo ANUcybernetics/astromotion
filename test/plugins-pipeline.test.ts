@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Root } from "mdast";
+import type { Root, RootContent } from "mdast";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -9,34 +9,35 @@ import remarkMdx from "remark-mdx";
 import remarkSmartypants from "remark-smartypants";
 import remarkDirective from "remark-directive";
 import { deckRemarkPlugins } from "../plugins/index.ts";
+import { attrValue, sectionAt } from "./mdast-helpers.ts";
 
 async function runPipeline(input: string, filePath: string): Promise<Root> {
   const processor = unified().use(remarkParse).use(remarkMdx).use(deckRemarkPlugins);
   const tree = processor.parse(input);
   await processor.run(tree, { path: filePath });
-  return tree as Root;
+  return tree;
 }
 
 function collectText(tree: Root): string[] {
   const out: string[] = [];
-  function walk(node: any): void {
-    if (node?.type === "text" && typeof node.value === "string") out.push(node.value);
-    if (Array.isArray(node?.children)) for (const c of node.children) walk(c);
+  function walk(node: Root | RootContent): void {
+    if (node.type === "text") out.push(node.value);
+    if ("children" in node) for (const c of node.children) walk(c);
   }
   walk(tree);
   return out;
 }
 
-function classOf(node: any): string | undefined {
-  return node?.attributes?.find((a: any) => a.name === "class")?.value;
-}
+const classOf = (node: RootContent | undefined) => attrValue(node, "class");
+const styleOf = (node: RootContent | undefined) => attrValue(node, "style");
 
-function styleOf(node: any): string | undefined {
-  return node?.attributes?.find((a: any) => a.name === "style")?.value;
-}
-
-function findChild(parent: any, predicate: (n: any) => boolean): any {
-  return (parent.children as any[]).find(predicate);
+function findChild(
+  parent: Root | RootContent | undefined,
+  predicate: (n: RootContent) => boolean,
+): RootContent | undefined {
+  if (!parent || !("children" in parent)) return undefined;
+  const children: RootContent[] = parent.children;
+  return children.find(predicate);
 }
 
 describe("deck plugin pipeline", () => {
@@ -63,11 +64,9 @@ body
 `;
     const tree = await runPipeline(input, "/decks/foo.deck.mdx");
     expect(tree.children.length).toBe(3);
-    const [s1, s2, s3] = tree.children as any[];
+    const [s1, s2, s3] = [sectionAt(tree, 0), sectionAt(tree, 1), sectionAt(tree, 2)];
 
     // Slide 1: section with class banner, includes a slide-bg div child
-    expect(s1.type).toBe("mdxJsxFlowElement");
-    expect(s1.name).toBe("section");
     expect(classOf(s1)).toBe("banner");
     const slideBg = findChild(
       s1,
@@ -109,7 +108,7 @@ body
       .use(remarkMdx)
       .use(remarkSmartypants) // simulate @astrojs/mdx default
       .use(deckRemarkPlugins);
-    const tree = processor.parse(input) as Root;
+    const tree = processor.parse(input);
     await processor.run(tree, { path: join(dir, "deck.deck.mdx") });
     const texts = collectText(tree);
     expect(texts.some((t) => t.includes("---"))).toBe(false);
@@ -142,17 +141,18 @@ body
       .use(remarkMdx)
       .use(remarkDirective) // consumer enables this for ::: containers
       .use(deckRemarkPlugins);
-    const tree = processor.parse(input) as Root;
+    const tree = processor.parse(input);
 
     // Sanity: confirm remark-directive really did mangle the inline alt.
     const inlinePara = findChild(
       tree,
-      (n) => n.type === "paragraph" && n.children?.[0]?.type === "image",
+      (n) => n.type === "paragraph" && n.children[0]?.type === "image",
     );
-    expect(inlinePara.children[0].alt).toBe("bg right%");
+    const inlineImageNode = inlinePara?.type === "paragraph" ? inlinePara.children[0] : undefined;
+    expect(inlineImageNode?.type === "image" && inlineImageNode.alt).toBe("bg right%");
 
     await processor.run(tree, { path: join(dir, "deck.deck.mdx"), value: input });
-    const [s1, s2] = tree.children as any[];
+    const [s1, s2] = [sectionAt(tree, 0), sectionAt(tree, 1)];
 
     const inlineSplit = findChild(s1, (n) => classOf(n) === "split-layout");
     expect(inlineSplit).toBeDefined();

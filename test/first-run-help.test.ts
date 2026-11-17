@@ -18,7 +18,7 @@ const fakeStore = (): Storage & { size: () => number } => {
 };
 
 const throwingStore = (): Storage =>
-  new Proxy({} as Storage, {
+  new Proxy<Storage>(Object.create(null), {
     get() {
       throw new DOMException("storage disabled");
     },

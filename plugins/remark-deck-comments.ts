@@ -1,4 +1,4 @@
-import type { Root, RootContent } from "mdast";
+import type { Parent, Root, RootContent } from "mdast";
 import { isCommentFence, isMultilineMdxComment } from "../src/parse-helpers.ts";
 
 /**
@@ -16,15 +16,14 @@ import { isCommentFence, isMultilineMdxComment } from "../src/parse-helpers.ts";
 export function remarkDeckComments() {
   return (tree: Root, file: { path?: string }) => {
     if (!file.path?.endsWith(".deck.mdx")) return;
-    walk(tree as unknown as RootContent, file.path);
+    walk(tree, file.path);
   };
 }
 
 // Recursive rather than a pass over section children: a comment fence is prose
 // the author put wherever it belongs, including inside a JSX block or a list.
-function walk(node: RootContent, path: string) {
-  const children = (node as any).children as RootContent[] | undefined;
-  if (!children) return;
+function walk(node: Root | Parent, path: string) {
+  const children: RootContent[] = node.children;
   const kept: RootContent[] = [];
   for (const child of children) {
     if (
@@ -34,10 +33,10 @@ function walk(node: RootContent, path: string) {
       throw new Error(multilineCommentError(path, child));
     }
     if (child.type === "code" && isCommentFence(child.lang)) continue;
-    walk(child, path);
+    if ("children" in child) walk(child, path);
     kept.push(child);
   }
-  (node as any).children = kept;
+  node.children = kept;
 }
 
 function multilineCommentError(path: string, node: RootContent): string {

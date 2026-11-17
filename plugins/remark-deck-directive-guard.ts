@@ -28,7 +28,7 @@ export function remarkDeckDirectiveGuard() {
  * the partial and its line rather than the deck that included it.
  */
 export function assertNoInlineDirectives(tree: Root, path: string): void {
-  walk(tree as unknown as Node, (node) => {
+  walk(tree, (node) => {
     if (node.type !== "mdxTextExpression") return;
     if (!isSlideDirective(node.value ?? "")) return;
     throw new Error(inlineDirectiveError(path, node));

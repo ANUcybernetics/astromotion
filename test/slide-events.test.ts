@@ -37,9 +37,10 @@ function fakeDeck(opts: { speakerNotes?: boolean; printView?: boolean } = {}) {
 
 function collect(target: EventTarget): SlideChangeDetail[] {
   const seen: SlideChangeDetail[] = [];
-  target.addEventListener(SLIDE_CHANGE_EVENT, (e) =>
-    seen.push((e as CustomEvent<SlideChangeDetail>).detail),
-  );
+  target.addEventListener(SLIDE_CHANGE_EVENT, (e) => {
+    if (!(e instanceof CustomEvent)) throw new Error(`expected a CustomEvent, got ${e.type}`);
+    seen.push(e.detail);
+  });
   return seen;
 }
 

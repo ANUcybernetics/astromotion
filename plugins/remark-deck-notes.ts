@@ -3,7 +3,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { isLegacyNotesDirective, isNotesFence } from "../src/parse-helpers.ts";
-import { attr } from "./section-directive.ts";
+import { attr, flowChildren, isSection } from "./section-directive.ts";
 
 // Notes are authored as markdown, so a fence body has to be parsed into mdast
 // before it can join the tree. `unified().parse` runs no transformers ---
@@ -16,24 +16,22 @@ const notesParser = unified().use(remarkParse).use(remarkGfm);
 export function remarkDeckNotes() {
   return (tree: Root, file: { path?: string }) => {
     if (!file.path?.endsWith(".deck.mdx")) return;
-    for (const section of tree.children) {
-      if ((section as any).type !== "mdxJsxFlowElement" || (section as any).name !== "section")
-        continue;
-      const sec = section as any;
+    for (const sec of tree.children) {
+      if (!isSection(sec)) continue;
       const kept: RootContent[] = [];
       const notes: RootContent[] = [];
-      for (const child of sec.children as RootContent[]) {
+      for (const child of sec.children) {
         if (child.type === "mdxFlowExpression" && isLegacyNotesDirective(child.value)) {
           throw new Error(legacyNotesError(file.path, child));
         }
         if (child.type === "code" && isNotesFence(child.lang)) {
           // Two fences in one slide read as one set of notes, in source order.
-          notes.push(...(notesParser.parse(child.value).children as RootContent[]));
+          notes.push(...notesParser.parse(child.value).children);
           continue;
         }
         kept.push(child);
       }
-      sec.children = kept;
+      sec.children = flowChildren(kept);
       // `<aside class="notes">` is the element Reveal's notes plugin reads
       // for the speaker view; reveal core CSS hides it (`display:none`) so
       // the audience never sees it. `aria-hidden` is needed too: the notes
@@ -45,7 +43,7 @@ export function remarkDeckNotes() {
           type: "mdxJsxFlowElement",
           name: "aside",
           attributes: [attr("class", "notes"), attr("aria-hidden", "true")],
-          children: notes,
+          children: flowChildren(notes),
         });
       }
     }

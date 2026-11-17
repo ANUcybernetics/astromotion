@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkMdx from "remark-mdx";
+import { nodeAt, ofType, textOf } from "./mdast-helpers.ts";
 import { remarkDeckIncludes } from "../plugins/remark-deck-includes.ts";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,7 +28,7 @@ describe("remarkDeckIncludes", () => {
       .use(remarkDeckIncludes)
       .run(tree, { path: path.join(__dirname, "ordinary.md") });
     expect(tree.children.length).toBe(1);
-    expect((tree.children[0] as any).type).toBe("mdxFlowExpression");
+    expect(nodeAt(tree, 0).type).toBe("mdxFlowExpression");
   });
 
   it("recurses into included files", async () => {
@@ -104,13 +105,11 @@ describe("remarkDeckIncludes", () => {
       .run(tree, { path: path.join(__dirname, "main.deck.mdx") });
     // The deck's own heading keeps its position; the spliced-in heading does
     // not, since its offset referenced the partial file rather than the deck.
-    const own = tree.children.find(
-      (n: any) => n.type === "heading" && n.children[0].value === "Deck",
-    );
-    const spliced = tree.children.find(
-      (n: any) => n.type === "heading" && n.children[0].value === "Partial heading",
-    );
-    expect((own as any).position).toBeDefined();
-    expect((spliced as any).position).toBeUndefined();
+    const headingNamed = (text: string) =>
+      ofType(tree.children, "heading").find((h) => textOf(h) === text);
+    expect(headingNamed("Deck")?.position).toBeDefined();
+    const spliced = headingNamed("Partial heading");
+    expect(spliced).toBeDefined();
+    expect(spliced?.position).toBeUndefined();
   });
 });

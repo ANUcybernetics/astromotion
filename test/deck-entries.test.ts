@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { astromotion } from "../index.ts";
+import { runConfigSetup } from "./astro-hooks.ts";
 import { buildState } from "../src/build-config.ts";
 import { deckTextEntries } from "../src/deck-entries.ts";
 import { deckSlugFromPath } from "../src/deck-slug.ts";
@@ -193,16 +194,10 @@ describe("deckTextEntries", () => {
 // The defaults are the whole point of the buildState round-trip: a build-time
 // caller (a theme generating an llms.txt) knows neither the project root nor
 // the prefix the consumer chose, and shouldn't have to be told either.
-function setup(root: string, options: Parameters<typeof astromotion>[0] = {}) {
-  const hooks = astromotion(options).hooks as Record<string, (args: unknown) => unknown>;
-  hooks["astro:config:setup"]({
-    config: {
-      root: new URL(`file://${root}/`),
-      base: "/",
-      integrations: [{ name: "@astrojs/mdx" }],
-    },
-    updateConfig: () => {},
-    injectRoute: () => {},
+async function setup(root: string, options: Parameters<typeof astromotion>[0] = {}) {
+  await runConfigSetup(astromotion(options), {
+    root: new URL(`file://${root}/`),
+    integrations: [{ name: "@astrojs/mdx" }],
   });
 }
 
@@ -215,7 +210,7 @@ describe("defaults recorded by the integration", () => {
 
   test("uses the root and prefix from config:setup when given neither", async () => {
     const root = await project({ "week-7.deck.mdx": deck("title: Week 7") });
-    setup(root, { routePrefix: "/lectures" });
+    await setup(root, { routePrefix: "/lectures" });
 
     const entries = await deckTextEntries();
 
@@ -225,7 +220,7 @@ describe("defaults recorded by the integration", () => {
 
   test("falls back to the default deck prefix", async () => {
     const root = await project({ "week-8.deck.mdx": deck("title: Week 8") });
-    setup(root);
+    await setup(root);
 
     const [entry] = await deckTextEntries();
 

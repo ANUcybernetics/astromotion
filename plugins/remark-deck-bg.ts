@@ -1,9 +1,15 @@
-import type { Image, Paragraph, Root, RootContent } from "mdast";
+import type { Image, Root, RootContent } from "mdast";
 import { dirname, resolve } from "node:path";
 import { buildState } from "../src/build-config.ts";
 import { deckAssetPath, deckProjectRoot } from "../src/deck-assets.ts";
 import { withBase } from "../src/head-urls.ts";
 import { parseBgModifiers } from "../src/parse-helpers.ts";
+import {
+  flowChildren,
+  isSection,
+  type MdxJsxAttribute,
+  type MdxJsxFlowElement,
+} from "./section-directive.ts";
 
 interface BgImage {
   url: string;
@@ -25,19 +31,6 @@ function resolveAssetUrl(url: string, deckPath: string | undefined): string {
   const assetPath = deckAssetPath(root, resolve(dirname(deckPath), url));
   if (assetPath === null) return url;
   return withBase(`/${assetPath}`, buildState.base);
-}
-
-interface MdxJsxAttribute {
-  type: "mdxJsxAttribute";
-  name: string;
-  value: string | null;
-}
-
-interface MdxJsxFlowElement {
-  type: "mdxJsxFlowElement";
-  name: string;
-  attributes: MdxJsxAttribute[];
-  children: RootContent[];
 }
 
 // Recover an inline bg image's alt straight from the deck source.
@@ -63,11 +56,11 @@ function rawImageAlt(img: Image, file: { value?: unknown }): string {
 
 function asBgImageParagraph(node: RootContent, file: { value?: unknown }): BgImage | null {
   if (node.type !== "paragraph") return null;
-  const para = node as Paragraph;
+  const para = node;
   if (para.children.length !== 1) return null;
   const child = para.children[0];
   if (child.type !== "image") return null;
-  const img = child as Image;
+  const img = child;
   const alt = rawImageAlt(img, file);
   if (!alt.startsWith("bg")) return null;
   return { url: img.url, ...parseBgModifiers(alt.slice(2)) };
@@ -80,7 +73,12 @@ function attr(name: string, value: string): MdxJsxAttribute {
 function div(className: string, style: string | null, children: RootContent[]): MdxJsxFlowElement {
   const attrs: MdxJsxAttribute[] = [attr("class", className)];
   if (style) attrs.push(attr("style", style));
-  return { type: "mdxJsxFlowElement", name: "div", attributes: attrs, children };
+  return {
+    type: "mdxJsxFlowElement",
+    name: "div",
+    attributes: attrs,
+    children: flowChildren(children),
+  };
 }
 
 function slideBgStyle(img: BgImage): string {
@@ -104,13 +102,11 @@ function splitImageStyle(img: BgImage): string {
 export function remarkDeckBg() {
   return (tree: Root, file: { path?: string; value?: unknown }) => {
     if (!file.path?.endsWith(".deck.mdx")) return;
-    for (const section of tree.children) {
-      if ((section as any).type !== "mdxJsxFlowElement" || (section as any).name !== "section")
-        continue;
-      const sec = section as any;
+    for (const sec of tree.children) {
+      if (!isSection(sec)) continue;
       const bgImages: BgImage[] = [];
       const remaining: RootContent[] = [];
-      for (const child of sec.children as RootContent[]) {
+      for (const child of sec.children) {
         const img = asBgImageParagraph(child, file);
         if (img) {
           img.url = resolveAssetUrl(img.url, file.path);
@@ -124,7 +120,7 @@ export function remarkDeckBg() {
 
       const newChildren: RootContent[] = [];
       if (fullBleed) {
-        newChildren.push(div("slide-bg", slideBgStyle(fullBleed), []) as unknown as RootContent);
+        newChildren.push(div("slide-bg", slideBgStyle(fullBleed), []));
       }
       if (splitImg) {
         const percent = splitImg.splitPercent || "50%";
@@ -132,14 +128,12 @@ export function remarkDeckBg() {
         const content = div("split-content", contentStyle, remaining);
         const image = div("split-image", splitImageStyle(splitImg), []);
         const layoutChildren: RootContent[] =
-          splitImg.position === "left"
-            ? [image as unknown as RootContent, content as unknown as RootContent]
-            : [content as unknown as RootContent, image as unknown as RootContent];
-        newChildren.push(div("split-layout", null, layoutChildren) as unknown as RootContent);
+          splitImg.position === "left" ? [image, content] : [content, image];
+        newChildren.push(div("split-layout", null, layoutChildren));
       } else {
         newChildren.push(...remaining);
       }
-      sec.children = newChildren;
+      sec.children = flowChildren(newChildren);
     }
   };
 }

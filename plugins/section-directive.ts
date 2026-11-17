@@ -1,4 +1,23 @@
+/// <reference types="remark-mdx" />
 import type { Root, RootContent } from "mdast";
+
+/** A slide `<section>`, as `remarkDeckSections` builds it. */
+export type MdxJsxFlowElement = Extract<RootContent, { type: "mdxJsxFlowElement" }>;
+export type MdxJsxAttribute = MdxJsxFlowElement["attributes"][number];
+
+/**
+ * Narrow nodes taken from `Root.children` (typed as any `RootContent`) to what
+ * a flow element may hold. Every caller passes nodes that already sat at flow
+ * level in the deck, so this is a typing gap in mdast, not a runtime change.
+ */
+export function flowChildren(nodes: RootContent[]): MdxJsxFlowElement["children"] {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- mdast types Root.children as RootContent but flow elements as BlockContent | DefinitionContent; these nodes were top-level flow nodes
+  return nodes as MdxJsxFlowElement["children"];
+}
+
+export function isSection(node: RootContent): node is MdxJsxFlowElement {
+  return node.type === "mdxJsxFlowElement" && node.name === "section";
+}
 
 /**
  * The shared shape of the single-directive slide plugins (`_class`, `_if`,
@@ -9,19 +28,17 @@ import type { Root, RootContent } from "mdast";
  */
 export function sectionDirective<T>(
   parse: (value: string) => T | null,
-  apply: (section: any, parsed: T) => void,
+  apply: (section: MdxJsxFlowElement, parsed: T) => void,
 ) {
   return (tree: Root, file: { path?: string }) => {
     if (!file.path?.endsWith(".deck.mdx")) return;
-    for (const section of tree.children) {
-      if ((section as any).type !== "mdxJsxFlowElement" || (section as any).name !== "section")
-        continue;
-      const sec = section as any;
+    for (const sec of tree.children) {
+      if (!isSection(sec)) continue;
       const newChildren: RootContent[] = [];
       let parsed: T | null = null;
-      for (const child of sec.children as RootContent[]) {
-        if ((child as any).type === "mdxFlowExpression") {
-          const p = parse((child as any).value);
+      for (const child of sec.children) {
+        if (child.type === "mdxFlowExpression") {
+          const p = parse(child.value);
           if (p !== null) {
             parsed = p;
             continue;
@@ -29,12 +46,12 @@ export function sectionDirective<T>(
         }
         newChildren.push(child);
       }
-      sec.children = newChildren;
+      sec.children = flowChildren(newChildren);
       if (parsed !== null) apply(sec, parsed);
     }
   };
 }
 
-export function attr(name: string, value: string | null) {
+export function attr(name: string, value: string | null): MdxJsxAttribute {
   return { type: "mdxJsxAttribute", name, value };
 }

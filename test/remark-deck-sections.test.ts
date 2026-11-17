@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import { remarkDeckSections } from "../plugins/remark-deck-sections.ts";
+import { sectionAt } from "./mdast-helpers.ts";
 
 describe("remarkDeckSections", () => {
   it("wraps groups separated by --- in <section> JSX elements", async () => {
@@ -9,10 +10,7 @@ describe("remarkDeckSections", () => {
     const tree = unified().use(remarkParse).parse(input);
     await unified().use(remarkDeckSections).run(tree, { path: "test.deck.mdx" });
     expect(tree.children.length).toBe(3);
-    for (const node of tree.children) {
-      expect((node as any).type).toBe("mdxJsxFlowElement");
-      expect((node as any).name).toBe("section");
-    }
+    for (let i = 0; i < tree.children.length; i++) sectionAt(tree, i);
   });
 
   it("keeps single-slide documents as one <section>", async () => {
@@ -20,7 +18,7 @@ describe("remarkDeckSections", () => {
     const tree = unified().use(remarkParse).parse(input);
     await unified().use(remarkDeckSections).run(tree, { path: "test.deck.mdx" });
     expect(tree.children.length).toBe(1);
-    expect((tree.children[0] as any).children.length).toBe(2);
+    expect(sectionAt(tree, 0).children.length).toBe(2);
   });
 
   it("skips empty groups (consecutive ---)", async () => {

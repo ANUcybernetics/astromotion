@@ -116,8 +116,8 @@ describe("viteDeckWatchIncludes plugin", () => {
     plugin.transform.call({}, "ignored", deckId);
     plugin.handleHotUpdate({ file: partialPath });
     expect(server.moduleGraph.onFileChange).toHaveBeenCalledWith(deckId);
-    const sendOrder = server.ws.send.mock.invocationCallOrder[0]!;
-    const invalidateOrder = server.moduleGraph.onFileChange.mock.invocationCallOrder[0]!;
+    const sendOrder = server.ws.send.mock.invocationCallOrder[0];
+    const invalidateOrder = server.moduleGraph.onFileChange.mock.invocationCallOrder[0];
     expect(invalidateOrder).toBeLessThan(sendOrder);
   });
 
