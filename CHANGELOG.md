@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-18 (v0.39.2)
+
+### Deck frontmatter is checked
+
+Deck frontmatter must now be a YAML mapping, with `title`, `description`,
+`author` and `image` as strings and `published` and `unlisted` as booleans. A
+deck that breaks this fails the build with an error naming the deck and the key,
+where before a wrong type passed through and empty frontmatter crashed with a
+`TypeError`.
+
 ## 2026-11-17 (v0.39.1)
 
 ### Slide titles skip hidden heading content
