@@ -14,6 +14,7 @@ const { document } = parseHTML(`
     <section id="intro"><h2>  Counting
       words </h2><h3>ignored</h3></section>
     <section><p>no heading</p></section>
+    <section><h2>Anchored<a aria-hidden="true" href="#anchored">#</a></h2></section>
   </div>`);
 const slides = [...document.querySelectorAll("section")];
 
@@ -47,6 +48,10 @@ describe("slideTitle", () => {
     expect(slideTitle(slides[0])).toBe("Counting words");
   });
 
+  it("leaves out aria-hidden content such as heading anchors", () => {
+    expect(slideTitle(slides[2])).toBe("Anchored");
+  });
+
   it("is null for a slide without a heading", () => {
     expect(slideTitle(slides[1])).toBeNull();
   });
@@ -60,8 +65,8 @@ describe("initSlideEvents", () => {
     initSlideEvents(deck, target, "");
     deck.goTo(1);
     expect(seen).toEqual([
-      { index: 1, total: 2, id: "intro", title: "Counting words" },
-      { index: 2, total: 2, id: null, title: null },
+      { index: 1, total: 3, id: "intro", title: "Counting words" },
+      { index: 2, total: 3, id: null, title: null },
     ]);
   });
 

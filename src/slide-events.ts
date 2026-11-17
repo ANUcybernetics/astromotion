@@ -26,9 +26,15 @@ interface SlideDeck {
   isPrintView?(): boolean;
 }
 
+// Leaves out aria-hidden content, such as the `#` of a heading's anchor link,
+// so the title is what a screen reader would announce.
 export function slideTitle(slide: Element): string | null {
-  const text = slide.querySelector("h1, h2, h3, h4, h5, h6")?.textContent;
-  return text?.replace(/\s+/g, " ").trim() || null;
+  const heading = slide.querySelector("h1, h2, h3, h4, h5, h6")?.cloneNode(true) as
+    | Element
+    | undefined;
+  if (!heading) return null;
+  for (const hidden of heading.querySelectorAll('[aria-hidden="true"]')) hidden.remove();
+  return heading.textContent?.replace(/\s+/g, " ").trim() || null;
 }
 
 export function slideDetail(slide: Element, h: number, total: number): SlideChangeDetail {

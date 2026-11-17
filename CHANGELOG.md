@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-17 (v0.39.1)
+
+### Slide titles skip hidden heading content
+
+The `title` in `astromotion:slidechange` now leaves out `aria-hidden` content,
+so a heading's anchor link no longer adds a trailing `#`.
+
 ## 2026-11-17 (v0.39.0)
 
 ### Head component and slide events
