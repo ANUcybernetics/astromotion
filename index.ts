@@ -49,6 +49,12 @@ export interface AstromotionOptions {
    * is set, the `og:image` / `twitter:image` tags are omitted entirely.
    */
   ogImage?: string;
+  /**
+   * Path to an `.astro` component, resolved against the project root,
+   * rendered at the end of every deck's `<head>`. For site-wide head content
+   * the deck route can't otherwise get, such as an analytics snippet.
+   */
+  head?: string;
 }
 
 export function normalizeRoutePrefix(prefix: string): string {
@@ -87,6 +93,7 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
         buildState.base = config.base;
         buildState.root = projectRoot;
         buildState.routePrefix = routePrefix;
+        const headPath = options.head ? resolve(projectRoot, options.head) : null;
 
         const hasMdx = config.integrations.some((i) => i.name === "@astrojs/mdx");
         if (!hasMdx) {
@@ -136,7 +143,10 @@ export function astromotion(options: AstromotionOptions = {}): AstroIntegration 
                       `export const favicon = ${JSON.stringify(options.favicon ?? null)};\n` +
                       `export const ogImage = ${JSON.stringify(options.ogImage ?? null)};\n` +
                       `export const cspEnabled = ${cspEnabled};\n` +
-                      `export const speakerViewScript = ${JSON.stringify(cspEnabled ? speakerViewScript() : "")};\n`
+                      `export const speakerViewScript = ${JSON.stringify(cspEnabled ? speakerViewScript() : "")};\n` +
+                      (headPath
+                        ? `export { default as HeadExtra } from ${JSON.stringify(headPath)};\n`
+                        : `export const HeadExtra = null;\n`)
                     );
                   }
                   return null;

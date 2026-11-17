@@ -1,7 +1,13 @@
 ---
 import { Font } from "astro:assets";
 import { fontVariables } from "virtual:astromotion/fonts";
-import { cspEnabled, favicon, ogImage, speakerViewScript } from "virtual:astromotion/head";
+import {
+  HeadExtra,
+  cspEnabled,
+  favicon,
+  ogImage,
+  speakerViewScript,
+} from "virtual:astromotion/head";
 import { EXPORT_SHIM, scriptHash } from "../src/export-shim.ts";
 import { absoluteUrl, withBase } from "../src/head-urls.ts";
 
@@ -84,3 +90,4 @@ if (cspEnabled) {
   frontmatter can register its CSP hash.
 */}
 <script is:inline set:html={EXPORT_SHIM} />
+{HeadExtra && <HeadExtra />}

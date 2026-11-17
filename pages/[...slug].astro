@@ -53,6 +53,7 @@ const { Content, frontmatter } = Astro.props;
 
   import { initClock } from "../src/clock";
   import { initFirstRunHelp } from "../src/first-run-help";
+  import { initSlideEvents } from "../src/slide-events";
   import { keepAwakeInFullscreen } from "../src/keep-awake";
   import { initWhiteboard } from "../src/whiteboard";
 
@@ -93,6 +94,7 @@ const { Content, frontmatter } = Astro.props;
     initWhiteboard(deck);
     initClock(deck);
     initFirstRunHelp(deck);
+    initSlideEvents(deck);
   });
   keepAwakeInFullscreen();
 </script>

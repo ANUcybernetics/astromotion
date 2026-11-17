@@ -93,6 +93,7 @@ describe("deck head under a base path", () => {
     configured = await build("dist-configured", {
       FIXTURE_FAVICON: "/favicon.svg",
       FIXTURE_OG_IMAGE: "/og-image.svg",
+      FIXTURE_HEAD: "src/components/DeckExtra.astro",
     });
     omitted = await build("dist-omitted");
     remounted = await build("dist-remounted", { FIXTURE_ROUTE_PREFIX: "/lectures/" });
@@ -138,6 +139,12 @@ describe("deck head under a base path", () => {
     expect(omitted.querySelector('meta[name="twitter:card"]')?.getAttribute("content")).toBe(
       "summary",
     );
+  });
+
+  it("renders the head option's component into the deck head", () => {
+    const extra = configured.head.querySelector('meta[name="fixture-head"]');
+    expect(extra?.getAttribute("content")).toBe("from the head option");
+    expect(omitted.querySelector('meta[name="fixture-head"]')).toBeNull();
   });
 
   // The export-mode guard freezes repeating timers so a live widget can't keep

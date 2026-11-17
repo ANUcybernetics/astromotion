@@ -66,6 +66,35 @@ URL, and are resolved against the site's `base` --- so they stay correct on a
 site deployed under a subpath. Nothing is emitted for an option you leave unset:
 a dangling icon or social-card URL is worse than none.
 
+Anything else your site puts in every `<head>`, such as an analytics snippet,
+goes in a component named by the `head` option:
+
+```js
+astromotion({
+  head: "./src/components/DeckHeadExtra.astro", // resolved against the project root
+});
+```
+
+It renders at the end of every deck's `<head>`. On a site with `security.csp`,
+the component registers hashes for any inline scripts it emits.
+
+### Slide events
+
+Each deck dispatches an `astromotion:slidechange` event on `document` for the
+slide it opens on and after every slide change, so a script in the `head`
+component can follow the deck:
+
+```js
+document.addEventListener("astromotion:slidechange", (e) => {
+  const { index, total, id, title } = e.detail;
+  // index is one-based, as in the #/n URL hash; title is the first heading's text
+});
+```
+
+The speaker view's preview frames and the print and export views (`?print-pdf`,
+`?astromotion-export`) dispatch nothing, so a listener sees only the slides
+someone is actually looking at.
+
 ## Writing slides
 
 Create `.deck.mdx` files in `src/decks/`:
@@ -385,6 +414,7 @@ astromotion({
   checkStructure: true, // verify generated deck markup after builds (default: true)
   shikiConfig: { theme: "vitesse-dark" }, // full ShikiConfig (default: { theme: "vitesse-dark" })
   fontVariables: ["--font-deck"], // cssVariable names from astro.config's `fonts` to put in every deck head (default: all of them)
+  head: "./src/components/DeckHeadExtra.astro", // component rendered at the end of every deck head (see "Head assets")
 });
 ```
 

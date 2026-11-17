@@ -3,7 +3,7 @@ import { defineConfig, passthroughImageService } from "astro/config";
 import { astromotion } from "../../../index.ts";
 import { deckRemarkPlugins } from "../../../plugins/index.ts";
 
-// Fixture for the base-path build test. The favicon/ogImage options are driven
+// Fixture for the base-path build test. The favicon/ogImage/head options are driven
 // by env vars so one fixture covers both the configured and the omitted case.
 // mdx is registered the way a real consumer does it — with deckRemarkPlugins —
 // so the build exercises the plugins' URL rewriting (notably remarkDeckBg's
@@ -25,6 +25,7 @@ export default defineConfig({
       favicon: process.env.FIXTURE_FAVICON || undefined,
       ogImage: process.env.FIXTURE_OG_IMAGE || undefined,
       routePrefix: process.env.FIXTURE_ROUTE_PREFIX || undefined,
+      head: process.env.FIXTURE_HEAD || undefined,
     }),
   ],
 });

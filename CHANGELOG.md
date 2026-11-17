@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-17 (v0.39.0)
+
+### Head component and slide events
+
+A new `head` option names an `.astro` component to render at the end of every
+deck's `<head>`, for site-wide head content such as an analytics snippet. Decks
+also dispatch an `astromotion:slidechange` event on `document`, with the
+one-based slide number, slide count, slide `id` and first heading, for the
+opening slide and every change after it. The speaker view's preview frames and
+the print and export views stay silent.
+
 ## 2026-11-12 (v0.38.0)
 
 ### Whiteboard laser
