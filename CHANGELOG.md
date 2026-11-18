@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-19 (v0.39.3)
+
+### The whiteboard leaves form fields alone
+
+Keys typed into a form field or editable region on a slide no longer reach the
+whiteboard, so a deck that collects input can take a **w** without opening the
+board. Reveal already ignored keys there; the pen now matches it.
+
 ## 2026-11-18 (v0.39.2)
 
 ### Deck frontmatter is checked

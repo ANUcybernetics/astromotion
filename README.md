@@ -503,6 +503,9 @@ the laser, or click the toolbar buttons), plus **Z** to undo, **C** to clear and
 **D** to save. Everything else belongs to the deck, so you can keep navigating
 with the board up, and **F**, **S** and **B** still work.
 
+None of these keys reach the pen while you're typing in a form field on a slide,
+so a deck that collects input can still take a **w**.
+
 The laser draws fine strokes in the current colour that fade on their own: they
 hold for a moment after you lift the pen, then all of them fade together, so a
 circle followed by an arrow goes as one gesture. Laser marks never join the

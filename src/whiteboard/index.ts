@@ -13,7 +13,8 @@
 //
 // The pen claims a small fixed set of keys (W, then the digits, Z/U, C, D and
 // Escape while open) and lets everything else through to Reveal, so the deck
-// keeps navigating and F, S and B keep working with the board up.
+// keeps navigating and F, S and B keep working with the board up. Keys typed
+// into a form field on a slide are left alone, as Reveal leaves them.
 //
 // The laser brush draws marks that fade on their own (see LASER in ./core).
 // Rendering is otherwise on demand; while laser marks are on screen it runs
@@ -36,6 +37,7 @@ import {
   endStroke,
   expireLaser,
   extendStroke,
+  isTextEntry,
   keyAction,
   LASER,
   laserOpacity,
@@ -399,6 +401,7 @@ export function initWhiteboard(deck: RevealDeck): void {
   document.addEventListener(
     "keydown",
     (event) => {
+      if (isTextEntry(event.target)) return;
       const action = keyAction(
         state,
         event.key,

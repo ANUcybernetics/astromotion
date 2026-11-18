@@ -1,3 +1,4 @@
+import { parseHTML } from "linkedom";
 import { describe, expect, it } from "vitest";
 import {
   annotationFilename,
@@ -14,6 +15,7 @@ import {
   expireLaser,
   extendStroke,
   INK_PALETTES,
+  isTextEntry,
   keyAction,
   LASER,
   LASER_FADE_MS,
@@ -170,6 +172,34 @@ describe("coverRect", () => {
       width: 100,
       height: 60,
     });
+  });
+});
+
+describe("isTextEntry", () => {
+  const { document } = parseHTML(`
+    <section>
+      <h2 id="heading">Write a story</h2>
+      <form>
+        <input id="text" type="text" />
+        <textarea id="story"></textarea>
+        <select id="pick"><option>a</option></select>
+      </form>
+      <div id="editor" contenteditable="true"><p id="para">Once</p></div>
+      <div id="off" contenteditable="false"></div>
+    </section>
+  `);
+  const at = (id: string) => document.getElementById(id);
+
+  it("holds for form fields and editable regions, including their descendants", () => {
+    for (const id of ["text", "story", "pick", "editor", "para"]) {
+      expect(isTextEntry(at(id))).toBe(true);
+    }
+  });
+
+  it("does not hold for the rest of the slide or for no target", () => {
+    expect(isTextEntry(at("heading"))).toBe(false);
+    expect(isTextEntry(at("off"))).toBe(false);
+    expect(isTextEntry(null)).toBe(false);
   });
 });
 

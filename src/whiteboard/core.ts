@@ -226,6 +226,21 @@ export interface KeyModifiers {
   other: boolean;
 }
 
+// Text-entry elements, matched as Reveal matches them before ignoring a key,
+// so a key typed into a form on a slide never reaches the pen either.
+const TEXT_ENTRY = "input, textarea, select, [contenteditable]:not([contenteditable='false'])";
+
+// Whether a keydown's target is somewhere the user is typing. A form on a
+// slide would otherwise lose every W to the board.
+export function isTextEntry(target: EventTarget | null): boolean {
+  return isElement(target) && target.closest(TEXT_ENTRY) !== null;
+}
+
+// Duck-typed rather than instanceof, so it holds for any DOM implementation.
+function isElement(target: EventTarget | null): target is Element {
+  return target !== null && "closest" in target;
+}
+
 // Map a keydown to an action. The pen claims a small fixed set --- W, then the
 // digits, Z/U, C, D and Escape while it is open --- and everything else
 // returns null and reaches Reveal, so the deck keeps navigating and F, S and B
